@@ -5,7 +5,7 @@ import (
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 )
 
-func NewIOChaos(opts ...OptChaos) (*chaosmeshv1alpha1.IOChaos, error) {
+func NewWorkflowChaos(opts ...OptChaos) (*chaosmeshv1alpha1.Workflow, error) {
 	config := ConfigChaos{}
 	for _, opt := range opts {
 		if opt != nil {
@@ -19,21 +19,21 @@ func NewIOChaos(opts ...OptChaos) (*chaosmeshv1alpha1.IOChaos, error) {
 	if config.Namespace == "" {
 		return nil, errors.New("the namespace is required")
 	}
-	if config.IOChaos == nil {
-		return nil, errors.New("IOChaos is required")
+	if config.Workflow == nil {
+		return nil, errors.New("workflow is required")
 	}
 
-	ioChaos := chaosmeshv1alpha1.IOChaos{}
-	ioChaos.Name = config.Name
-	ioChaos.Namespace = config.Namespace
-	config.IOChaos.DeepCopyInto(&ioChaos.Spec)
+	workflow := chaosmeshv1alpha1.Workflow{}
+	workflow.Name = config.Name
+	workflow.Namespace = config.Namespace
+	config.Workflow.DeepCopyInto(&workflow.Spec)
 
 	if config.Labels != nil {
-		ioChaos.Labels = config.Labels
+		workflow.Labels = config.Labels
 	}
 	if config.Annotations != nil {
-		ioChaos.Annotations = config.Annotations
+		workflow.Annotations = config.Annotations
 	}
 
-	return &ioChaos, nil
+	return &workflow, nil
 }

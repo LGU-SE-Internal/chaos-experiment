@@ -15,7 +15,7 @@ import (
 
 // Load configuration
 func getK8sConfig() *rest.Config {
-	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "remote")
+	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		panic(err.Error())

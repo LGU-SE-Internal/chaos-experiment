@@ -3,13 +3,13 @@ package controllers
 import (
 	"chaos-expriment/chaos"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 func ScheduleChaos(cli client.Client, namespace string) {
@@ -26,64 +26,87 @@ func ScheduleChaos(cli client.Client, namespace string) {
 		return
 	}
 
+	workflowSpec := v1alpha1.WorkflowSpec{
+		Entry: "httpchaosworkflow",
+		Templates: []v1alpha1.Template{
+			{
+				Name:     "father",
+				Type:     v1alpha1.TypeSerial,
+				Children: nil,
+			},
+		},
+	}
 	for _, pod := range podList.Items {
 		if pod.Status.Phase != corev1.PodRunning {
 			logrus.Infof("Pod %s in namespace %s is not running (status: %s). Deleting pod.", pod.Name, pod.Namespace, pod.Status.Phase)
-
 			if err := cli.Delete(ctx, &pod, &client.DeleteOptions{}); err != nil {
 				logrus.Errorf("Failed to delete pod %s/%s: %v", pod.Namespace, pod.Name, err)
 			} else {
 				logrus.Infof("Successfully deleted pod %s/%s", pod.Namespace, pod.Name)
 			}
 		}
+		specs := chaos.GenerateSetsOfHttpChaosSpec(namespace, pod.Name)
+
+		for idx, spec := range specs {
+			choice := ""
+			if spec.PodHttpChaosActions.Abort != nil {
+				choice = "abort"
+			}
+			if spec.PodHttpChaosActions.Delay != nil {
+				choice = "delay"
+			}
+			if spec.PodHttpChaosActions.Replace != nil {
+				choice = "replace"
+			}
+			if spec.PodHttpChaosActions.Patch != nil {
+				choice = "patch"
+			}
+
+			workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
+				Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, pod.Name, spec.Target, choice)),
+				Type: v1alpha1.TypeTask,
+				EmbedChaos: &v1alpha1.EmbedChaos{
+					HTTPChaos: &spec,
+				},
+			})
+			workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
+				Name:     fmt.Sprintf("%s-%s-%s-%d", namespace, pod.Name, "sleep", idx),
+				Type:     v1alpha1.TypeSuspend,
+				Deadline: pointer.String("5m"),
+			})
+		}
 	}
 
-	spec := v1alpha1.HTTPChaosSpec{
-		PodSelector: v1alpha1.PodSelector{
-			Selector: v1alpha1.PodSelectorSpec{
-				GenericSelectorSpec: v1alpha1.GenericSelectorSpec{
-					Namespaces: []string{namespace},
-					//FieldSelectors:      nil,
-					//LabelSelectors: nil,
-					//ExpressionSelectors: nil,
-					//AnnotationSelectors: nil,
-				},
-				//Nodes:             nil,
-				Pods: nil,
-				//NodeSelectors:     nil,
-				//PodPhaseSelectors: nil,
-			},
-			Mode:  v1alpha1.OneMode,
-			Value: "",
-		},
-		Target: v1alpha1.PodHttpRequest,
-		PodHttpChaosActions: v1alpha1.PodHttpChaosActions{
-			//Abort:   nil,
-			Delay: pointer.String("5s"),
-			//Replace: nil,
-			//Patch:   nil,
-		},
-		Port: 8080,
-		//Path:            nil,
-		//Method:          nil,
-		//Code:            nil,
-		//RequestHeaders:  nil,
-		//ResponseHeaders: nil,
-		//TLS:             nil,
-		Duration: pointer.String("1m"),
-		//RemoteCluster:       "",
+	for i, template := range workflowSpec.Templates {
+		if i == 0 {
+			continue
+		}
+		workflowSpec.Templates[0].Children = append(workflowSpec.Templates[0].Children, template.Name)
 	}
-	httpChaos, err := chaos.NewHttpChaos(chaos.WithNamespace(namespace), chaos.WithName("test111"), chaos.WithPodHttpChaosSpec(&spec))
+
+	workflowChaos, err := chaos.NewWorkflowChaos(chaos.WithName("httpchaosworkflow"), chaos.WithNamespace(namespace), chaos.WithWorkflowSpec(&workflowSpec))
+	if err != nil {
+		logrus.Errorf("Failed to create chaos workflow: %v", err)
+	}
+
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
 	}
-	jsonDataIndented, err := json.MarshalIndent(httpChaos, "", "  ")
-	if err != nil {
-		fmt.Println("Error marshalling to indented JSON:", err)
-		return
-	}
+	//jsonDataIndented, err := json.MarshalIndent(workflowChaos, "", "  ")
+	//if err != nil {
+	//	fmt.Println("Error marshalling to indented JSON:", err)
+	//	return
+	//}
 
-	// 打印带缩进的 JSON 字符串
-	fmt.Println("Indented JSON format:")
-	fmt.Println(string(jsonDataIndented))
+	//fmt.Println("Indented JSON format:")
+	//fmt.Println(string(jsonDataIndented))
+	create, err := workflowChaos.ValidateCreate()
+	if err != nil {
+		logrus.Errorf("Failed to validate create chaos: %v", err)
+	}
+	logrus.Infof("create warning: %v", create)
+	//err = cli.Create(context.Background(), workflowChaos)
+	//if err != nil {
+	//	logrus.Errorf("Failed to create chaos: %v", err)
+	//}
 }
