@@ -8,7 +8,7 @@ type ConfigChaos struct {
 	Labels      map[string]string
 	Annotations map[string]string
 
-	PodHttpChaos *chaosmeshv1alpha1.PodHttpChaosSpec
+	HttpChaos *chaosmeshv1alpha1.HTTPChaosSpec
 }
 
 type OptChaos func(opt *ConfigChaos)
@@ -34,8 +34,8 @@ func WithAnnotations(annotations map[string]string) OptChaos {
 	}
 }
 
-func WithPodHttpChaosSpec(spec *chaosmeshv1alpha1.PodHttpChaosSpec) OptChaos {
+func WithPodHttpChaosSpec(spec *chaosmeshv1alpha1.HTTPChaosSpec) OptChaos {
 	return func(opt *ConfigChaos) {
-		opt.PodHttpChaos = spec
+		opt.HttpChaos = spec
 	}
 }
