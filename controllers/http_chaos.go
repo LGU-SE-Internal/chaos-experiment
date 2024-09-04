@@ -27,10 +27,10 @@ func ScheduleChaos(cli client.Client, namespace string) {
 	}
 
 	workflowSpec := v1alpha1.WorkflowSpec{
-		Entry: "httpchaosworkflow",
+		Entry: "entry",
 		Templates: []v1alpha1.Template{
 			{
-				Name:     "father",
+				Name:     "entry",
 				Type:     v1alpha1.TypeSerial,
 				Children: nil,
 			},
@@ -53,7 +53,7 @@ func ScheduleChaos(cli client.Client, namespace string) {
 				choice = "abort"
 			}
 			if spec.PodHttpChaosActions.Delay != nil {
-				choice = "delay"
+				choice = "delay-" + *spec.PodHttpChaosActions.Delay
 			}
 			if spec.PodHttpChaosActions.Replace != nil {
 				choice = "replace"
@@ -64,10 +64,11 @@ func ScheduleChaos(cli client.Client, namespace string) {
 
 			workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 				Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, pod.Name, spec.Target, choice)),
-				Type: v1alpha1.TypeTask,
+				Type: v1alpha1.TypeHTTPChaos,
 				EmbedChaos: &v1alpha1.EmbedChaos{
 					HTTPChaos: &spec,
 				},
+				Deadline: pointer.String("5m"),
 			})
 			workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 				Name:     fmt.Sprintf("%s-%s-%s-%d", namespace, pod.Name, "sleep", idx),
@@ -84,7 +85,7 @@ func ScheduleChaos(cli client.Client, namespace string) {
 		workflowSpec.Templates[0].Children = append(workflowSpec.Templates[0].Children, template.Name)
 	}
 
-	workflowChaos, err := chaos.NewWorkflowChaos(chaos.WithName("httpchaosworkflow"), chaos.WithNamespace(namespace), chaos.WithWorkflowSpec(&workflowSpec))
+	workflowChaos, err := chaos.NewWorkflowChaos(chaos.WithName("entry"), chaos.WithNamespace(namespace), chaos.WithWorkflowSpec(&workflowSpec))
 	if err != nil {
 		logrus.Errorf("Failed to create chaos workflow: %v", err)
 	}
@@ -105,8 +106,8 @@ func ScheduleChaos(cli client.Client, namespace string) {
 		logrus.Errorf("Failed to validate create chaos: %v", err)
 	}
 	logrus.Infof("create warning: %v", create)
-	//err = cli.Create(context.Background(), workflowChaos)
-	//if err != nil {
-	//	logrus.Errorf("Failed to create chaos: %v", err)
-	//}
+	err = cli.Create(context.Background(), workflowChaos)
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+	}
 }

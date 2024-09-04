@@ -2,6 +2,7 @@ package chaos
 
 import (
 	"errors"
+	"fmt"
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"k8s.io/utils/pointer"
 )
@@ -69,7 +70,7 @@ func GenerateSetsOfHttpChaosSpec(namespace string, podName string) []chaosmeshv1
 		Code:            nil, // for filtering the request
 		RequestHeaders:  nil, // for filtering the request
 		ResponseHeaders: nil, // for filtering the request
-		Duration:        pointer.String("5m"),
+		//Duration:        nil,
 	}
 	for _, target := range []chaosmeshv1alpha1.PodHttpChaosTarget{chaosmeshv1alpha1.PodHttpRequest, chaosmeshv1alpha1.PodHttpResponse} {
 		cur := chaosmeshv1alpha1.HTTPChaosSpec{}
@@ -80,9 +81,13 @@ func GenerateSetsOfHttpChaosSpec(namespace string, podName string) []chaosmeshv1
 			switch i {
 			case 0:
 				cur.PodHttpChaosActions.Abort = pointer.Bool(true)
+				specs = append(specs, cur)
 			case 1:
-				cur.PodHttpChaosActions.Abort = nil
-				cur.PodHttpChaosActions.Delay = pointer.String("5m")
+				for interval := 1; interval < 10; interval++ {
+					cur.PodHttpChaosActions.Abort = nil
+					cur.PodHttpChaosActions.Delay = pointer.String(fmt.Sprintf("%ds", interval))
+					specs = append(specs, cur)
+				}
 			case 2:
 				//cur.PodHttpChaosActions.Replace =
 			case 3:
@@ -90,7 +95,6 @@ func GenerateSetsOfHttpChaosSpec(namespace string, podName string) []chaosmeshv1
 			}
 		}
 
-		specs = append(specs, cur)
 	}
 	return specs
 }
