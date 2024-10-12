@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func ScheduleChaos(cli client.Client, namespace string) {
+func ScheduleHTTPChaos(cli client.Client, namespace string) {
 	ctx := context.Background()
 
 	podList := &corev1.PodList{}

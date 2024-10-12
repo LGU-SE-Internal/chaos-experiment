@@ -2,6 +2,7 @@ package chaos
 
 import (
 	"errors"
+
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 )
 
@@ -36,4 +37,27 @@ func NewStressChaos(opts ...OptChaos) (*chaosmeshv1alpha1.StressChaos, error) {
 	}
 
 	return &stressChaos, nil
+}
+
+
+
+func GenerateStressChaosSpec(namespace string, appName string, Stressors chaosmeshv1alpha1.Stressors) *chaosmeshv1alpha1.StressChaosSpec {
+
+	spec := &chaosmeshv1alpha1.StressChaosSpec{
+		ContainerSelector: chaosmeshv1alpha1.ContainerSelector{
+			PodSelector: chaosmeshv1alpha1.PodSelector{
+				Selector: chaosmeshv1alpha1.PodSelectorSpec{
+					GenericSelectorSpec: chaosmeshv1alpha1.GenericSelectorSpec{
+						Namespaces: []string{namespace},
+						LabelSelectors: map[string]string{
+							"app": appName,
+						},
+					},
+				},
+				Mode: chaosmeshv1alpha1.AllMode,
+			},
+		},
+		Stressors: &Stressors,
+	}
+	return spec
 }

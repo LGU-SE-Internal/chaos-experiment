@@ -2,14 +2,15 @@ package main
 
 import (
 	controllers "chaos-expriment/controllers"
+	"os"
+	"path/filepath"
+
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -25,7 +26,6 @@ func getK8sConfig() *rest.Config {
 
 func main() {
 	cfg := getK8sConfig()
-
 	scheme := runtime.NewScheme()
 	err := chaosmeshv1alpha1.AddToScheme(scheme)
 	if err != nil {
@@ -40,5 +40,9 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("create k8sClient: %v", err)
 	}
-	controllers.ScheduleChaos(k8sClient, "ts")
+
+	namespace := "onlineboutique"
+	appList := []string{"checkoutservice", "recommendationservice", "emailservice", "paymentservice", "productcatalogservice"}
+	stressors := controllers.MakeCPUStressors(100, 2)
+	controllers.ScheduleStressChaos(k8sClient, namespace, appList, stressors, "cpu")
 }
