@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	"github.com/k0kubun/pp/v3"
 	"github.com/sirupsen/logrus"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,6 +29,7 @@ func MakeMemoryStressors(memorySize string, worker int) v1alpha1.Stressors {
 		},
 	}
 }
+
 func ScheduleStressChaos(cli client.Client, namespace string, appList []string, stressors v1alpha1.Stressors, stressType string) {
 
 	workflowSpec := v1alpha1.WorkflowSpec{
@@ -76,14 +78,8 @@ func ScheduleStressChaos(cli client.Client, namespace string, appList []string, 
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
 	}
-	//jsonDataIndented, err := json.MarshalIndent(workflowChaos, "", "  ")
-	//if err != nil {
-	//	fmt.Println("Error marshalling to indented JSON:", err)
-	//	return
-	//}
 
-	//fmt.Println("Indented JSON format:")
-	//fmt.Println(string(jsonDataIndented))
+	pp.Print("%+v", workflowChaos)
 	create, err := workflowChaos.ValidateCreate()
 	if err != nil {
 		logrus.Errorf("Failed to validate create chaos: %v", err)

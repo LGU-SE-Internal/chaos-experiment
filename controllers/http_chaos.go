@@ -4,12 +4,14 @@ import (
 	"chaos-expriment/chaos"
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	"github.com/k0kubun/pp/v3"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 func ScheduleHTTPChaos(cli client.Client, namespace string) {
@@ -93,14 +95,7 @@ func ScheduleHTTPChaos(cli client.Client, namespace string) {
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
 	}
-	//jsonDataIndented, err := json.MarshalIndent(workflowChaos, "", "  ")
-	//if err != nil {
-	//	fmt.Println("Error marshalling to indented JSON:", err)
-	//	return
-	//}
-
-	//fmt.Println("Indented JSON format:")
-	//fmt.Println(string(jsonDataIndented))
+	pp.Print("%+v", workflowChaos)
 	create, err := workflowChaos.ValidateCreate()
 	if err != nil {
 		logrus.Errorf("Failed to validate create chaos: %v", err)

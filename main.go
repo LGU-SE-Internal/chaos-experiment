@@ -41,7 +41,7 @@ func main() {
 		logrus.Fatalf("create k8sClient: %v", err)
 	}
 
-	namespace := "onlineboutique"
+	namespace := "ts-dev"
 	appList := []string{"checkoutservice", "recommendationservice", "emailservice", "paymentservice", "productcatalogservice"}
 	stressors := controllers.MakeCPUStressors(100, 2)
 	controllers.ScheduleStressChaos(k8sClient, namespace, appList, stressors, "cpu")
