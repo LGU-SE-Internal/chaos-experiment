@@ -2,6 +2,7 @@ package chaos
 
 import (
 	"errors"
+
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 )
 
@@ -36,4 +37,25 @@ func NewPodChaos(opts ...OptChaos) (*chaosmeshv1alpha1.PodChaos, error) {
 	}
 
 	return &podChaos, nil
+}
+
+func GeneratePodChaosSpec(namespace string, appName string, action chaosmeshv1alpha1.PodChaosAction) *chaosmeshv1alpha1.PodChaosSpec {
+
+	spec := &chaosmeshv1alpha1.PodChaosSpec{
+		Action: action,
+		ContainerSelector: chaosmeshv1alpha1.ContainerSelector{
+			PodSelector: chaosmeshv1alpha1.PodSelector{
+				Selector: chaosmeshv1alpha1.PodSelectorSpec{
+					GenericSelectorSpec: chaosmeshv1alpha1.GenericSelectorSpec{
+						Namespaces: []string{namespace},
+						LabelSelectors: map[string]string{
+							"app": appName,
+						},
+					},
+				},
+				Mode: chaosmeshv1alpha1.AllMode,
+			},
+		},
+	}
+	return spec
 }
