@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 func MakeCPUStressors(load int, worker int) v1alpha1.Stressors {
@@ -31,12 +32,12 @@ func MakeMemoryStressors(memorySize string, worker int) v1alpha1.Stressors {
 }
 
 func ScheduleStressChaos(cli client.Client, namespace string, appList []string, stressors v1alpha1.Stressors, stressType string) {
-
+	workflowName := strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, stressType, rand.String(6)))
 	workflowSpec := v1alpha1.WorkflowSpec{
-		Entry: "entry",
+		Entry: workflowName,
 		Templates: []v1alpha1.Template{
 			{
-				Name:     "entry",
+				Name:     workflowName,
 				Type:     v1alpha1.TypeSerial,
 				Children: nil,
 			},
@@ -56,7 +57,7 @@ func ScheduleStressChaos(cli client.Client, namespace string, appList []string, 
 		})
 		if idx < len(appList)-1 {
 			workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
-				Name:     fmt.Sprintf("%s-%s-%d", namespace, "sleep", idx),
+				Name:     fmt.Sprintf("%s-%d", "sleep", idx),
 				Type:     v1alpha1.TypeSuspend,
 				Deadline: pointer.String("10m"),
 			})
@@ -70,7 +71,7 @@ func ScheduleStressChaos(cli client.Client, namespace string, appList []string, 
 		workflowSpec.Templates[0].Children = append(workflowSpec.Templates[0].Children, template.Name)
 	}
 
-	workflowChaos, err := chaos.NewWorkflowChaos(chaos.WithName("entry"), chaos.WithNamespace(namespace), chaos.WithWorkflowSpec(&workflowSpec))
+	workflowChaos, err := chaos.NewWorkflowChaos(chaos.WithName(workflowName), chaos.WithNamespace(namespace), chaos.WithWorkflowSpec(&workflowSpec))
 	if err != nil {
 		logrus.Errorf("Failed to create chaos workflow: %v", err)
 	}
