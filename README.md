@@ -25,3 +25,14 @@ appList := []string{"checkoutservice", "recommendationservice", "emailservice", 
 	action := chaosmeshv1alpha1.PodFailureAction
 	controllers.SchedulePodChaos(k8sClient, namespace, appList, action)
     ```
+- HTTPChaos
+    - abort
+        ```
+        abort := true
+        opts := []chaos.OptHTTPChaos{
+            chaos.WithTarget(chaosmeshv1alpha1.PodHttpRequest),
+            chaos.WithPort(8080),
+            chaos.WithAbort(&abort),
+        }
+        controllers.ScheduleHTTPChaos(k8sClient, namespace, appList, "request-abort", opts...)
+        ```
