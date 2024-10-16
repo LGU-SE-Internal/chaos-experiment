@@ -1,6 +1,7 @@
 package main
 
 import (
+	chaos "chaos-expriment/chaos"
 	controllers "chaos-expriment/controllers"
 	"os"
 	"path/filepath"
@@ -42,7 +43,12 @@ func main() {
 	}
 
 	namespace := "ts-dev"
-	appList := []string{"checkoutservice", "recommendationservice", "emailservice", "paymentservice", "productcatalogservice"}
-	stressors := controllers.MakeCPUStressors(100, 2)
-	controllers.ScheduleStressChaos(k8sClient, namespace, appList, stressors, "cpu")
+	appList := []string{"ts-basic-service", "ts-config-service"}
+	abort := true
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(chaosmeshv1alpha1.PodHttpRequest),
+		chaos.WithPort(8080),
+		chaos.WithAbort(&abort),
+	}
+	controllers.ScheduleHTTPChaos(k8sClient, namespace, appList, "request-abort", opts...)
 }

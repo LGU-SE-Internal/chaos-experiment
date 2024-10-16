@@ -10,11 +10,73 @@ import (
 	"github.com/k0kubun/pp/v3"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ScheduleHTTPChaos(cli client.Client, namespace string) {
+func ScheduleHTTPChaos(cli client.Client, namespace string, appList []string, stressType string, opts ...chaos.OptHTTPChaos) {
+	workflowName := strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, stressType, rand.String(6)))
+	workflowSpec := v1alpha1.WorkflowSpec{
+		Entry: workflowName,
+		Templates: []v1alpha1.Template{
+			{
+				Name:     workflowName,
+				Type:     v1alpha1.TypeSerial,
+				Children: nil,
+			},
+		},
+	}
+	for idx, appName := range appList {
+
+		spec := chaos.GenerateHttpChaosSpec(namespace, appName, opts...)
+
+		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
+			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, stressType)),
+			Type: v1alpha1.TypeHTTPChaos,
+			EmbedChaos: &v1alpha1.EmbedChaos{
+				HTTPChaos: spec,
+			},
+			Deadline: pointer.String("5m"),
+		})
+		if idx < len(appList)-1 {
+			workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
+				Name:     fmt.Sprintf("%s-%d", "sleep", idx),
+				Type:     v1alpha1.TypeSuspend,
+				Deadline: pointer.String("10m"),
+			})
+		}
+	}
+
+	for i, template := range workflowSpec.Templates {
+		if i == 0 {
+			continue
+		}
+		workflowSpec.Templates[0].Children = append(workflowSpec.Templates[0].Children, template.Name)
+	}
+
+	workflowChaos, err := chaos.NewWorkflowChaos(chaos.WithName(workflowName), chaos.WithNamespace(namespace), chaos.WithWorkflowSpec(&workflowSpec))
+	if err != nil {
+		logrus.Errorf("Failed to create chaos workflow: %v", err)
+	}
+
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+	}
+
+	pp.Print("%+v", workflowChaos)
+	create, err := workflowChaos.ValidateCreate()
+	if err != nil {
+		logrus.Errorf("Failed to validate create chaos: %v", err)
+	}
+	logrus.Infof("create warning: %v", create)
+	err = cli.Create(context.Background(), workflowChaos)
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+	}
+}
+
+func ScheduleSetsOfHTTPChaos(cli client.Client, namespace string) {
 	ctx := context.Background()
 
 	podList := &corev1.PodList{}
