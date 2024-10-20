@@ -36,3 +36,12 @@ appList := []string{"checkoutservice", "recommendationservice", "emailservice", 
         }
         controllers.ScheduleHTTPChaos(k8sClient, namespace, appList, "request-abort", opts...)
         ```
+    - replace
+        ```
+        opts := []chaos.OptHTTPChaos{
+            chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
+            chaos.WithPort(8080),
+            chaos.WithReplaceBody([]byte(rand.String(6))),
+        }
+        controllers.ScheduleHTTPChaos(k8sClient, namespace, appList, "Response-replace", opts...)
+        ```
