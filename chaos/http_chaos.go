@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/utils/pointer"
 )
 
@@ -177,6 +178,13 @@ func WithReplaceBody(body []byte) OptHTTPChaos {
 	return func(opt *chaosmeshv1alpha1.HTTPChaosSpec) {
 		WithReplace(nil)(opt)
 		opt.PodHttpChaosActions.Replace.Body = body
+	}
+}
+
+func WithRandomReplaceBody() OptHTTPChaos {
+	return func(opt *chaosmeshv1alpha1.HTTPChaosSpec) {
+		WithReplace(nil)(opt)
+		opt.PodHttpChaosActions.Replace.Body = []byte(rand.String(6))
 	}
 }
 
