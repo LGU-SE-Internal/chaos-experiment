@@ -15,6 +15,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func AddHTTPChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, stressType string, opts ...chaos.OptHTTPChaos) *v1alpha1.WorkflowSpec {
+	for _, appName := range appList {
+
+		spec := chaos.GenerateHttpChaosSpec(namespace, appName, opts...)
+
+		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
+			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, stressType)),
+			Type: v1alpha1.TypeHTTPChaos,
+			EmbedChaos: &v1alpha1.EmbedChaos{
+				HTTPChaos: spec,
+			},
+			Deadline: pointer.String("5m"),
+		})
+
+		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
+			Name:     fmt.Sprintf("%s-%s", "sleep", rand.String(6)),
+			Type:     v1alpha1.TypeSuspend,
+			Deadline: pointer.String("10m"),
+		})
+	}
+	return workflowSpec
+}
+
 func ScheduleHTTPChaos(cli client.Client, namespace string, appList []string, stressType string, opts ...chaos.OptHTTPChaos) {
 	workflowName := strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, stressType, rand.String(6)))
 	workflowSpec := v1alpha1.WorkflowSpec{

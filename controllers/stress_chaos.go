@@ -9,9 +9,9 @@ import (
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/k0kubun/pp/v3"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 func MakeCPUStressors(load int, worker int) v1alpha1.Stressors {
@@ -31,6 +31,29 @@ func MakeMemoryStressors(memorySize string, worker int) v1alpha1.Stressors {
 	}
 }
 
+func AddStressChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, stressors v1alpha1.Stressors, stressType string) *v1alpha1.WorkflowSpec {
+	for _, appName := range appList {
+
+		spec := chaos.GenerateStressChaosSpec(namespace, appName, stressors)
+
+		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
+			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, stressType)),
+			Type: v1alpha1.TypeStressChaos,
+			EmbedChaos: &v1alpha1.EmbedChaos{
+				StressChaos: spec,
+			},
+			Deadline: pointer.String("5m"),
+		})
+
+		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
+			Name:     fmt.Sprintf("%s-%s", "sleep", rand.String(6)),
+			Type:     v1alpha1.TypeSuspend,
+			Deadline: pointer.String("10m"),
+		})
+
+	}
+	return workflowSpec
+}
 func ScheduleStressChaos(cli client.Client, namespace string, appList []string, stressors v1alpha1.Stressors, stressType string) {
 	workflowName := strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, stressType, rand.String(6)))
 	workflowSpec := v1alpha1.WorkflowSpec{

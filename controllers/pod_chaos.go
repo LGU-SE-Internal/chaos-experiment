@@ -14,6 +14,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func AddPodChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, action v1alpha1.PodChaosAction) *v1alpha1.WorkflowSpec {
+	for _, appName := range appList {
+
+		spec := chaos.GeneratePodChaosSpec(namespace, appName, action)
+
+		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
+			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, action)),
+			Type: v1alpha1.TypePodChaos,
+			EmbedChaos: &v1alpha1.EmbedChaos{
+				PodChaos: spec,
+			},
+			Deadline: pointer.String("5m"),
+		})
+
+		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
+			Name:     fmt.Sprintf("%s-%s", "sleep", rand.String(6)),
+			Type:     v1alpha1.TypeSuspend,
+			Deadline: pointer.String("10m"),
+		})
+	}
+	
+	return workflowSpec
+}
+
 func SchedulePodChaos(cli client.Client, namespace string, appList []string, action v1alpha1.PodChaosAction) {
 	workflowName := strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, action, rand.String(6)))
 	workflowSpec := v1alpha1.WorkflowSpec{
