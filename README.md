@@ -49,17 +49,20 @@ appList := []string{"checkoutservice", "recommendationservice", "emailservice", 
 
 ```go
 namespace := "ts"
-appList := []string{"ts-consign-service", "ts-route-service", "ts-train-service", "ts-travel-service"}
+
+appList := []string{"ts-consign-service", "ts-route-service", "ts-train-service", "ts-travel-service", "ts-basic-service", "ts-food-service", "ts-security-service", "ts-seat-service", "ts-routeplan-service", "ts-travel2-service"}
 workflowSpec := controllers.NewWorkflowSpec(namespace)
+sleepTime := pointer.String("15m")
+injectTime := pointer.String("5m")
 // Add cpu
 stressors := controllers.MakeCPUStressors(100, 5)
-controllers.AddStressChaosWorkflowNodes(workflowSpec, namespace, appList, stressors, "cpu")
+controllers.AddStressChaosWorkflowNodes(workflowSpec, namespace, appList, stressors, "cpu", injectTime, sleepTime)
 // Add memory
 stressors = controllers.MakeMemoryStressors("1GB", 1)
-controllers.AddStressChaosWorkflowNodes(workflowSpec, namespace, appList, stressors, "memory")
+controllers.AddStressChaosWorkflowNodes(workflowSpec, namespace, appList, stressors, "memory", injectTime, sleepTime)
 // Add Pod failure
 action := chaosmeshv1alpha1.PodFailureAction
-controllers.AddPodChaosWorkflowNodes(workflowSpec, namespace, appList, action)
+controllers.AddPodChaosWorkflowNodes(workflowSpec, namespace, appList, action, injectTime, sleepTime)
 // Add abort
 abort := true
 opts1 := []chaos.OptHTTPChaos{
@@ -67,16 +70,14 @@ opts1 := []chaos.OptHTTPChaos{
     chaos.WithPort(8080),
     chaos.WithAbort(&abort),
 }
-appList1 := []string{"ts-config-service", "ts-order-service", "ts-station-food-service", "ts-travel-service", "ts-travel2-service"}
-controllers.AddHTTPChaosWorkflowNodes(workflowSpec, namespace, appList1, "request-abort", opts1...)
+controllers.AddHTTPChaosWorkflowNodes(workflowSpec, namespace, appList, "request-abort", injectTime, sleepTime, opts1...)
 // add replace
 opts2 := []chaos.OptHTTPChaos{
     chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
     chaos.WithPort(8080),
     chaos.WithReplaceBody([]byte(rand.String(6))),
 }
-appList2 := []string{"ts-travel-service", "ts-basic-service", "ts-food-service", "ts-security-service", "ts-seat-service", "ts-routeplan-service"}
-controllers.AddHTTPChaosWorkflowNodes(workflowSpec, namespace, appList2, "response-replace", opts2...)
+controllers.AddHTTPChaosWorkflowNodes(workflowSpec, namespace, appList, "response-replace", injectTime, sleepTime, opts2...)
 // create workflow
 controllers.CreateWorkflow(k8sClient, workflowSpec, namespace)
 ```
