@@ -20,7 +20,7 @@ func AddPodChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace str
 		spec := chaos.GeneratePodChaosSpec(namespace, appName, action)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
-			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, action)),
+			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6))),
 			Type: v1alpha1.TypePodChaos,
 			EmbedChaos: &v1alpha1.EmbedChaos{
 				PodChaos: spec,

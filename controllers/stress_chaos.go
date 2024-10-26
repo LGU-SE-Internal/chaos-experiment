@@ -37,7 +37,7 @@ func AddStressChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace 
 		spec := chaos.GenerateStressChaosSpec(namespace, appName, stressors)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
-			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, stressType)),
+			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6))),
 			Type: v1alpha1.TypeStressChaos,
 			EmbedChaos: &v1alpha1.EmbedChaos{
 				StressChaos: spec,

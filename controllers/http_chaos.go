@@ -21,7 +21,7 @@ func AddHTTPChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace st
 		spec := chaos.GenerateHttpChaosSpec(namespace, appName, opts...)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
-			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, stressType)),
+			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6))),
 			Type: v1alpha1.TypeHTTPChaos,
 			EmbedChaos: &v1alpha1.EmbedChaos{
 				HTTPChaos: spec,
