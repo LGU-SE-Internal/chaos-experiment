@@ -1,3 +1,0 @@
-[submodule "artifacts/train-ticket"]
-	path = artifacts/train-ticket
-	url = git@github.com:Lincyaw/train-ticket.git
