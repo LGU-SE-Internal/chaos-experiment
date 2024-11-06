@@ -4,10 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	controllers "github.com/CUHK-SE-Group/chaos-experiment/controllers"
-
 	chaos "github.com/CUHK-SE-Group/chaos-experiment/chaos"
-
+	controllers "github.com/CUHK-SE-Group/chaos-experiment/controllers"
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
