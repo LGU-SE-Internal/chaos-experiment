@@ -1,10 +1,12 @@
 package main
 
 import (
-	chaos "chaos-expriment/chaos"
-	controllers "chaos-expriment/controllers"
 	"os"
 	"path/filepath"
+
+	controllers "github.com/CUHK-SE-Group/chaos-experiment/controllers"
+
+	chaos "github.com/CUHK-SE-Group/chaos-experiment/chaos"
 
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/sirupsen/logrus"

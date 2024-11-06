@@ -1,11 +1,11 @@
 package controllers
 
 import (
-	"chaos-expriment/chaos"
 	"context"
 	"fmt"
 	"strings"
 
+	"github.com/CUHK-SE-Group/chaos-experiment/chaos"
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/k0kubun/pp/v3"
 	"github.com/sirupsen/logrus"
@@ -34,7 +34,7 @@ func AddPodChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace str
 			Deadline: sleepTime,
 		})
 	}
-	
+
 	return workflowSpec
 }
 

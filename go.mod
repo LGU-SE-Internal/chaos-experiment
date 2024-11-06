@@ -1,4 +1,4 @@
-module chaos-expriment
+module github.com/CUHK-SE-Group/chaos-experiment
 
 go 1.22
 
