@@ -1,4 +1,4 @@
-package controllers
+package handler
 
 import (
 	"fmt"
@@ -6,12 +6,7 @@ import (
 )
 
 func TestGenerateActionSpace(t *testing.T) {
-	type ChaosSpec struct {
-		CPULoad    int `range:"1-100"`
-		MemorySize int `range:"1-262144"`
-		Worker     int `range:"1-8192"`
-		Target     int `range:"1-2"`
-	}
+
 
 	chaosSpec := ChaosSpec{}
 	actionSpace, err := GenerateActionSpace(chaosSpec)
@@ -30,12 +25,11 @@ func TestGenerateActionSpace(t *testing.T) {
 	} else {
 		fmt.Println("Action is valid!")
 	}
-
 	manualAction := map[string]int{
-		"CPULoad":    50,
-		"MemorySize": 3123,
-		"Worker":     1000,
-		"Target":     2,
+		"InjectTime": 15,
+		"SleepTime":  5,
+		"CPULoad": 100,
+		"CPUWorker": 2,
 	}
 	err = ValidateAction(manualAction, actionSpace)
 	if err != nil {

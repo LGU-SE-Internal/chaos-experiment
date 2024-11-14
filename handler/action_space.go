@@ -1,4 +1,4 @@
-package controllers
+package handler
 
 import (
 	"errors"
@@ -14,6 +14,7 @@ type ActionSpace struct {
 	FieldName string
 	Min       int
 	Max       int
+	IsOptional bool
 }
 
 // 从结构体生成动作空间
@@ -32,7 +33,9 @@ func GenerateActionSpace(v interface{}) ([]ActionSpace, error) {
 		if rangeTag == "" {
 			continue
 		}
-
+		// 获取 optional tag
+		optionalTag := field.Tag.Get("optional")
+		isOptional := optionalTag == "true"
 		// 解析范围
 		ranges := strings.Split(rangeTag, "-")
 		if len(ranges) != 2 {
@@ -52,6 +55,7 @@ func GenerateActionSpace(v interface{}) ([]ActionSpace, error) {
 			FieldName: field.Name,
 			Min:       min,
 			Max:       max,
+			IsOptional: isOptional,
 		})
 	}
 
@@ -62,7 +66,11 @@ func GenerateActionSpace(v interface{}) ([]ActionSpace, error) {
 func ValidateAction(action map[string]int, actionSpace []ActionSpace) error {
 	for _, space := range actionSpace {
 		value, ok := action[space.FieldName]
+		// 如果 action 是可选的，且未指定，则跳过检查
 		if !ok {
+			if space.IsOptional {
+				continue
+			}
 			return fmt.Errorf("missing action for field %s", space.FieldName)
 		}
 		if value < space.Min || value > space.Max {
