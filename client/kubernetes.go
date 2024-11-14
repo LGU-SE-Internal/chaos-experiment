@@ -60,8 +60,9 @@ func NewK8sClient() client.Client {
 	return k8sClientInstance
 }
 
-func GetLabels(namespace string) {
+func GetLabels(namespace string, key string) ([]string, error) {
 	cli := NewK8sClient()
+	labelValues := []string{}
 
 	// List all pods in the specified namespace
 	podList := &corev1.PodList{}
@@ -70,18 +71,16 @@ func GetLabels(namespace string) {
 	})
 	if err != nil {
 		fmt.Printf("Error listing pods in namespace %s: %v\n", namespace, err)
-		return
+		return nil, err
 	}
 	pp.Print(podList.ListMeta)
-	labelSet := make(map[string]struct{})
+
 	for _, pod := range podList.Items {
-		for key := range pod.Labels {
-			labelSet[key] = struct{}{}
+		for label, value := range pod.Labels {
+			if key == label {
+				labelValues = append(labelValues, value)
+			}
 		}
 	}
-
-	fmt.Printf("Labels in namespace %s:\n", namespace)
-	for label := range labelSet {
-		fmt.Println(label)
-	}
+	return labelValues, nil
 }
