@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
-	"github.com/k0kubun/pp/v3"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -73,7 +72,6 @@ func GetLabels(namespace string, key string) ([]string, error) {
 		fmt.Printf("Error listing pods in namespace %s: %v\n", namespace, err)
 		return nil, err
 	}
-	pp.Print(podList.ListMeta)
 
 	for _, pod := range podList.Items {
 		for label, value := range pod.Labels {
