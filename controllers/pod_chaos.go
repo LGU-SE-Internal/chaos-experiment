@@ -14,10 +14,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func CreatePodChaos(cli client.Client, namespace string, appName string, action v1alpha1.PodChaosAction, duration *string) {
+	spec := chaos.GeneratePodChaosSpec(namespace, appName, duration, action)
+	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6)))
+	podChaos, err := chaos.NewPodChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithPodChaosSpec(spec))
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+	}
+	pp.Print("%+v", podChaos)
+	create, err := podChaos.ValidateCreate()
+	if err != nil {
+		logrus.Errorf("Failed to validate create chaos: %v", err)
+	}
+	logrus.Infof("create warning: %v", create)
+	err = cli.Create(context.Background(), podChaos)
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+	}
+
+}
+
 func AddPodChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, action v1alpha1.PodChaosAction, injectTime *string, sleepTime *string) *v1alpha1.WorkflowSpec {
 	for _, appName := range appList {
 
-		spec := chaos.GeneratePodChaosSpec(namespace, appName, action)
+		spec := chaos.GeneratePodChaosSpec(namespace, appName, injectTime, action)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6))),
@@ -52,7 +72,7 @@ func SchedulePodChaos(cli client.Client, namespace string, appList []string, act
 	}
 	for idx, appName := range appList {
 
-		spec := chaos.GeneratePodChaosSpec(namespace, appName, action)
+		spec := chaos.GeneratePodChaosSpec(namespace, appName, pointer.String("5m"), action)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, action)),
@@ -81,10 +101,6 @@ func SchedulePodChaos(cli client.Client, namespace string, appList []string, act
 	workflowChaos, err := chaos.NewWorkflowChaos(chaos.WithName(workflowName), chaos.WithNamespace(namespace), chaos.WithWorkflowSpec(&workflowSpec))
 	if err != nil {
 		logrus.Errorf("Failed to create chaos workflow: %v", err)
-	}
-
-	if err != nil {
-		logrus.Errorf("Failed to create chaos: %v", err)
 	}
 
 	pp.Print("%+v", workflowChaos)

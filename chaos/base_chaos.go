@@ -45,6 +45,19 @@ func WithAnnotations(annotations map[string]string) OptChaos {
 	}
 }
 
+func WithPodChaosSpec(spec *chaosmeshv1alpha1.PodChaosSpec) OptChaos {
+	return func(opt *ConfigChaos) {
+		opt.PodChaos = spec
+	}
+}
+
+
+func WithStressChaosSpec(spec *chaosmeshv1alpha1.StressChaosSpec) OptChaos {
+	return func(opt *ConfigChaos) {
+		opt.StressChaos = spec
+	}
+}
+
 func WithHttpChaosSpec(spec *chaosmeshv1alpha1.HTTPChaosSpec) OptChaos {
 	return func(opt *ConfigChaos) {
 		opt.HttpChaos = spec

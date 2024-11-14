@@ -14,6 +14,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func CreateStressChaos(cli client.Client, namespace string, appName string, stressors v1alpha1.Stressors, stressType string, duration *string) {
+	spec := chaos.GenerateStressChaosSpec(namespace, appName, duration, stressors)
+	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6)))
+	stressChaos, err := chaos.NewStressChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithStressChaosSpec(spec))
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+	}
+	pp.Print("%+v", stressChaos)
+	create, err := stressChaos.ValidateCreate()
+	if err != nil {
+		logrus.Errorf("Failed to validate create chaos: %v", err)
+	}
+	logrus.Infof("create warning: %v", create)
+	err = cli.Create(context.Background(), stressChaos)
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+	}
+
+}
+
 func MakeCPUStressors(load int, worker int) v1alpha1.Stressors {
 	return v1alpha1.Stressors{
 		CPUStressor: &v1alpha1.CPUStressor{
@@ -34,7 +54,7 @@ func MakeMemoryStressors(memorySize string, worker int) v1alpha1.Stressors {
 func AddStressChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, stressors v1alpha1.Stressors, stressType string, injectTime *string, sleepTime *string) *v1alpha1.WorkflowSpec {
 	for _, appName := range appList {
 
-		spec := chaos.GenerateStressChaosSpec(namespace, appName, stressors)
+		spec := chaos.GenerateStressChaosSpec(namespace, appName, injectTime, stressors)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6))),
@@ -68,7 +88,7 @@ func ScheduleStressChaos(cli client.Client, namespace string, appList []string, 
 	}
 	for idx, appName := range appList {
 
-		spec := chaos.GenerateStressChaosSpec(namespace, appName, stressors)
+		spec := chaos.GenerateStressChaosSpec(namespace, appName, pointer.String("5m"), stressors)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, stressType)),

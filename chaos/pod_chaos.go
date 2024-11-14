@@ -39,7 +39,7 @@ func NewPodChaos(opts ...OptChaos) (*chaosmeshv1alpha1.PodChaos, error) {
 	return &podChaos, nil
 }
 
-func GeneratePodChaosSpec(namespace string, appName string, action chaosmeshv1alpha1.PodChaosAction) *chaosmeshv1alpha1.PodChaosSpec {
+func GeneratePodChaosSpec(namespace string, appName string, duration *string, action chaosmeshv1alpha1.PodChaosAction) *chaosmeshv1alpha1.PodChaosSpec {
 
 	spec := &chaosmeshv1alpha1.PodChaosSpec{
 		Action: action,
@@ -56,6 +56,7 @@ func GeneratePodChaosSpec(namespace string, appName string, action chaosmeshv1al
 				Mode: chaosmeshv1alpha1.AllMode,
 			},
 		},
+		Duration: duration,
 	}
 	return spec
 }

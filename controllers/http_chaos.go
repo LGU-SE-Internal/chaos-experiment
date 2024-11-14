@@ -15,10 +15,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func CreateHTTPChaos(cli client.Client, namespace string, appName string, stressType string, duration *string, opts ...chaos.OptHTTPChaos) {
+	spec := chaos.GenerateHttpChaosSpec(namespace, appName, duration, opts...)
+	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6)))
+	httpChaos, err := chaos.NewHttpChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithHttpChaosSpec(spec))
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+	}
+	pp.Print("%+v", httpChaos)
+	create, err := httpChaos.ValidateCreate()
+	if err != nil {
+		logrus.Errorf("Failed to validate create chaos: %v", err)
+	}
+	logrus.Infof("create warning: %v", create)
+	err = cli.Create(context.Background(), httpChaos)
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+	}
+}
+
 func AddHTTPChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, stressType string, injectTime *string, sleepTime *string, opts ...chaos.OptHTTPChaos) *v1alpha1.WorkflowSpec {
 	for _, appName := range appList {
 
-		spec := chaos.GenerateHttpChaosSpec(namespace, appName, opts...)
+		spec := chaos.GenerateHttpChaosSpec(namespace, appName, injectTime, opts...)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6))),
@@ -52,7 +71,7 @@ func ScheduleHTTPChaos(cli client.Client, namespace string, appList []string, st
 	}
 	for idx, appName := range appList {
 
-		spec := chaos.GenerateHttpChaosSpec(namespace, appName, opts...)
+		spec := chaos.GenerateHttpChaosSpec(namespace, appName, pointer.String("5m"), opts...)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, stressType)),

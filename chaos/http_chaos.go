@@ -42,7 +42,6 @@ func NewHttpChaos(opts ...OptChaos) (*chaosmeshv1alpha1.HTTPChaos, error) {
 	return &httpChaos, nil
 }
 
-
 type OptHTTPChaos func(opt *chaosmeshv1alpha1.HTTPChaosSpec)
 
 func WithTarget(target chaosmeshv1alpha1.PodHttpChaosTarget) OptHTTPChaos {
@@ -106,16 +105,15 @@ func WithDelay(delay *string) OptHTTPChaos {
 }
 
 func WithReplace(replace *chaosmeshv1alpha1.PodHttpChaosReplaceActions) OptHTTPChaos {
-    return func(opt *chaosmeshv1alpha1.HTTPChaosSpec) {
-        if opt.PodHttpChaosActions.Replace == nil {
-            opt.PodHttpChaosActions.Replace = &chaosmeshv1alpha1.PodHttpChaosReplaceActions{}
-        }
-        if replace != nil {
-            opt.PodHttpChaosActions.Replace = replace
-        }
-    }
+	return func(opt *chaosmeshv1alpha1.HTTPChaosSpec) {
+		if opt.PodHttpChaosActions.Replace == nil {
+			opt.PodHttpChaosActions.Replace = &chaosmeshv1alpha1.PodHttpChaosReplaceActions{}
+		}
+		if replace != nil {
+			opt.PodHttpChaosActions.Replace = replace
+		}
+	}
 }
-
 
 func WithPatch(patch *chaosmeshv1alpha1.PodHttpChaosPatchActions) OptHTTPChaos {
 	return func(opt *chaosmeshv1alpha1.HTTPChaosSpec) {
@@ -132,7 +130,7 @@ func WithPatchBody(body string) OptHTTPChaos {
 	return func(opt *chaosmeshv1alpha1.HTTPChaosSpec) {
 		WithPatch(nil)(opt)
 		opt.PodHttpChaosActions.Patch.Body = &chaosmeshv1alpha1.PodHttpChaosPatchBodyAction{
-			Type: "JSON",
+			Type:  "JSON",
 			Value: body,
 		}
 	}
@@ -151,7 +149,6 @@ func WithPatchHeaders(headers [][]string) OptHTTPChaos {
 		opt.PodHttpChaosActions.Patch.Headers = headers
 	}
 }
-
 
 func WithReplacePath(path *string) OptHTTPChaos {
 	return func(opt *chaosmeshv1alpha1.HTTPChaosSpec) {
@@ -202,7 +199,7 @@ func WithReplaceHeaders(headers map[string]string) OptHTTPChaos {
 	}
 }
 
-func GenerateHttpChaosSpec(namespace string, appName string, opts ...OptHTTPChaos) *chaosmeshv1alpha1.HTTPChaosSpec {
+func GenerateHttpChaosSpec(namespace string, appName string, duration *string, opts ...OptHTTPChaos) *chaosmeshv1alpha1.HTTPChaosSpec {
 	spec := &chaosmeshv1alpha1.HTTPChaosSpec{
 		PodSelector: chaosmeshv1alpha1.PodSelector{
 			Selector: chaosmeshv1alpha1.PodSelectorSpec{
@@ -213,7 +210,8 @@ func GenerateHttpChaosSpec(namespace string, appName string, opts ...OptHTTPChao
 			},
 			Mode: chaosmeshv1alpha1.AllMode,
 		},
-		Target:              chaosmeshv1alpha1.PodHttpRequest,
+		Target:   chaosmeshv1alpha1.PodHttpRequest,
+		Duration: duration,
 	}
 	for _, opt := range opts {
 		if opt != nil {

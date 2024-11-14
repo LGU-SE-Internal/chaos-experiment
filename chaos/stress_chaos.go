@@ -39,9 +39,7 @@ func NewStressChaos(opts ...OptChaos) (*chaosmeshv1alpha1.StressChaos, error) {
 	return &stressChaos, nil
 }
 
-
-
-func GenerateStressChaosSpec(namespace string, appName string, Stressors chaosmeshv1alpha1.Stressors) *chaosmeshv1alpha1.StressChaosSpec {
+func GenerateStressChaosSpec(namespace string, appName string, duration *string, Stressors chaosmeshv1alpha1.Stressors) *chaosmeshv1alpha1.StressChaosSpec {
 
 	spec := &chaosmeshv1alpha1.StressChaosSpec{
 		ContainerSelector: chaosmeshv1alpha1.ContainerSelector{
@@ -58,6 +56,7 @@ func GenerateStressChaosSpec(namespace string, appName string, Stressors chaosme
 			},
 		},
 		Stressors: &Stressors,
+		Duration:  duration,
 	}
 	return spec
 }
