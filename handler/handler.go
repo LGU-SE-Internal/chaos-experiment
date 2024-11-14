@@ -8,7 +8,9 @@ import (
 	"github.com/CUHK-SE-Group/chaos-experiment/client"
 	controllers "github.com/CUHK-SE-Group/chaos-experiment/controllers"
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	"github.com/sirupsen/logrus"
 	"k8s.io/utils/pointer"
+	cli "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ChaosType int
@@ -37,24 +39,8 @@ const (
 
 type ChaosConfig struct {
 	Type ChaosType `range:"1-9"`
-	Spec ChaosSpec
-}
-type ChaosSpec struct {
-	// common
-	InjectTime int `range:"1-60"`
-	SleepTime  int `range:"1-60"`
-	
-	// StressChaos
-	MemorySize int `range:"1-262144" optional:"true"` 
-	MemWorker  int `range:"1-8192" optional:"true"`
-	CPULoad    int `range:"1-100" optional:"true"`
-	CPUWorker  int `range:"1-8192" optional:"true"`
-
-	// HTTPChaos
-	HTTPTarget  HTTPChaosTarget `range:"1-2" optional:"true"`
-	ReplaceBody HTTPReplaceBody `range:"1-2" optional:"true"`
-
-	// TODO: Implement other chaos types
+	Spec interface{} `optional:"true"`
+	Duration int `range:"1-60"`
 }
 type HTTPChaosTarget int
 
@@ -80,53 +66,100 @@ var httpReplaceBodyMap = map[HTTPReplaceBody]chaos.OptHTTPChaos{
 	Random: chaos.WithRandomReplaceBody(),
 }
 
-func CreateChaosHandlers(workflowSpec *chaosmeshv1alpha1.WorkflowSpec, namespace string, appList []string, config ChaosConfig) map[ChaosType]func() {
-	injectTime := pointer.String(strconv.Itoa(config.Spec.InjectTime) + "m")
-	sleepTime := pointer.String(strconv.Itoa(config.Spec.SleepTime) + "m")
+
+type CPUStressChaosSpec struct {
+		CPULoad    int `range:"1-100"`
+		CPUWorker  int `range:"1-8192"`
+}
+
+type MemoryStressChaosSpec struct {
+		MemorySize int `range:"1-262144"`
+		MemWorker  int `range:"1-8192"`
+}
+
+type HTTPChaosReplaceSpec struct {
+	HTTPTarget  HTTPChaosTarget `range:"1-2"`
+	ReplaceBody HTTPReplaceBody `range:"1-2"`
+}
+
+type HTTPChaosAbortSpec struct {
+	HTTPTarget  HTTPChaosTarget `range:"1-2"`
+}
+
+var SpecMap = map[ChaosType]interface{}{
+	CPUStress:   CPUStressChaosSpec{},
+	MemoryStress: MemoryStressChaosSpec{},
+	HTTPAbort:   HTTPChaosAbortSpec{},
+	HTTPReplace: HTTPChaosReplaceSpec{},
+}
+
+func CreateChaosHandlers(cli cli.Client, namespace string, appName string, config ChaosConfig) map[ChaosType]func() {
+	duration := pointer.String(strconv.Itoa(config.Duration) + "m")
 	return map[ChaosType]func(){
 		PodKill: func() {
 			action := chaosmeshv1alpha1.PodKillAction
-			controllers.AddPodChaosWorkflowNodes(workflowSpec, namespace, appList, action, injectTime, sleepTime)
+			controllers.CreatePodChaos(cli, namespace, appName, action, duration)
 		},
 		PodFailure: func() {
 			action := chaosmeshv1alpha1.PodFailureAction
-			controllers.AddPodChaosWorkflowNodes(workflowSpec, namespace, appList, action, injectTime, sleepTime)
+			controllers.CreatePodChaos(cli, namespace, appName, action, duration)
 		},
 		ContainerKill: func() {
 			action := chaosmeshv1alpha1.ContainerKillAction
-			controllers.AddPodChaosWorkflowNodes(workflowSpec, namespace, appList, action, injectTime, sleepTime)
+			controllers.CreatePodChaos(cli, namespace, appName, action, duration)
 		},
 		MemoryStress: func() {
-			stressors := controllers.MakeMemoryStressors(strconv.Itoa(config.Spec.MemorySize)+"MiB", config.Spec.MemWorker)
-			controllers.AddStressChaosWorkflowNodes(workflowSpec, namespace, appList, stressors, "memory-exhaustion", injectTime, sleepTime)
+			if memorySpec, ok := config.Spec.(MemoryStressChaosSpec); ok {
+				stressors := controllers.MakeMemoryStressors(
+					strconv.Itoa(memorySpec.MemorySize)+"MiB",
+					memorySpec.MemWorker,
+				)
+				controllers.CreateStressChaos(cli, namespace, appName, stressors, "memory-exhaustion", duration)
+			} else {
+				logrus.Error("Invalid memory stress spec")
+			}
 		},
 		CPUStress: func() {
-			stressors := controllers.MakeCPUStressors(config.Spec.CPULoad, config.Spec.CPUWorker)
-			controllers.AddStressChaosWorkflowNodes(workflowSpec, namespace, appList, stressors, "cpu-exhaustion", injectTime, sleepTime)
+			if cpuSpec, ok := config.Spec.(CPUStressChaosSpec); ok {
+				stressors := controllers.MakeCPUStressors(
+					cpuSpec.CPULoad,
+					cpuSpec.CPUWorker,
+				)
+				controllers.CreateStressChaos(cli, namespace, appName, stressors, "cpu-exhaustion", duration)
+			} else {
+				logrus.Error("Invalid cpu stress spec")
+			}
 		},
 
 		HTTPAbort: func() {
 			abort := true
-			target := httpChaosTargetMap[config.Spec.HTTPTarget]
-			opts := []chaos.OptHTTPChaos{
-				chaos.WithTarget(target),
-				chaos.WithPort(8080),
-				chaos.WithAbort(&abort),
+			if abortSpec, ok := config.Spec.(HTTPChaosAbortSpec); ok {
+				target := httpChaosTargetMap[abortSpec.HTTPTarget]
+				opts := []chaos.OptHTTPChaos{
+					chaos.WithTarget(target),
+					chaos.WithPort(8080),
+					chaos.WithAbort(&abort),
+				}
+				controllers.CreateHTTPChaos(cli, namespace, appName, fmt.Sprintf("%s-abort", target), duration, opts...)
+			} else {
+				logrus.Error("Invalid http abort spec")
 			}
-			controllers.AddHTTPChaosWorkflowNodes(workflowSpec, namespace, appList, fmt.Sprintf("%s-abort", target), injectTime, sleepTime, opts...)
 		},
 		HTTPDelay: func() {
 			// TODO
 		},
 		HTTPReplace: func() {
-			target := httpChaosTargetMap[config.Spec.HTTPTarget]
-			opts := []chaos.OptHTTPChaos{
-				chaos.WithTarget(target),
-				chaos.WithPort(8080),
-				httpReplaceBodyMap[config.Spec.ReplaceBody],
+			if replaceSpec, ok := config.Spec.(HTTPChaosReplaceSpec); ok {
+				target := httpChaosTargetMap[replaceSpec.HTTPTarget]
+				opts := []chaos.OptHTTPChaos{
+					chaos.WithTarget(target),
+					chaos.WithPort(8080),
+					httpReplaceBodyMap[replaceSpec.ReplaceBody],
+				}
+				controllers.CreateHTTPChaos(cli, namespace, appName, fmt.Sprintf("%s-replace", target), duration, opts...)
+			} else {
+				logrus.Error("Invalid http replace spec")
 			}
-			controllers.AddHTTPChaosWorkflowNodes(workflowSpec, namespace, appList, fmt.Sprintf("%s-replace", target), injectTime, sleepTime, opts...)
-
 		},
 		HTTPPatch: func() {
 			// TODO
@@ -139,13 +172,11 @@ func Create(config ChaosConfig) {
 	k8sClient := client.NewK8sClient()
 	namespace := "ts"
 
-	appList := []string{"ts-train-service"}
-	workflowSpec := controllers.NewWorkflowSpec(namespace)
+	appName := "ts-train-service"
 
-	handlers := CreateChaosHandlers(workflowSpec, namespace, appList, config)
+	handlers := CreateChaosHandlers(k8sClient, namespace, appName, config)
 
 	if handler, exists := handlers[config.Type]; exists {
 		handler()
 	}
-	controllers.CreateWorkflow(k8sClient, workflowSpec, namespace)
 }
