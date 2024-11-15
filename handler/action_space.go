@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -11,9 +10,9 @@ import (
 
 // 动作空间的定义
 type ActionSpace struct {
-	FieldName string
-	Min       int
-	Max       int
+	FieldName  string
+	Min        int
+	Max        int
 	IsOptional bool
 }
 
@@ -52,9 +51,9 @@ func GenerateActionSpace(v interface{}) ([]ActionSpace, error) {
 		}
 
 		actionSpace = append(actionSpace, ActionSpace{
-			FieldName: field.Name,
-			Min:       min,
-			Max:       max,
+			FieldName:  field.Name,
+			Min:        min,
+			Max:        max,
 			IsOptional: isOptional,
 		})
 	}
@@ -93,7 +92,7 @@ func ActionToStruct(action map[string]int, target interface{}) error {
 	// 检查 target 是否为指针类型的结构体
 	val := reflect.ValueOf(target)
 	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
-		return errors.New("target must be a pointer to a struct")
+		return fmt.Errorf("target must be a pointer to a struct, currently: %v, %v", val.Kind(), val.Elem().Kind())
 	}
 
 	// 获取结构体类型和值
