@@ -38,7 +38,7 @@ const (
 )
 
 // 定义 ChaosType 对应的 map
-var chaosTypeMap = map[ChaosType]string{
+var ChaosTypeMap = map[ChaosType]string{
 	PodKill:       "PodKill",
 	PodFailure:    "PodFailure",
 	ContainerKill: "ContainerKill",
@@ -52,7 +52,7 @@ var chaosTypeMap = map[ChaosType]string{
 
 // GetChaosTypeName 根据 ChaosType 获取名称
 func GetChaosTypeName(c ChaosType) string {
-	if name, ok := chaosTypeMap[c]; ok {
+	if name, ok := ChaosTypeMap[c]; ok {
 		return name
 	}
 	return "Unknown"
