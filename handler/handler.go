@@ -37,10 +37,31 @@ const (
 	// ...
 )
 
+// 定义 ChaosType 对应的 map
+var chaosTypeMap = map[ChaosType]string{
+	PodKill:       "PodKill",
+	PodFailure:    "PodFailure",
+	ContainerKill: "ContainerKill",
+	MemoryStress:  "MemoryStress",
+	CPUStress:     "CPUStress",
+	HTTPAbort:     "HTTPAbort",
+	HTTPDelay:     "HTTPDelay",
+	HTTPReplace:   "HTTPReplace",
+	HTTPPatch:     "HTTPPatch",
+}
+
+// GetChaosTypeName 根据 ChaosType 获取名称
+func GetChaosTypeName(c ChaosType) string {
+	if name, ok := chaosTypeMap[c]; ok {
+		return name
+	}
+	return "Unknown"
+}
+
 type ChaosConfig struct {
-	Type ChaosType `range:"1-9"`
-	Spec interface{} `optional:"true"`
-	Duration int `range:"1-60"`
+	Type     ChaosType   `range:"1-9"`
+	Spec     interface{} `optional:"true"`
+	Duration int         `range:"1-60"`
 }
 type HTTPChaosTarget int
 
@@ -66,15 +87,14 @@ var httpReplaceBodyMap = map[HTTPReplaceBody]chaos.OptHTTPChaos{
 	Random: chaos.WithRandomReplaceBody(),
 }
 
-
 type CPUStressChaosSpec struct {
-		CPULoad    int `range:"1-100"`
-		CPUWorker  int `range:"1-8192"`
+	CPULoad   int `range:"1-100"`
+	CPUWorker int `range:"1-8192"`
 }
 
 type MemoryStressChaosSpec struct {
-		MemorySize int `range:"1-262144"`
-		MemWorker  int `range:"1-8192"`
+	MemorySize int `range:"1-262144"`
+	MemWorker  int `range:"1-8192"`
 }
 
 type HTTPChaosReplaceSpec struct {
@@ -83,14 +103,14 @@ type HTTPChaosReplaceSpec struct {
 }
 
 type HTTPChaosAbortSpec struct {
-	HTTPTarget  HTTPChaosTarget `range:"1-2"`
+	HTTPTarget HTTPChaosTarget `range:"1-2"`
 }
 
 var SpecMap = map[ChaosType]interface{}{
-	CPUStress:   CPUStressChaosSpec{},
+	CPUStress:    CPUStressChaosSpec{},
 	MemoryStress: MemoryStressChaosSpec{},
-	HTTPAbort:   HTTPChaosAbortSpec{},
-	HTTPReplace: HTTPChaosReplaceSpec{},
+	HTTPAbort:    HTTPChaosAbortSpec{},
+	HTTPReplace:  HTTPChaosReplaceSpec{},
 }
 
 func CreateChaosHandlers(cli cli.Client, namespace string, appName string, config ChaosConfig) map[ChaosType]func() {
