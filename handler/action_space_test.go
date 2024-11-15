@@ -25,10 +25,8 @@ func TestGenerateActionSpace(t *testing.T) {
 		fmt.Println("Action is valid!")
 	}
 	manualAction := map[string]int{
-		"InjectTime": 15,
-		"SleepTime":  5,
-		"CPULoad":    100,
-		"CPUWorker":  2,
+		"CPULoad":   100,
+		"CPUWorker": 2,
 	}
 	err = ValidateAction(manualAction, actionSpace)
 	if err != nil {
@@ -37,7 +35,7 @@ func TestGenerateActionSpace(t *testing.T) {
 		fmt.Println("Manual Action is valid!")
 	}
 
-	err = ActionToStruct(manualAction, chaosSpec)
+	chaosSpec, err = ActionToStruct(CPUStress, manualAction)
 	if err != nil {
 		fmt.Println("Error:", err)
 	} else {

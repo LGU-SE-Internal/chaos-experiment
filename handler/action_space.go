@@ -88,36 +88,41 @@ func generateRandomAction(actionSpace []ActionSpace) map[string]int {
 	return action
 }
 
-func ActionToStruct(action map[string]int, target interface{}) error {
-	// 检查 target 是否为指针类型的结构体
-	val := reflect.ValueOf(target)
-	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("target must be a pointer to a struct, currently: %v, %v", val.Kind(), val.Elem().Kind())
+func ActionToStruct(tp ChaosType, action map[string]int) (interface{}, error) {
+	// Retrieve the zero value of the struct corresponding to the ChaosType
+	specZeroValue, ok := SpecMap[tp]
+	if !ok {
+		return nil, fmt.Errorf("unknown ChaosType: %v", tp)
 	}
 
-	// 获取结构体类型和值
-	val = val.Elem()
-	typ := val.Type()
+	// Get the type of the struct
+	specType := reflect.TypeOf(specZeroValue)
 
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		fieldValue := val.Field(i)
+	// Create a new instance of the struct
+	specValue := reflect.New(specType).Elem()
 
-		// 检查字段是否可设置
-		if !fieldValue.CanSet() {
-			continue
+	// Iterate over the action map and set the struct fields
+	for fieldName, fieldValue := range action {
+		// Get the field by name
+		field := specValue.FieldByName(fieldName)
+		if !field.IsValid() {
+			return nil, fmt.Errorf("unknown field: %v", fieldName)
+		}
+		if !field.CanSet() {
+			return nil, fmt.Errorf("cannot set field: %v", fieldName)
 		}
 
-		// 检查是否有对应的值
-		if actionValue, ok := action[field.Name]; ok {
-			// 确保字段是 int 类型
-			if fieldValue.Kind() == reflect.Int {
-				fieldValue.SetInt(int64(actionValue))
-			} else {
-				return fmt.Errorf("field %s is not of type int", field.Name)
-			}
+		// Set the field value based on its kind
+		switch field.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			field.SetInt(int64(fieldValue))
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			field.SetUint(uint64(fieldValue))
+		default:
+			return nil, fmt.Errorf("unsupported field type: %v", field.Kind())
 		}
 	}
 
-	return nil
+	// Return the populated struct
+	return specValue.Interface(), nil
 }
