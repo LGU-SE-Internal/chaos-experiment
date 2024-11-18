@@ -3,9 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/sirupsen/logrus"
@@ -81,4 +83,77 @@ func GetLabels(namespace string, key string) ([]string, error) {
 		}
 	}
 	return labelValues, nil
+}
+
+// QueryCRDByName 查询指定命名空间和名称的 CRD，并检查其状态
+func QueryCRDByName(namespace, nameToQuery string) (time.Time, time.Time, error) {
+	k8sClient := NewK8sClient()
+	ctx := context.Background()
+
+	// 定义支持的 CRD 类型和对应的 GVR 映射
+	// TODO: 添加需要的类型
+	crdMapping := map[schema.GroupVersionResource]client.Object{
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "podchaos"}:     &chaosmeshv1alpha1.PodChaos{},
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "networkchaos"}: &chaosmeshv1alpha1.NetworkChaos{},
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "stresschaos"}:  &chaosmeshv1alpha1.StressChaos{},
+	}
+
+	for gvr, obj := range crdMapping {
+		objCopy := obj.DeepCopyObject().(client.Object)
+		err := k8sClient.Get(ctx, client.ObjectKey{Name: nameToQuery, Namespace: namespace}, objCopy)
+		if err == nil {
+			logrus.Infof("Found resource in GroupVersionResource: %s\n", gvr)
+
+			switch resource := objCopy.(type) {
+			case *chaosmeshv1alpha1.PodChaos:
+				return checkStatus(resource.Status.ChaosStatus)
+
+			case *chaosmeshv1alpha1.NetworkChaos:
+				return checkStatus(resource.Status.ChaosStatus)
+
+			case *chaosmeshv1alpha1.StressChaos:
+				return checkStatus(resource.Status.ChaosStatus)
+			}
+			return time.Time{}, time.Time{}, fmt.Errorf("CRD type not found")
+		}
+	}
+
+	return time.Time{}, time.Time{}, fmt.Errorf("No resource found for name '%s' in namespace '%s'\n", nameToQuery, namespace)
+}
+
+// checkStatus 检查 Chaos 状态是否注入成功和恢复成功
+func checkStatus(status chaosmeshv1alpha1.ChaosStatus) (time.Time, time.Time, error) {
+	var (
+		apply time.Time
+		reco  time.Time
+	)
+
+	for _, record := range status.Experiment.Records {
+		for _, event := range record.Events {
+			if event.Operation == chaosmeshv1alpha1.Apply && event.Type == chaosmeshv1alpha1.TypeSucceeded {
+				apply = event.Timestamp.Time
+			}
+			if event.Operation == chaosmeshv1alpha1.Recover && event.Type == chaosmeshv1alpha1.TypeSucceeded {
+				reco = event.Timestamp.Time
+			}
+		}
+	}
+
+	// 判断是否找到注入和恢复事件
+	if apply.IsZero() && reco.IsZero() {
+		return apply, reco, fmt.Errorf("no successful Apply or Recover events found")
+	}
+	if apply.IsZero() {
+		return apply, reco, fmt.Errorf("injection not successful: Apply event missing")
+	}
+	if reco.IsZero() {
+		return apply, reco, fmt.Errorf("injection successful but recovery not successful")
+	}
+
+	// 检查注入和恢复的逻辑关系
+	if apply.After(reco) {
+		return apply, reco, fmt.Errorf("recovery occurred before injection, which is invalid")
+	}
+
+	return apply, reco, nil
 }

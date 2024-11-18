@@ -14,24 +14,27 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreatePodChaos(cli client.Client, namespace string, appName string, action v1alpha1.PodChaosAction, duration *string) {
+func CreatePodChaos(cli client.Client, namespace string, appName string, action v1alpha1.PodChaosAction, duration *string) string {
 	spec := chaos.GeneratePodChaosSpec(namespace, appName, duration, action)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6)))
 	podChaos, err := chaos.NewPodChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithPodChaosSpec(spec))
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
+		return ""
 	}
 	pp.Print("%+v", podChaos)
 	create, err := podChaos.ValidateCreate()
 	if err != nil {
 		logrus.Errorf("Failed to validate create chaos: %v", err)
+		return ""
 	}
 	logrus.Infof("create warning: %v", create)
 	err = cli.Create(context.Background(), podChaos)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
+		return ""
 	}
-
+	return name
 }
 
 func AddPodChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, action v1alpha1.PodChaosAction, injectTime *string, sleepTime *string) *v1alpha1.WorkflowSpec {
