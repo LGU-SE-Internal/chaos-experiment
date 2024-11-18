@@ -194,10 +194,8 @@ func CreateChaosHandlers(cli cli.Client, namespace string, appName string, confi
 	}
 }
 
-func Create(config ChaosConfig) string {
+func Create(namespace string, appName string, config ChaosConfig) string {
 	k8sClient := client.NewK8sClient()
-	namespace := "ts"
-	appName := "ts-train-service"
 	handlers := CreateChaosHandlers(k8sClient, namespace, appName, config)
 
 	if handler, exists := handlers[config.Type]; exists {
