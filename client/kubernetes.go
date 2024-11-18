@@ -3,11 +3,13 @@ package client
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"time"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/sirupsen/logrus"
@@ -76,12 +78,13 @@ func GetLabels(namespace string, key string) ([]string, error) {
 	}
 
 	for _, pod := range podList.Items {
-		for label, value := range pod.Labels {
-			if key == label {
-				labelValues = append(labelValues, value)
-			}
+		if value, exists := pod.Labels[key]; exists {
+			labelValues = append(labelValues, value)
 		}
 	}
+
+	slices.Sort(labelValues)
+	labelValues = slices.Compact(labelValues)
 	return labelValues, nil
 }
 
