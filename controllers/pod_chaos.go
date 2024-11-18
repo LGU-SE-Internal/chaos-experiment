@@ -22,7 +22,6 @@ func CreatePodChaos(cli client.Client, namespace string, appName string, action 
 		logrus.Errorf("Failed to create chaos: %v", err)
 		return ""
 	}
-	pp.Print("%+v", podChaos)
 	create, err := podChaos.ValidateCreate()
 	if err != nil {
 		logrus.Errorf("Failed to validate create chaos: %v", err)

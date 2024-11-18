@@ -23,7 +23,6 @@ func CreateHTTPChaos(cli client.Client, namespace string, appName string, stress
 		logrus.Errorf("Failed to create chaos: %v", err)
 		return ""
 	}
-	pp.Print("%+v", httpChaos)
 	create, err := httpChaos.ValidateCreate()
 	if err != nil {
 		logrus.Errorf("Failed to validate create chaos: %v", err)

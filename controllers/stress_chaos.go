@@ -22,7 +22,6 @@ func CreateStressChaos(cli client.Client, namespace string, appName string, stre
 		logrus.Errorf("Failed to create chaos: %v", err)
 		return ""
 	}
-	pp.Print("%+v", stressChaos)
 	create, err := stressChaos.ValidateCreate()
 	if err != nil {
 		logrus.Errorf("Failed to validate create chaos: %v", err)
