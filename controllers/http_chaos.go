@@ -40,7 +40,7 @@ func CreateHTTPChaos(cli client.Client, namespace string, appName string, stress
 func AddHTTPChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, stressType string, injectTime *string, sleepTime *string, opts ...chaos.OptHTTPChaos) *v1alpha1.WorkflowSpec {
 	for _, appName := range appList {
 
-		spec := chaos.GenerateHttpChaosSpec(namespace, appName, injectTime, opts...)
+		spec := chaos.GenerateHttpChaosSpec(namespace, appName, nil, opts...)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6))),
@@ -74,7 +74,7 @@ func ScheduleHTTPChaos(cli client.Client, namespace string, appList []string, st
 	}
 	for idx, appName := range appList {
 
-		spec := chaos.GenerateHttpChaosSpec(namespace, appName, pointer.String("5m"), opts...)
+		spec := chaos.GenerateHttpChaosSpec(namespace, appName, nil, opts...)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, stressType)),

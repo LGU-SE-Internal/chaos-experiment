@@ -39,7 +39,7 @@ func CreatePodChaos(cli client.Client, namespace string, appName string, action 
 func AddPodChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, action v1alpha1.PodChaosAction, injectTime *string, sleepTime *string) *v1alpha1.WorkflowSpec {
 	for _, appName := range appList {
 
-		spec := chaos.GeneratePodChaosSpec(namespace, appName, injectTime, action)
+		spec := chaos.GeneratePodChaosSpec(namespace, appName, nil, action)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6))),
@@ -74,7 +74,7 @@ func SchedulePodChaos(cli client.Client, namespace string, appList []string, act
 	}
 	for idx, appName := range appList {
 
-		spec := chaos.GeneratePodChaosSpec(namespace, appName, pointer.String("5m"), action)
+		spec := chaos.GeneratePodChaosSpec(namespace, appName, nil, action)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, action)),

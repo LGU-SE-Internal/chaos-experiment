@@ -56,7 +56,7 @@ func MakeMemoryStressors(memorySize string, worker int) v1alpha1.Stressors {
 func AddStressChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, stressors v1alpha1.Stressors, stressType string, injectTime *string, sleepTime *string) *v1alpha1.WorkflowSpec {
 	for _, appName := range appList {
 
-		spec := chaos.GenerateStressChaosSpec(namespace, appName, injectTime, stressors)
+		spec := chaos.GenerateStressChaosSpec(namespace, appName, nil, stressors)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6))),
@@ -90,7 +90,7 @@ func ScheduleStressChaos(cli client.Client, namespace string, appList []string, 
 	}
 	for idx, appName := range appList {
 
-		spec := chaos.GenerateStressChaosSpec(namespace, appName, pointer.String("5m"), stressors)
+		spec := chaos.GenerateStressChaosSpec(namespace, appName, nil, stressors)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, appName, stressType)),

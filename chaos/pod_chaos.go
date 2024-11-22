@@ -56,7 +56,11 @@ func GeneratePodChaosSpec(namespace string, appName string, duration *string, ac
 				Mode: chaosmeshv1alpha1.AllMode,
 			},
 		},
-		Duration: duration,
 	}
+
+	if duration != nil && *duration != "" {
+		spec.Duration = duration
+	}
+
 	return spec
 }

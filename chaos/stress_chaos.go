@@ -56,7 +56,9 @@ func GenerateStressChaosSpec(namespace string, appName string, duration *string,
 			},
 		},
 		Stressors: &Stressors,
-		Duration:  duration,
+	}
+	if duration != nil && *duration != "" {
+		spec.Duration = duration
 	}
 	return spec
 }

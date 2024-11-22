@@ -210,8 +210,10 @@ func GenerateHttpChaosSpec(namespace string, appName string, duration *string, o
 			},
 			Mode: chaosmeshv1alpha1.AllMode,
 		},
-		Target:   chaosmeshv1alpha1.PodHttpRequest,
-		Duration: duration,
+		Target: chaosmeshv1alpha1.PodHttpRequest,
+	}
+	if duration != nil && *duration != "" {
+		spec.Duration = duration
 	}
 	for _, opt := range opts {
 		if opt != nil {
