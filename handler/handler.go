@@ -89,12 +89,12 @@ var httpReplaceBodyMap = map[HTTPReplaceBody]chaos.OptHTTPChaos{
 
 type CPUStressChaosSpec struct {
 	CPULoad   int `range:"1-100"`
-	CPUWorker int `range:"1-8192"`
+	CPUWorker int `range:"1-3"`
 }
 
 type MemoryStressChaosSpec struct {
-	MemorySize int `range:"1-262144"`
-	MemWorker  int `range:"1-8192"`
+	MemorySize int `range:"1-1024"`
+	MemWorker  int `range:"1-4"`
 }
 
 type HTTPChaosReplaceSpec struct {
