@@ -96,8 +96,9 @@ func QueryCRDByName(namespace, nameToQuery string) (time.Time, time.Time, error)
 	// 定义支持的 CRD 类型和对应的 GVR 映射
 	// TODO: 添加需要的类型
 	crdMapping := map[schema.GroupVersionResource]client.Object{
-		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "podchaos"}:     &chaosmeshv1alpha1.PodChaos{},
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "httpchaos"}:    &chaosmeshv1alpha1.HTTPChaos{},
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "networkchaos"}: &chaosmeshv1alpha1.NetworkChaos{},
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "podchaos"}:     &chaosmeshv1alpha1.PodChaos{},
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "stresschaos"}:  &chaosmeshv1alpha1.StressChaos{},
 	}
 
@@ -108,15 +109,19 @@ func QueryCRDByName(namespace, nameToQuery string) (time.Time, time.Time, error)
 			logrus.Infof("Found resource in GroupVersionResource: %s\n", gvr)
 
 			switch resource := objCopy.(type) {
-			case *chaosmeshv1alpha1.PodChaos:
+			case *chaosmeshv1alpha1.HTTPChaos:
 				return checkStatus(resource.Status.ChaosStatus)
 
 			case *chaosmeshv1alpha1.NetworkChaos:
 				return checkStatus(resource.Status.ChaosStatus)
 
+			case *chaosmeshv1alpha1.PodChaos:
+				return checkStatus(resource.Status.ChaosStatus)
+
 			case *chaosmeshv1alpha1.StressChaos:
 				return checkStatus(resource.Status.ChaosStatus)
 			}
+
 			return time.Time{}, time.Time{}, fmt.Errorf("CRD type not found")
 		}
 	}
