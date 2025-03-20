@@ -11,6 +11,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -88,20 +89,23 @@ func GetLabels(namespace string, key string) ([]string, error) {
 	return labelValues, nil
 }
 
+// TODO: 添加需要的类型
+func GetCRDMapping() map[schema.GroupVersionResource]client.Object {
+	return map[schema.GroupVersionResource]client.Object{
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "httpchaos"}:    &v1alpha1.HTTPChaos{},
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "networkchaos"}: &v1alpha1.NetworkChaos{},
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "podchaos"}:     &v1alpha1.PodChaos{},
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "stresschaos"}:  &v1alpha1.StressChaos{},
+	}
+}
+
 // QueryCRDByName 查询指定命名空间和名称的 CRD，并检查其状态
 func QueryCRDByName(namespace, nameToQuery string) (time.Time, time.Time, error) {
 	k8sClient := NewK8sClient()
 	ctx := context.Background()
 
 	// 定义支持的 CRD 类型和对应的 GVR 映射
-	// TODO: 添加需要的类型
-	crdMapping := map[schema.GroupVersionResource]client.Object{
-		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "httpchaos"}:    &chaosmeshv1alpha1.HTTPChaos{},
-		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "networkchaos"}: &chaosmeshv1alpha1.NetworkChaos{},
-		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "podchaos"}:     &chaosmeshv1alpha1.PodChaos{},
-		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "stresschaos"}:  &chaosmeshv1alpha1.StressChaos{},
-	}
-
+	crdMapping := GetCRDMapping()
 	for gvr, obj := range crdMapping {
 		objCopy := obj.DeepCopyObject().(client.Object)
 		err := k8sClient.Get(ctx, client.ObjectKey{Name: nameToQuery, Namespace: namespace}, objCopy)
