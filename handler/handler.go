@@ -8,13 +8,13 @@ import (
 	"github.com/CUHK-SE-Group/chaos-experiment/client"
 	controllers "github.com/CUHK-SE-Group/chaos-experiment/controllers"
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
-	"github.com/sirupsen/logrus"
 	"k8s.io/utils/pointer"
 	cli "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ChaosType int
 
+const targetNamespace = "ts"
 const (
 	// Default indicates an unknown Type.
 	Default ChaosType = iota
@@ -71,8 +71,7 @@ const (
 )
 
 type Injection interface {
-	Create(cli cli.Client, namespace string, appName string, config ChaosConfig) string
-	GetGroudtruth() []Groudtruth
+	Create(cli cli.Client) string
 }
 
 var httpChaosTargetMap = map[HTTPChaosTarget]chaosmeshv1alpha1.PodHttpChaosTarget{
@@ -92,110 +91,142 @@ var httpReplaceBodyMap = map[HTTPReplaceBody]chaos.OptHTTPChaos{
 	Random: chaos.WithRandomReplaceBody(),
 }
 
-type ContainerKillSpec struct{}
+type ContainerKillSpec struct {
+	Duration  int `range:"1-60"`
+	Namespace int `range:"0-0"`
+	AppName   int `range:"0-0"`
+}
 
-func (s *ContainerKillSpec) Create(cli cli.Client, namespace string, appName string, config ChaosConfig) string {
-	duration := pointer.String(strconv.Itoa(config.Duration) + "m")
+func (s *ContainerKillSpec) Create(cli cli.Client) string {
+	labelArr, err := client.GetLabels(targetNamespace, "app")
+	if err != nil {
+		return ""
+	}
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.ContainerKillAction
-	return controllers.CreatePodChaos(cli, namespace, appName, action, duration)
+	return controllers.CreatePodChaos(cli, targetNamespace, labelArr[s.AppName], action, duration)
 }
 
-type PodFailureSpec struct{}
+type PodFailureSpec struct {
+	Duration  int `range:"1-60"`
+	Namespace int `range:"0-0"`
+	AppName   int `range:"0-0"`
+}
 
-func (s *PodFailureSpec) Create(cli cli.Client, namespace string, appName string, config ChaosConfig) string {
-	duration := pointer.String(strconv.Itoa(config.Duration) + "m")
+func (s *PodFailureSpec) Create(cli cli.Client) string {
+	labelArr, err := client.GetLabels(targetNamespace, "app")
+	if err != nil {
+		return ""
+	}
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodFailureAction
-	return controllers.CreatePodChaos(cli, namespace, appName, action, duration)
+	return controllers.CreatePodChaos(cli, targetNamespace, labelArr[s.AppName], action, duration)
 }
 
-type PodKillSpec struct{}
+type PodKillSpec struct {
+	Duration  int `range:"1-60"`
+	Namespace int `range:"0-0"`
+	AppName   int `range:"0-0"`
+}
 
-func (s *PodKillSpec) Create(cli cli.Client, namespace string, appName string, config ChaosConfig) string {
-	duration := pointer.String(strconv.Itoa(config.Duration) + "m")
+func (s *PodKillSpec) Create(cli cli.Client) string {
+	labelArr, err := client.GetLabels(targetNamespace, "app")
+	if err != nil {
+		return ""
+	}
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodKillAction
-	return controllers.CreatePodChaos(cli, namespace, appName, action, duration)
+	return controllers.CreatePodChaos(cli, targetNamespace, labelArr[s.AppName], action, duration)
 }
 
 type CPUStressChaosSpec struct {
 	CPULoad   int `range:"1-100"`
 	CPUWorker int `range:"1-3"`
+	Duration  int `range:"1-60"`
+	Namespace int `range:"0-0"`
+	AppName   int `range:"0-0"`
 }
 
-func (s *CPUStressChaosSpec) Create(cli cli.Client, namespace string, appName string, config ChaosConfig) string {
-	duration := pointer.String(strconv.Itoa(config.Duration) + "m")
-	if cpuSpec, ok := config.Spec.(CPUStressChaosSpec); ok {
-		stressors := controllers.MakeCPUStressors(
-			cpuSpec.CPULoad,
-			cpuSpec.CPUWorker,
-		)
-		return controllers.CreateStressChaos(cli, namespace, appName, stressors, "cpu-exhaustion", duration)
-	} else {
-		logrus.Error("Invalid cpu stress spec")
+func (s *CPUStressChaosSpec) Create(cli cli.Client) string {
+	labelArr, err := client.GetLabels(targetNamespace, "app")
+	if err != nil {
 		return ""
 	}
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	stressors := controllers.MakeCPUStressors(
+		s.CPULoad,
+		s.CPUWorker,
+	)
+	return controllers.CreateStressChaos(cli, targetNamespace, labelArr[s.AppName], stressors, "cpu-exhaustion", duration)
 }
 
 type MemoryStressChaosSpec struct {
 	MemorySize int `range:"1-1024"`
 	MemWorker  int `range:"1-4"`
+	Duration   int `range:"1-60"`
+	Namespace  int `range:"0-0"`
+	AppName    int `range:"0-0"`
 }
 
-func (s *MemoryStressChaosSpec) Create(cli cli.Client, namespace string, appName string, config ChaosConfig) string {
-	duration := pointer.String(strconv.Itoa(config.Duration) + "m")
-	if memorySpec, ok := config.Spec.(MemoryStressChaosSpec); ok {
-		stressors := controllers.MakeMemoryStressors(
-			strconv.Itoa(memorySpec.MemorySize)+"MiB",
-			memorySpec.MemWorker,
-		)
-		return controllers.CreateStressChaos(cli, namespace, appName, stressors, "memory-exhaustion", duration)
-	} else {
-		logrus.Error("Invalid memory stress spec")
+func (s *MemoryStressChaosSpec) Create(cli cli.Client) string {
+	labelArr, err := client.GetLabels(targetNamespace, "app")
+	if err != nil {
 		return ""
 	}
+	stressors := controllers.MakeMemoryStressors(
+		strconv.Itoa(s.MemorySize)+"MiB",
+		s.MemWorker,
+	)
+	return controllers.CreateStressChaos(cli, targetNamespace, labelArr[s.AppName], stressors, "memory-exhaustion", pointer.String(strconv.Itoa(s.Duration)+"m"))
 }
 
 type HTTPChaosReplaceSpec struct {
 	HTTPTarget  HTTPChaosTarget `range:"1-2"`
 	ReplaceBody HTTPReplaceBody `range:"1-2"`
+	Duration    int             `range:"1-60"`
+	Namespace   int             `range:"0-0"`
+	AppName     int             `range:"0-0"`
 }
 
-func (s *HTTPChaosReplaceSpec) Create(cli cli.Client, namespace string, appName string, config ChaosConfig) string {
-	duration := pointer.String(strconv.Itoa(config.Duration) + "m")
-
-	if replaceSpec, ok := config.Spec.(HTTPChaosReplaceSpec); ok {
-		target := httpChaosTargetMap[replaceSpec.HTTPTarget]
-		opts := []chaos.OptHTTPChaos{
-			chaos.WithTarget(target),
-			chaos.WithPort(8080),
-			httpReplaceBodyMap[replaceSpec.ReplaceBody],
-		}
-		return controllers.CreateHTTPChaos(cli, namespace, appName, fmt.Sprintf("%s-replace", target), duration, opts...)
-	} else {
-		logrus.Error("Invalid http replace spec")
+func (s *HTTPChaosReplaceSpec) Create(cli cli.Client) string {
+	labelArr, err := client.GetLabels(targetNamespace, "app")
+	if err != nil {
 		return ""
 	}
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	target := httpChaosTargetMap[s.HTTPTarget]
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(target),
+		chaos.WithPort(8080),
+		httpReplaceBodyMap[s.ReplaceBody],
+	}
+	return controllers.CreateHTTPChaos(cli, targetNamespace, labelArr[s.AppName], fmt.Sprintf("%s-replace", target), duration, opts...)
 }
 
 type HTTPChaosAbortSpec struct {
 	HTTPTarget HTTPChaosTarget `range:"1-2"`
+	Duration   int             `range:"1-60"`
+	Namespace  int             `range:"0-0"`
+	AppName    int             `range:"0-0"`
 }
 
-func (s *HTTPChaosAbortSpec) Create(cli cli.Client, namespace string, appName string, config ChaosConfig) string {
-	duration := pointer.String(strconv.Itoa(config.Duration) + "m")
-
-	abort := true
-	if abortSpec, ok := config.Spec.(HTTPChaosAbortSpec); ok {
-		target := httpChaosTargetMap[abortSpec.HTTPTarget]
-		opts := []chaos.OptHTTPChaos{
-			chaos.WithTarget(target),
-			chaos.WithPort(8080),
-			chaos.WithAbort(&abort),
-		}
-		return controllers.CreateHTTPChaos(cli, namespace, appName, fmt.Sprintf("%s-abort", target), duration, opts...)
-	} else {
-		logrus.Error("Invalid http abort spec")
+func (s *HTTPChaosAbortSpec) Create(cli cli.Client) string {
+	labelArr, err := client.GetLabels(targetNamespace, "app")
+	if err != nil {
 		return ""
 	}
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	abort := true
+	target := httpChaosTargetMap[s.HTTPTarget]
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(target),
+		chaos.WithPort(8080),
+		chaos.WithAbort(&abort),
+	}
+	return controllers.CreateHTTPChaos(cli, targetNamespace, labelArr[s.AppName], fmt.Sprintf("%s-abort", target), duration, opts...)
 }
 
 var SpecMap = map[ChaosType]interface{}{
@@ -212,16 +243,15 @@ var ChaosHandlers = map[ChaosType]Injection{
 	MemoryStress:  &MemoryStressChaosSpec{},
 	CPUStress:     &CPUStressChaosSpec{},
 	HTTPAbort:     &HTTPChaosAbortSpec{},
-	// HTTPDelay:  TODO
-	HTTPReplace: &HTTPChaosReplaceSpec{},
-	// HTTPPatch: TODO
-	// TODO: Implement other chaos types
+	HTTPReplace:   &HTTPChaosReplaceSpec{},
 }
 
-func Create(namespace string, appName string, config ChaosConfig) string {
-	k8sClient := client.NewK8sClient()
-	if handler, exists := ChaosHandlers[config.Type]; exists {
-		return handler.Create(k8sClient, namespace, appName, config)
-	}
-	return ""
+type InjectionConf struct {
+	PodKill       *PodKillSpec           `range:"0-2"`
+	PodFailure    *PodFailureSpec        `range:"0-2"`
+	ContainerKill *ContainerKillSpec     `range:"0-2"`
+	MemoryStress  *MemoryStressChaosSpec `range:"0-4"`
+	CPUStress     *CPUStressChaosSpec    `range:"0-4"`
+	HTTPAbort     *HTTPChaosAbortSpec    `range:"0-3"`
+	HTTPReplace   *HTTPChaosReplaceSpec  `range:"0-4"`
 }
