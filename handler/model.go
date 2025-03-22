@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/CUHK-SE-Group/chaos-experiment/client"
 )
 
 /*
@@ -112,6 +114,22 @@ func buildFieldNode(field reflect.StructField) (*Node, error) {
 	start, end, err := parseRangeTag(field.Tag.Get("range"))
 	if err != nil {
 		return nil, fmt.Errorf("field %s: %w", field.Name, err)
+	}
+
+	dyn := field.Tag.Get("dynamic")
+	if dyn == "true" {
+		switch field.Name {
+		case "Namespace":
+			start = 0
+			end = 0
+		case "AppName":
+			values, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get labels: %w", err)
+			}
+			start = 0
+			end = len(values) - 1
+		}
 	}
 
 	child := &Node{

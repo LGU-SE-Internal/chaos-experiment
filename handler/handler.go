@@ -14,7 +14,9 @@ import (
 
 type ChaosType int
 
-const targetNamespace = "ts"
+const TargetNamespace = "ts" // todo: make it dynamic (e.g. from config)
+const TargetLabelKey = "app"
+
 const (
 	// Default indicates an unknown Type.
 	Default ChaosType = iota
@@ -93,62 +95,62 @@ var httpReplaceBodyMap = map[HTTPReplaceBody]chaos.OptHTTPChaos{
 
 type ContainerKillSpec struct {
 	Duration  int `range:"1-60"`
-	Namespace int `range:"0-0"`
-	AppName   int `range:"0-0"`
+	Namespace int `range:"0-0" dynamic:"true"`
+	AppName   int `range:"0-0" dynamic:"true"`
 }
 
 func (s *ContainerKillSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(targetNamespace, "app")
+	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
 		return ""
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.ContainerKillAction
-	return controllers.CreatePodChaos(cli, targetNamespace, labelArr[s.AppName], action, duration)
+	return controllers.CreatePodChaos(cli, TargetNamespace, labelArr[s.AppName], action, duration)
 }
 
 type PodFailureSpec struct {
 	Duration  int `range:"1-60"`
-	Namespace int `range:"0-0"`
-	AppName   int `range:"0-0"`
+	Namespace int `range:"0-0" dynamic:"true"`
+	AppName   int `range:"0-0" dynamic:"true"`
 }
 
 func (s *PodFailureSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(targetNamespace, "app")
+	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
 		return ""
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodFailureAction
-	return controllers.CreatePodChaos(cli, targetNamespace, labelArr[s.AppName], action, duration)
+	return controllers.CreatePodChaos(cli, TargetNamespace, labelArr[s.AppName], action, duration)
 }
 
 type PodKillSpec struct {
 	Duration  int `range:"1-60"`
-	Namespace int `range:"0-0"`
-	AppName   int `range:"0-0"`
+	Namespace int `range:"0-0" dynamic:"true"`
+	AppName   int `range:"0-0" dynamic:"true"`
 }
 
 func (s *PodKillSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(targetNamespace, "app")
+	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
 		return ""
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodKillAction
-	return controllers.CreatePodChaos(cli, targetNamespace, labelArr[s.AppName], action, duration)
+	return controllers.CreatePodChaos(cli, TargetNamespace, labelArr[s.AppName], action, duration)
 }
 
 type CPUStressChaosSpec struct {
 	CPULoad   int `range:"1-100"`
 	CPUWorker int `range:"1-3"`
 	Duration  int `range:"1-60"`
-	Namespace int `range:"0-0"`
-	AppName   int `range:"0-0"`
+	Namespace int `range:"0-0" dynamic:"true"`
+	AppName   int `range:"0-0" dynamic:"true"`
 }
 
 func (s *CPUStressChaosSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(targetNamespace, "app")
+	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
 		return ""
 	}
@@ -158,19 +160,19 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client) string {
 		s.CPULoad,
 		s.CPUWorker,
 	)
-	return controllers.CreateStressChaos(cli, targetNamespace, labelArr[s.AppName], stressors, "cpu-exhaustion", duration)
+	return controllers.CreateStressChaos(cli, TargetNamespace, labelArr[s.AppName], stressors, "cpu-exhaustion", duration)
 }
 
 type MemoryStressChaosSpec struct {
 	MemorySize int `range:"1-1024"`
 	MemWorker  int `range:"1-4"`
 	Duration   int `range:"1-60"`
-	Namespace  int `range:"0-0"`
-	AppName    int `range:"0-0"`
+	Namespace  int `range:"0-0" dynamic:"true"`
+	AppName    int `range:"0-0" dynamic:"true"`
 }
 
 func (s *MemoryStressChaosSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(targetNamespace, "app")
+	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
 		return ""
 	}
@@ -178,19 +180,19 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client) string {
 		strconv.Itoa(s.MemorySize)+"MiB",
 		s.MemWorker,
 	)
-	return controllers.CreateStressChaos(cli, targetNamespace, labelArr[s.AppName], stressors, "memory-exhaustion", pointer.String(strconv.Itoa(s.Duration)+"m"))
+	return controllers.CreateStressChaos(cli, TargetNamespace, labelArr[s.AppName], stressors, "memory-exhaustion", pointer.String(strconv.Itoa(s.Duration)+"m"))
 }
 
 type HTTPChaosReplaceSpec struct {
 	HTTPTarget  HTTPChaosTarget `range:"1-2"`
 	ReplaceBody HTTPReplaceBody `range:"1-2"`
 	Duration    int             `range:"1-60"`
-	Namespace   int             `range:"0-0"`
-	AppName     int             `range:"0-0"`
+	Namespace   int             `range:"0-0" dynamic:"true"`
+	AppName     int             `range:"0-0" dynamic:"true"`
 }
 
 func (s *HTTPChaosReplaceSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(targetNamespace, "app")
+	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
 		return ""
 	}
@@ -202,18 +204,18 @@ func (s *HTTPChaosReplaceSpec) Create(cli cli.Client) string {
 		chaos.WithPort(8080),
 		httpReplaceBodyMap[s.ReplaceBody],
 	}
-	return controllers.CreateHTTPChaos(cli, targetNamespace, labelArr[s.AppName], fmt.Sprintf("%s-replace", target), duration, opts...)
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, labelArr[s.AppName], fmt.Sprintf("%s-replace", target), duration, opts...)
 }
 
 type HTTPChaosAbortSpec struct {
 	HTTPTarget HTTPChaosTarget `range:"1-2"`
 	Duration   int             `range:"1-60"`
-	Namespace  int             `range:"0-0"`
-	AppName    int             `range:"0-0"`
+	Namespace  int             `range:"0-0" dynamic:"true"`
+	AppName    int             `range:"0-0" dynamic:"true"`
 }
 
 func (s *HTTPChaosAbortSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(targetNamespace, "app")
+	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
 		return ""
 	}
@@ -226,7 +228,7 @@ func (s *HTTPChaosAbortSpec) Create(cli cli.Client) string {
 		chaos.WithPort(8080),
 		chaos.WithAbort(&abort),
 	}
-	return controllers.CreateHTTPChaos(cli, targetNamespace, labelArr[s.AppName], fmt.Sprintf("%s-abort", target), duration, opts...)
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, labelArr[s.AppName], fmt.Sprintf("%s-abort", target), duration, opts...)
 }
 
 var SpecMap = map[ChaosType]interface{}{
