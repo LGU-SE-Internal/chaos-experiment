@@ -25,6 +25,7 @@ func NodeToMap(n *Node) map[string]interface{} {
 	result := make(map[string]interface{})
 	result["name"] = n.Name
 	result["range"] = n.Range
+	result["value"] = n.Value
 
 	if len(n.Children) > 0 {
 		childrenMap := make(map[int]interface{})
@@ -36,6 +37,7 @@ func NodeToMap(n *Node) map[string]interface{} {
 
 	return result
 }
+
 func MapToNode(m map[string]interface{}) (*Node, error) {
 	node := &Node{}
 
@@ -48,6 +50,9 @@ func MapToNode(m map[string]interface{}) (*Node, error) {
 		node.Name = name
 	} else {
 		return nil, fmt.Errorf("invalid name format, expected string")
+	}
+	if value, ok := m["value"].(int); ok {
+		node.Value = value
 	}
 	if children, ok := m["children"].(map[int]interface{}); ok {
 		node.Children = make(map[int]*Node)
@@ -218,6 +223,7 @@ func processNestedStruct(rt reflect.Type, val reflect.Value, node *Node) error {
 	}
 	return nil
 }
+
 func assignBasicType(val reflect.Value, node *Node) error {
 	if node.Value < node.Range[0] || node.Value > node.Range[1] {
 		return fmt.Errorf("value %d out of range [%d, %d]", node.Value, node.Range[0], node.Range[1])
