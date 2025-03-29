@@ -23,14 +23,14 @@ type Node struct {
 	Value    int           `json:"value,omitempty"`
 }
 
-func NodeToMap(n *Node) map[string]interface{} {
-	result := make(map[string]interface{})
+func NodeToMap(n *Node) map[string]any {
+	result := make(map[string]any)
 	result["name"] = n.Name
 	result["range"] = n.Range
 	result["value"] = n.Value
 
 	if len(n.Children) > 0 {
-		childrenMap := make(map[int]interface{})
+		childrenMap := make(map[int]any)
 		for k, v := range n.Children {
 			childrenMap[k] = NodeToMap(v)
 		}
@@ -40,7 +40,7 @@ func NodeToMap(n *Node) map[string]interface{} {
 	return result
 }
 
-func MapToNode(m map[string]interface{}) (*Node, error) {
+func MapToNode(m map[string]any) (*Node, error) {
 	node := &Node{}
 
 	if r, ok := m["range"].([]int); ok {
@@ -48,18 +48,21 @@ func MapToNode(m map[string]interface{}) (*Node, error) {
 	} else {
 		return nil, fmt.Errorf("invalid range format")
 	}
+
 	if name, ok := m["name"].(string); ok {
 		node.Name = name
 	} else {
 		return nil, fmt.Errorf("invalid name format, expected string")
 	}
+
 	if value, ok := m["value"].(int); ok {
 		node.Value = value
 	}
-	if children, ok := m["children"].(map[int]interface{}); ok {
+
+	if children, ok := m["children"].(map[int]any); ok {
 		node.Children = make(map[int]*Node)
 		for key, val := range children {
-			childMap, ok := val.(map[string]interface{})
+			childMap, ok := val.(map[string]any)
 			if !ok {
 				return nil, fmt.Errorf("invalid child node at key %d", key)
 			}
@@ -97,7 +100,7 @@ func buildNode(rt reflect.Type, fieldName string) (*Node, error) {
 	node.Children = make(map[int]*Node)
 
 	if rt.Kind() == reflect.Struct {
-		for i := 0; i < rt.NumField(); i++ {
+		for i := range rt.NumField() {
 			field := rt.Field(i)
 			if child, err := buildFieldNode(field); err != nil {
 				return nil, err
@@ -165,7 +168,7 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 	}
 
 	val := reflect.New(rt).Elem()
-	for i := 0; i < rt.NumField(); i++ {
+	for i := range rt.NumField() {
 		if err := processStructField(rt.Field(i), val.Field(i), n.Children[i]); err != nil {
 			return nil, err
 		}
@@ -234,7 +237,7 @@ func processNestedStruct(rt reflect.Type, val reflect.Value, node *Node) error {
 		return fmt.Errorf("expected struct type, got %s", rt.Kind())
 	}
 
-	for i := 0; i < rt.NumField(); i++ {
+	for i := range rt.NumField() {
 		if err := processStructField(rt.Field(i), val.Field(i), node.Children[i]); err != nil {
 			return err
 		}

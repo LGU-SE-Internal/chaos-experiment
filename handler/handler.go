@@ -61,9 +61,9 @@ func GetChaosTypeName(c ChaosType) string {
 }
 
 type ChaosConfig struct {
-	Type     ChaosType   `range:"1-9"`
-	Spec     interface{} `optional:"true"`
-	Duration int         `range:"1-60"`
+	Type     ChaosType `range:"1-9"`
+	Spec     any       `optional:"true"`
+	Duration int       `range:"1-60"`
 }
 type HTTPChaosTarget int
 
@@ -74,6 +74,7 @@ const (
 
 type Injection interface {
 	Create(cli cli.Client) string
+	GetGroudtruth() []Groudtruth
 }
 
 var httpChaosTargetMap = map[HTTPChaosTarget]chaosmeshv1alpha1.PodHttpChaosTarget{
@@ -231,7 +232,7 @@ func (s *HTTPChaosAbortSpec) Create(cli cli.Client) string {
 	return controllers.CreateHTTPChaos(cli, TargetNamespace, labelArr[s.AppName], fmt.Sprintf("%s-abort", target), duration, opts...)
 }
 
-var SpecMap = map[ChaosType]interface{}{
+var SpecMap = map[ChaosType]any{
 	CPUStress:    CPUStressChaosSpec{},
 	MemoryStress: MemoryStressChaosSpec{},
 	HTTPAbort:    HTTPChaosAbortSpec{},

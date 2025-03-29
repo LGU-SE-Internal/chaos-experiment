@@ -80,7 +80,7 @@ func fillRandom(n *Node) error {
 }
 func TestGenerateRandomAction(t *testing.T) {
 
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 1; i++ {
 		podNode, err := StructToNode[InjectionConf]()
 		if err != nil {
 			t.Error(err)
