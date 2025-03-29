@@ -60,11 +60,6 @@ func GetChaosTypeName(c ChaosType) string {
 	return "Unknown"
 }
 
-type ChaosConfig struct {
-	Type     ChaosType `range:"1-9"`
-	Spec     any       `optional:"true"`
-	Duration int       `range:"1-60"`
-}
 type HTTPChaosTarget int
 
 const (
@@ -74,7 +69,6 @@ const (
 
 type Injection interface {
 	Create(cli cli.Client) string
-	GetGroudtruth() []Groudtruth
 }
 
 var httpChaosTargetMap = map[HTTPChaosTarget]chaosmeshv1alpha1.PodHttpChaosTarget{
@@ -95,9 +89,9 @@ var httpReplaceBodyMap = map[HTTPReplaceBody]chaos.OptHTTPChaos{
 }
 
 type ContainerKillSpec struct {
-	Duration  int `range:"1-60"`
-	Namespace int `range:"0-0" dynamic:"true"`
-	AppName   int `range:"0-0" dynamic:"true"`
+	Duration  int `range:"1-60" description:"time unit minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"string"`
+	AppName   int `range:"0-0" dynamic:"true" description:"array"`
 }
 
 func (s *ContainerKillSpec) Create(cli cli.Client) string {
@@ -111,9 +105,9 @@ func (s *ContainerKillSpec) Create(cli cli.Client) string {
 }
 
 type PodFailureSpec struct {
-	Duration  int `range:"1-60"`
-	Namespace int `range:"0-0" dynamic:"true"`
-	AppName   int `range:"0-0" dynamic:"true"`
+	Duration  int `range:"1-60" description:"time unit minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"string"`
+	AppName   int `range:"0-0" dynamic:"true" description:"array"`
 }
 
 func (s *PodFailureSpec) Create(cli cli.Client) string {
@@ -127,9 +121,9 @@ func (s *PodFailureSpec) Create(cli cli.Client) string {
 }
 
 type PodKillSpec struct {
-	Duration  int `range:"1-60"`
-	Namespace int `range:"0-0" dynamic:"true"`
-	AppName   int `range:"0-0" dynamic:"true"`
+	Duration  int `range:"1-60" description:"time unit minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"string"`
+	AppName   int `range:"0-0" dynamic:"true" description:"array"`
 }
 
 func (s *PodKillSpec) Create(cli cli.Client) string {
@@ -143,11 +137,11 @@ func (s *PodKillSpec) Create(cli cli.Client) string {
 }
 
 type CPUStressChaosSpec struct {
-	CPULoad   int `range:"1-100"`
-	CPUWorker int `range:"1-3"`
-	Duration  int `range:"1-60"`
-	Namespace int `range:"0-0" dynamic:"true"`
-	AppName   int `range:"0-0" dynamic:"true"`
+	CPULoad   int `range:"1-100" description:"CPU Load Percentage"`
+	CPUWorker int `range:"1-3" description:"CPU Stress Threads"`
+	Duration  int `range:"1-60" description:"time unit minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"string"`
+	AppName   int `range:"0-0" dynamic:"true" description:"array"`
 }
 
 func (s *CPUStressChaosSpec) Create(cli cli.Client) string {
@@ -165,11 +159,11 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client) string {
 }
 
 type MemoryStressChaosSpec struct {
-	MemorySize int `range:"1-1024"`
-	MemWorker  int `range:"1-4"`
-	Duration   int `range:"1-60"`
-	Namespace  int `range:"0-0" dynamic:"true"`
-	AppName    int `range:"0-0" dynamic:"true"`
+	MemorySize int `range:"1-1024" description:"Memory Size Unit MB"`
+	MemWorker  int `range:"1-4" description:"Memory Stress Threads"`
+	Duration   int `range:"1-60" description:"Time Unit Minute"`
+	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
+	AppName    int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
 func (s *MemoryStressChaosSpec) Create(cli cli.Client) string {
@@ -185,11 +179,11 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client) string {
 }
 
 type HTTPChaosReplaceSpec struct {
-	HTTPTarget  HTTPChaosTarget `range:"1-2"`
-	ReplaceBody HTTPReplaceBody `range:"1-2"`
-	Duration    int             `range:"1-60"`
-	Namespace   int             `range:"0-0" dynamic:"true"`
-	AppName     int             `range:"0-0" dynamic:"true"`
+	HTTPTarget  HTTPChaosTarget `range:"1-2" description:"HTTP Phase Request/Response"`
+	ReplaceBody HTTPReplaceBody `range:"1-2" description:"Body Replacement Blank/Random"`
+	Duration    int             `range:"1-60" description:"Time Unit Minute"`
+	Namespace   int             `range:"0-0" dynamic:"true" description:"String"`
+	AppName     int             `range:"0-0" dynamic:"true" description:"Array"`
 }
 
 func (s *HTTPChaosReplaceSpec) Create(cli cli.Client) string {
@@ -209,10 +203,10 @@ func (s *HTTPChaosReplaceSpec) Create(cli cli.Client) string {
 }
 
 type HTTPChaosAbortSpec struct {
-	HTTPTarget HTTPChaosTarget `range:"1-2"`
-	Duration   int             `range:"1-60"`
-	Namespace  int             `range:"0-0" dynamic:"true"`
-	AppName    int             `range:"0-0" dynamic:"true"`
+	HTTPTarget HTTPChaosTarget `range:"1-2" description:"HTTP Phase Request/Response"`
+	Duration   int             `range:"1-60" description:"time unit minute"`
+	Namespace  int             `range:"0-0" dynamic:"true" description:"string"`
+	AppName    int             `range:"0-0" dynamic:"true" description:"array"`
 }
 
 func (s *HTTPChaosAbortSpec) Create(cli cli.Client) string {

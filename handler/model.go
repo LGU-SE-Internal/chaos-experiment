@@ -17,10 +17,11 @@ any node can be converted to a struct, and then to a map
 any map can be converted to a node, and then to a struct
 */
 type Node struct {
-	Name     string        `json:"name"`
-	Range    []int         `json:"range"`
-	Children map[int]*Node `json:"children,omitempty"`
-	Value    int           `json:"value,omitempty"`
+	Name        string        `json:"name"`
+	Range       []int         `json:"range"`
+	Children    map[int]*Node `json:"children,omitempty"`
+	Description string        `json:"description,omitempty"`
+	Value       int           `json:"value,omitempty"`
 }
 
 func NodeToMap(n *Node) map[string]any {
@@ -28,6 +29,10 @@ func NodeToMap(n *Node) map[string]any {
 	result["name"] = n.Name
 	result["range"] = n.Range
 	result["value"] = n.Value
+
+	if n.Description != "" {
+		result["description"] = n.Description
+	}
 
 	if len(n.Children) > 0 {
 		childrenMap := make(map[int]any)
@@ -135,10 +140,16 @@ func buildFieldNode(field reflect.StructField) (*Node, error) {
 		}
 	}
 
+	desp := field.Tag.Get("description")
+	fmt.Println(desp)
+
 	child := &Node{
-		Name:  field.Name,
-		Range: []int{start, end},
+		Name:        field.Name,
+		Description: desp,
+		Range:       []int{start, end},
 	}
+
+	fmt.Println(child)
 
 	fieldType := field.Type
 	if fieldType.Kind() == reflect.Ptr {
