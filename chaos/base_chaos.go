@@ -1,6 +1,9 @@
 package chaos
 
-import chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+import (
+	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+)
 
 type ConfigChaos struct {
 	Name        string
@@ -66,6 +69,12 @@ func WithHttpChaosSpec(spec *chaosmeshv1alpha1.HTTPChaosSpec) OptChaos {
 func WithIOChaosSpec(spec *chaosmeshv1alpha1.IOChaosSpec) OptChaos {
 	return func(config *ConfigChaos) {
 		config.IOChaos = spec
+	}
+}
+
+func WithTimeChaosSpec(spec *v1alpha1.TimeChaosSpec) OptChaos {
+	return func(config *ConfigChaos) {
+		config.TimeChaos = spec
 	}
 }
 
