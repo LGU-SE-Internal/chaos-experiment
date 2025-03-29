@@ -27,6 +27,7 @@ func TestGenerateActionSpace(t *testing.T) {
 	manualAction := map[string]int{
 		"CPULoad":   100,
 		"CPUWorker": 2,
+		"Duration": 2,
 	}
 	err = ValidateAction(manualAction, actionSpace)
 	if err != nil {
