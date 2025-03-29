@@ -141,15 +141,12 @@ func buildFieldNode(field reflect.StructField) (*Node, error) {
 	}
 
 	desp := field.Tag.Get("description")
-	fmt.Println(desp)
 
 	child := &Node{
 		Name:        field.Name,
 		Description: desp,
 		Range:       []int{start, end},
 	}
-
-	fmt.Println(child)
 
 	fieldType := field.Type
 	if fieldType.Kind() == reflect.Ptr {

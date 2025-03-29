@@ -89,9 +89,9 @@ var httpReplaceBodyMap = map[HTTPReplaceBody]chaos.OptHTTPChaos{
 }
 
 type ContainerKillSpec struct {
-	Duration  int `range:"1-60" description:"time unit minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"string"`
-	AppName   int `range:"0-0" dynamic:"true" description:"array"`
+	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"String"`
+	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
 func (s *ContainerKillSpec) Create(cli cli.Client) string {
@@ -105,9 +105,9 @@ func (s *ContainerKillSpec) Create(cli cli.Client) string {
 }
 
 type PodFailureSpec struct {
-	Duration  int `range:"1-60" description:"time unit minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"string"`
-	AppName   int `range:"0-0" dynamic:"true" description:"array"`
+	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"String"`
+	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
 func (s *PodFailureSpec) Create(cli cli.Client) string {
@@ -121,9 +121,9 @@ func (s *PodFailureSpec) Create(cli cli.Client) string {
 }
 
 type PodKillSpec struct {
-	Duration  int `range:"1-60" description:"time unit minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"string"`
-	AppName   int `range:"0-0" dynamic:"true" description:"array"`
+	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"String"`
+	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
 func (s *PodKillSpec) Create(cli cli.Client) string {
@@ -139,9 +139,9 @@ func (s *PodKillSpec) Create(cli cli.Client) string {
 type CPUStressChaosSpec struct {
 	CPULoad   int `range:"1-100" description:"CPU Load Percentage"`
 	CPUWorker int `range:"1-3" description:"CPU Stress Threads"`
-	Duration  int `range:"1-60" description:"time unit minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"string"`
-	AppName   int `range:"0-0" dynamic:"true" description:"array"`
+	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"String"`
+	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
 func (s *CPUStressChaosSpec) Create(cli cli.Client) string {
@@ -204,9 +204,9 @@ func (s *HTTPChaosReplaceSpec) Create(cli cli.Client) string {
 
 type HTTPChaosAbortSpec struct {
 	HTTPTarget HTTPChaosTarget `range:"1-2" description:"HTTP Phase Request/Response"`
-	Duration   int             `range:"1-60" description:"time unit minute"`
-	Namespace  int             `range:"0-0" dynamic:"true" description:"string"`
-	AppName    int             `range:"0-0" dynamic:"true" description:"array"`
+	Duration   int             `range:"1-60" description:"Time Unit Minute"`
+	Namespace  int             `range:"0-0" dynamic:"true" description:"String"`
+	AppName    int             `range:"0-0" dynamic:"true" description:"Array"`
 }
 
 func (s *HTTPChaosAbortSpec) Create(cli cli.Client) string {
