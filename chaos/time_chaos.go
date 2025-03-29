@@ -39,7 +39,7 @@ func NewTimeChaos(opts ...OptChaos) (*chaosmeshv1alpha1.TimeChaos, error) {
 	return &timeChaos, nil
 }
 
-func GenerateTimeChaosSpec(namespace string, appName string, duration *string, timeOffset string, clockIds []string) *chaosmeshv1alpha1.TimeChaosSpec {
+func GenerateTimeChaosSpec(namespace string, appName string, duration *string, timeOffset string) *chaosmeshv1alpha1.TimeChaosSpec {
 	spec := &chaosmeshv1alpha1.TimeChaosSpec{
 		TimeOffset: timeOffset,
 		ContainerSelector: chaosmeshv1alpha1.ContainerSelector{
@@ -59,10 +59,6 @@ func GenerateTimeChaosSpec(namespace string, appName string, duration *string, t
 
 	if duration != nil && *duration != "" {
 		spec.Duration = duration
-	}
-
-	if clockIds != nil && len(clockIds) > 0 {
-		spec.ClockIds = clockIds
 	}
 
 	return spec

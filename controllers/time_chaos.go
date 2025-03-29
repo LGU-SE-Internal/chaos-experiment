@@ -9,11 +9,12 @@ import (
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateTimeChaos(cli client.Client, namespace string, appName string, timeOffset string, clockIds []string, duration *string) string {
-	spec := chaos.GenerateTimeChaosSpec(namespace, appName, duration, timeOffset, clockIds)
+func CreateTimeChaos(cli client.Client, namespace string, appName string, timeOffset string, duration *string) string {
+	spec := chaos.GenerateTimeChaosSpec(namespace, appName, duration, timeOffset)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-time-%s", namespace, appName, rand.String(6)))
 	timeChaos, err := chaos.NewTimeChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithTimeChaosSpec(spec))
 	if err != nil {
@@ -34,9 +35,9 @@ func CreateTimeChaos(cli client.Client, namespace string, appName string, timeOf
 	return name
 }
 
-func AddTimeChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, timeOffset string, clockIds []string, injectTime *string, sleepTime *string) *v1alpha1.WorkflowSpec {
+func AddTimeChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, timeOffset string, injectTime *string, sleepTime *string) *v1alpha1.WorkflowSpec {
 	for _, appName := range appList {
-		spec := chaos.GenerateTimeChaosSpec(namespace, appName, nil, timeOffset, clockIds)
+		spec := chaos.GenerateTimeChaosSpec(namespace, appName, nil, timeOffset)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-time-%s", namespace, appName, rand.String(6))),
@@ -57,7 +58,7 @@ func AddTimeChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace st
 	return workflowSpec
 }
 
-func ScheduleTimeChaos(cli client.Client, namespace string, appList []string, timeOffset string, clockIds []string) {
+func ScheduleTimeChaos(cli client.Client, namespace string, appList []string, timeOffset string) {
 	workflowName := strings.ToLower(fmt.Sprintf("%s-time-%s", namespace, rand.String(6)))
 	workflowSpec := v1alpha1.WorkflowSpec{
 		Entry: workflowName,
@@ -70,7 +71,7 @@ func ScheduleTimeChaos(cli client.Client, namespace string, appList []string, ti
 		},
 	}
 	for idx, appName := range appList {
-		spec := chaos.GenerateTimeChaosSpec(namespace, appName, nil, timeOffset, clockIds)
+		spec := chaos.GenerateTimeChaosSpec(namespace, appName, nil, timeOffset)
 
 		workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 			Name: strings.ToLower(fmt.Sprintf("%s-%s-time", namespace, appName)),
@@ -78,13 +79,13 @@ func ScheduleTimeChaos(cli client.Client, namespace string, appList []string, ti
 			EmbedChaos: &v1alpha1.EmbedChaos{
 				TimeChaos: spec,
 			},
-			Deadline: nil,
+			Deadline: pointer.String("5m"),
 		})
 		if idx < len(appList)-1 {
 			workflowSpec.Templates = append(workflowSpec.Templates, v1alpha1.Template{
 				Name:     fmt.Sprintf("%s-%d", "sleep", idx),
 				Type:     v1alpha1.TypeSuspend,
-				Deadline: nil,
+				Deadline: pointer.String("10m"),
 			})
 		}
 	}
