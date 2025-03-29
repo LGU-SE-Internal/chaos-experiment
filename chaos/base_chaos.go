@@ -78,6 +78,12 @@ func WithTimeChaosSpec(spec *v1alpha1.TimeChaosSpec) OptChaos {
 	}
 }
 
+func WithNetworkChaosSpec(spec *chaosmeshv1alpha1.NetworkChaosSpec) OptChaos {
+	return func(config *ConfigChaos) {
+		config.NetworkChaos = spec
+	}
+}
+
 func WithWorkflowSpec(spec *chaosmeshv1alpha1.WorkflowSpec) OptChaos {
 	return func(opt *ConfigChaos) {
 		opt.Workflow = spec
