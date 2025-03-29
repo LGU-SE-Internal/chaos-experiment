@@ -51,7 +51,6 @@ func WithPodChaosSpec(spec *chaosmeshv1alpha1.PodChaosSpec) OptChaos {
 	}
 }
 
-
 func WithStressChaosSpec(spec *chaosmeshv1alpha1.StressChaosSpec) OptChaos {
 	return func(opt *ConfigChaos) {
 		opt.StressChaos = spec
@@ -63,6 +62,13 @@ func WithHttpChaosSpec(spec *chaosmeshv1alpha1.HTTPChaosSpec) OptChaos {
 		opt.HttpChaos = spec
 	}
 }
+
+func WithIOChaosSpec(spec *chaosmeshv1alpha1.IOChaosSpec) OptChaos {
+	return func(config *ConfigChaos) {
+		config.IOChaos = spec
+	}
+}
+
 func WithWorkflowSpec(spec *chaosmeshv1alpha1.WorkflowSpec) OptChaos {
 	return func(opt *ConfigChaos) {
 		opt.Workflow = spec
