@@ -14,6 +14,23 @@ git submodule update --init --depth 1 --recursive
 namespace := "onlineboutique"
 appList := []string{"checkoutservice", "recommendationservice", "emailservice", "paymentservice", "productcatalogservice"}
 ```
+
+## Single chaos
+- NetworkChaos
+    ```go
+    appName := "checkoutservice"
+    // Example: simple network delay chaos
+    controllers.CreateNetworkDelayChaos(k8sClient, namespace, appName, "100ms", "25", "10ms", pointer.String("2m"))
+    
+	// Example: Using the simpler helper with target/direction together
+	controllers.CreateNetworkDelayChaos(k8sClient, namespace, appName, "100ms", "25", "10ms", pointer.String("2m"),
+	   chaos.WithNetworkTargetAndDirection(namespace, "productcatalogservice", v1alpha1.Both))
+
+	// Example: Create network partition with additional options
+	controllers.CreateNetworkPartitionChaos(k8sClient, namespace, appName, "productcatalogservice",
+	   v1alpha1.Both, pointer.String("3m"),
+	   chaos.WithNetworkDevice("eth0")) // Specify network device
+    ```
 ## Schedule chaos
 - StressChaos
     ```go
@@ -45,6 +62,7 @@ appList := []string{"checkoutservice", "recommendationservice", "emailservice", 
         }
         controllers.ScheduleHTTPChaos(k8sClient, namespace, appList, "Response-replace", opts...)
         ```
+
 ## workflow
 
 ```go

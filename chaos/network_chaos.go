@@ -65,7 +65,6 @@ func WithNetworkDuration(duration *string) OptNetworkChaos {
 	}
 }
 
-
 func WithNetworkTargetDevice(device string) OptNetworkChaos {
 	return func(opt *chaosmeshv1alpha1.NetworkChaosSpec) {
 		opt.TargetDevice = device
@@ -75,6 +74,21 @@ func WithNetworkTargetDevice(device string) OptNetworkChaos {
 func WithNetworkExternalTargets(targets []string) OptNetworkChaos {
 	return func(opt *chaosmeshv1alpha1.NetworkChaosSpec) {
 		opt.ExternalTargets = targets
+	}
+}
+
+func WithNetworkTarget(target *chaosmeshv1alpha1.PodSelector) OptNetworkChaos {
+	return func(opt *chaosmeshv1alpha1.NetworkChaosSpec) {
+		opt.Target = target
+	}
+}
+
+// Simplified function that takes target app name directly instead of a PodSelector
+func WithNetworkTargetAndDirection(namespace string, targetAppName string, direction chaosmeshv1alpha1.Direction) OptNetworkChaos {
+	return func(opt *chaosmeshv1alpha1.NetworkChaosSpec) {
+		target := CreateTargetPodSelector(namespace, targetAppName, chaosmeshv1alpha1.AllMode)
+		opt.Target = target
+		opt.Direction = direction
 	}
 }
 
@@ -153,4 +167,17 @@ func GenerateNetworkChaosSpec(namespace string, appName string, duration *string
 	}
 
 	return spec
+}
+
+// Helper function to create target pod selector
+func CreateTargetPodSelector(namespace string, appName string, mode chaosmeshv1alpha1.SelectorMode) *chaosmeshv1alpha1.PodSelector {
+	return &chaosmeshv1alpha1.PodSelector{
+		Selector: chaosmeshv1alpha1.PodSelectorSpec{
+			GenericSelectorSpec: chaosmeshv1alpha1.GenericSelectorSpec{
+				Namespaces:     []string{namespace},
+				LabelSelectors: map[string]string{"app": appName},
+			},
+		},
+		Mode: mode,
+	}
 }
