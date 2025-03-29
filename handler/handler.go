@@ -36,6 +36,9 @@ const (
 	HTTPReplace
 	HTTPPatch
 
+	// TimeChaos
+	TimeSkew
+
 	// ...
 )
 
@@ -50,6 +53,7 @@ var ChaosTypeMap = map[ChaosType]string{
 	HTTPDelay:     "HTTPDelay",
 	HTTPReplace:   "HTTPReplace",
 	HTTPPatch:     "HTTPPatch",
+	TimeSkew:      "TimeSkew",
 }
 
 // GetChaosTypeName 根据 ChaosType 获取名称
@@ -226,11 +230,31 @@ func (s *HTTPChaosAbortSpec) Create(cli cli.Client) string {
 	return controllers.CreateHTTPChaos(cli, TargetNamespace, labelArr[s.AppName], fmt.Sprintf("%s-abort", target), duration, opts...)
 }
 
+type TimeSkewSpec struct {
+	TimeOffset int `range:"-600-600" description:"Time offset in seconds"`
+	Duration   int `range:"1-60" description:"Time Unit Minute"`
+	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
+	AppName    int `range:"0-0" dynamic:"true" description:"Array"`
+}
+
+func (s *TimeSkewSpec) Create(cli cli.Client) string {
+	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+	if err != nil {
+		return ""
+	}
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+	// Format the TimeOffset with "s" unit
+	timeOffset := fmt.Sprintf("%ds", s.TimeOffset)
+
+	return controllers.CreateTimeChaos(cli, TargetNamespace, labelArr[s.AppName], timeOffset, duration)
+}
+
 var SpecMap = map[ChaosType]any{
 	CPUStress:    CPUStressChaosSpec{},
 	MemoryStress: MemoryStressChaosSpec{},
 	HTTPAbort:    HTTPChaosAbortSpec{},
 	HTTPReplace:  HTTPChaosReplaceSpec{},
+	TimeSkew:     TimeSkewSpec{},
 }
 
 var ChaosHandlers = map[ChaosType]Injection{
@@ -241,6 +265,7 @@ var ChaosHandlers = map[ChaosType]Injection{
 	CPUStress:     &CPUStressChaosSpec{},
 	HTTPAbort:     &HTTPChaosAbortSpec{},
 	HTTPReplace:   &HTTPChaosReplaceSpec{},
+	TimeSkew:      &TimeSkewSpec{},
 }
 
 type InjectionConf struct {
@@ -251,4 +276,5 @@ type InjectionConf struct {
 	CPUStress     *CPUStressChaosSpec    `range:"0-4"`
 	HTTPAbort     *HTTPChaosAbortSpec    `range:"0-3"`
 	HTTPReplace   *HTTPChaosReplaceSpec  `range:"0-4"`
+	TimeSkew      *TimeSkewSpec          `range:"0-3"`
 }

@@ -226,13 +226,42 @@ func typeName(rt reflect.Type, fieldName string) string {
 }
 
 func parseRangeTag(tag string) (int, int, error) {
-	parts := strings.Split(tag, "-")
-	if len(parts) != 2 {
-		return 0, 0, fmt.Errorf("invalid range format")
+	if tag == "" {
+		return 0, 0, fmt.Errorf("empty range tag")
 	}
 
-	start, _ := strconv.Atoi(parts[0])
-	end, _ := strconv.Atoi(parts[1])
+	// Special handling for ranges with negative numbers
+	var parts []string
+	if strings.HasPrefix(tag, "-") {
+		// Handle case like "-600-600"
+		remainingPart := tag[1:] // Remove the first "-"
+		idx := strings.Index(remainingPart, "-")
+		if idx == -1 {
+			return 0, 0, fmt.Errorf("invalid range format: missing second bound")
+		}
+
+		firstPart := "-" + remainingPart[:idx]
+		secondPart := remainingPart[idx+1:]
+		parts = []string{firstPart, secondPart}
+	} else {
+		// Standard case like "0-100"
+		parts = strings.Split(tag, "-")
+	}
+
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("invalid range format: expected format 'start-end'")
+	}
+
+	start, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid start value: %v", err)
+	}
+
+	end, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid end value: %v", err)
+	}
+
 	return start, end, nil
 }
 
