@@ -552,13 +552,13 @@ type InjectionConf struct {
 	CPUStress        *CPUStressChaosSpec    `range:"0-4"`
 	HTTPAbort        *HTTPChaosAbortSpec    `range:"0-3"`
 	HTTPReplace      *HTTPChaosReplaceSpec  `range:"0-4"`
-	DNSError         *DNSChaosSpec          `range:"0-2"`
-	DNSRandom        *DNSChaosSpec          `range:"0-2"`
+	DNSError         *DNSChaosSpec          `range:"0-3"`
+	DNSRandom        *DNSChaosSpec          `range:"0-3"`
 	TimeSkew         *TimeSkewSpec          `range:"0-3"`
-	NetworkDelay     *NetworkDelaySpec      `range:"0-2"`
-	NetworkLoss      *NetworkLossSpec       `range:"0-2"`
-	NetworkDuplicate *NetworkDuplicateSpec  `range:"0-2"`
-	NetworkCorrupt   *NetworkCorruptSpec    `range:"0-2"`
-	NetworkBandwidth *NetworkBandwidthSpec  `range:"0-2"`
-	NetworkPartition *NetworkPartitionSpec  `range:"0-2"`
+	NetworkDelay     *NetworkDelaySpec      `range:"0-7"`
+	NetworkLoss      *NetworkLossSpec       `range:"0-6"`
+	NetworkDuplicate *NetworkDuplicateSpec  `range:"0-6"`
+	NetworkCorrupt   *NetworkCorruptSpec    `range:"0-6"`
+	NetworkBandwidth *NetworkBandwidthSpec  `range:"0-7"`
+	NetworkPartition *NetworkPartitionSpec  `range:"0-4"`
 }
