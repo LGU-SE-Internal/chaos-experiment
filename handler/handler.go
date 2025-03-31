@@ -877,12 +877,11 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client) string {
 
 // JVMMySQLExceptionSpec defines the JVM MySQL exception chaos injection parameters
 type JVMMySQLExceptionSpec struct {
-	Duration     int    `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int    `range:"0-0" dynamic:"true" description:"String"`
-	AppName      int    `range:"0-0" dynamic:"true" description:"Array"`
-	ExceptionMsg string `range:"0-0" description:"Exception message"`
-	TableIndex   int    `range:"0-38" description:"Index of table to target (or -1 for all)"`
-	SQLType      int    `range:"0-5" description:"SQL Type (0=All, 1=Select, 2=Insert, 3=Update, 4=Delete, 5=Replace)"`
+	Duration   int `range:"1-60" description:"Time Unit Minute"`
+	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
+	AppName    int `range:"0-0" dynamic:"true" description:"Array"`
+	TableIndex int `range:"0-38" description:"Index of table to target (or -1 for all)"`
+	SQLType    int `range:"0-5" description:"SQL Type (0=All, 1=Select, 2=Insert, 3=Update, 4=Delete, 5=Replace)"`
 }
 
 func (s *JVMMySQLExceptionSpec) Create(cli cli.Client) string {
@@ -903,12 +902,15 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client) string {
 		tableStr = AvailableMySQLTables[s.TableIndex]
 	}
 
+	// Always use "BOOM" as the exception message
+	exceptionMsg := "BOOM"
+
 	opts := []chaos.OptJVMChaos{
 		chaos.WithJVMMySQLConnector("5"), // Hardcoded to version 5
 		chaos.WithJVMMySQLDatabase("ts"), // Hardcoded to ts database
 		chaos.WithJVMMySQLTable(tableStr),
 		chaos.WithJVMMySQLType(sqlTypeStr),
-		chaos.WithJVMException(s.ExceptionMsg),
+		chaos.WithJVMException(exceptionMsg),
 	}
 
 	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
@@ -1004,12 +1006,12 @@ type InjectionConf struct {
 	NetworkBandwidth    *NetworkBandwidthSpec  `range:"0-7"`
 	NetworkPartition    *NetworkPartitionSpec  `range:"0-4"`
 	JVMLatency          *JVMLatencySpec        `range:"0-5"`
-	JVMReturn           *JVMReturnSpec         `range:"0-7"`
+	JVMReturn           *JVMReturnSpec         `range:"0-6"`
 	JVMException        *JVMExceptionSpec      `range:"0-5"`
 	JVMGarbageCollector *JVMGCSpec             `range:"0-2"`
 	JVMRuleData         *JVMRuleDataSpec       `range:"0-4"`
 	JVMCPUStress        *JVMCPUStressSpec      `range:"0-5"`
 	JVMMemoryStress     *JVMMemoryStressSpec   `range:"0-5"`
 	JVMMySQLLatency     *JVMMySQLLatencySpec   `range:"0-5"`
-	JVMMySQLException   *JVMMySQLExceptionSpec `range:"0-5"`
+	JVMMySQLException   *JVMMySQLExceptionSpec `range:"0-4"`
 }
