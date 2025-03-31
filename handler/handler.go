@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 
 	chaos "github.com/CUHK-SE-Group/chaos-experiment/chaos"
@@ -57,11 +58,8 @@ const (
 	JVMException
 	JVMGarbageCollector
 	JVMRuleData
-	JVMMySQL
 	JVMCPUStress
 	JVMMemoryStress
-
-	// New MySQL chaos types
 	JVMMySQLLatency
 	JVMMySQLException
 )
@@ -91,7 +89,6 @@ var ChaosTypeMap = map[ChaosType]string{
 	JVMException:        "JVMException",
 	JVMGarbageCollector: "JVMGarbageCollector",
 	JVMRuleData:         "JVMRuleData",
-	JVMMySQL:            "JVMMySQL",
 	JVMCPUStress:        "JVMCPUStress",
 	JVMMemoryStress:     "JVMMemoryStress",
 	JVMMySQLLatency:     "JVMMySQLLatency",
@@ -581,8 +578,7 @@ type JVMReturnSpec struct {
 	Class          string        `range:"0-0" description:"Target Java Class"`
 	Method         string        `range:"0-0" description:"Target Method"`
 	ReturnType     JVMReturnType `range:"1-2" description:"Return Type (1=String, 2=Int)"`
-	CustomValue    bool          `range:"0-1" description:"Use custom return value?"`
-	CustomValueStr string        `range:"0-0" description:"Custom return value (if enabled)"`
+	ReturnValueOpt int           `range:"0-1" description:"Return value option (0=Default, 1=Random)"`
 }
 
 func (s *JVMReturnSpec) Create(cli cli.Client) string {
@@ -597,16 +593,15 @@ func (s *JVMReturnSpec) Create(cli cli.Client) string {
 		chaos.WithJVMMethod(s.Method),
 	}
 
-	if s.CustomValue && s.CustomValueStr != "" {
-		// Use custom value
-		if s.ReturnType == StringReturn && s.CustomValueStr[0] != '"' {
-			// Add quotes for string type if not present
-			opts = append(opts, chaos.WithJVMReturnValue(fmt.Sprintf("\"%s\"", s.CustomValueStr)))
+	if s.ReturnValueOpt == 0 {
+		// Use default value
+		if s.ReturnType == StringReturn {
+			opts = append(opts, chaos.WithJVMDefaultStringReturn())
 		} else {
-			opts = append(opts, chaos.WithJVMReturnValue(s.CustomValueStr))
+			opts = append(opts, chaos.WithJVMDefaultIntReturn())
 		}
 	} else {
-		// Use random or default value
+		// Use random value
 		if s.ReturnType == StringReturn {
 			opts = append(opts, chaos.WithJVMRandomStringReturn(8))
 		} else {
@@ -624,8 +619,7 @@ type JVMExceptionSpec struct {
 	AppName      int    `range:"0-0" dynamic:"true" description:"Array"`
 	Class        string `range:"0-0" description:"Target Java Class"`
 	Method       string `range:"0-0" description:"Target Method"`
-	CustomExp    bool   `range:"0-1" description:"Use custom exception?"`
-	CustomExpStr string `range:"0-0" description:"Custom exception (if enabled)"`
+	ExceptionOpt int    `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
 }
 
 func (s *JVMExceptionSpec) Create(cli cli.Client) string {
@@ -640,10 +634,21 @@ func (s *JVMExceptionSpec) Create(cli cli.Client) string {
 		chaos.WithJVMMethod(s.Method),
 	}
 
-	if s.CustomExp && s.CustomExpStr != "" {
-		opts = append(opts, chaos.WithJVMException(s.CustomExpStr))
-	} else {
+	if s.ExceptionOpt == 0 {
+		// Use default exception
 		opts = append(opts, chaos.WithJVMDefaultException())
+	} else {
+		// Use random exception
+		randomExceptions := []string{
+			"java.io.IOException(\"Random failure\")",
+			"java.lang.IllegalArgumentException(\"Invalid argument\")",
+			"java.lang.NullPointerException()",
+			"java.lang.RuntimeException(\"Unexpected error\")",
+			"java.sql.SQLException(\"Database error\")",
+		}
+		// Pick a random exception from the list
+		randomIndex := rand.Intn(len(randomExceptions))
+		opts = append(opts, chaos.WithJVMException(randomExceptions[randomIndex]))
 	}
 
 	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
@@ -1004,7 +1009,7 @@ type InjectionConf struct {
 	JVMGarbageCollector *JVMGCSpec             `range:"0-2"`
 	JVMRuleData         *JVMRuleDataSpec       `range:"0-4"`
 	JVMCPUStress        *JVMCPUStressSpec      `range:"0-5"`
-	JVMMemoryStress     *JVMMemoryStressSpec   `range:"0-4"`
+	JVMMemoryStress     *JVMMemoryStressSpec   `range:"0-5"`
 	JVMMySQLLatency     *JVMMySQLLatencySpec   `range:"0-5"`
 	JVMMySQLException   *JVMMySQLExceptionSpec `range:"0-5"`
 }
