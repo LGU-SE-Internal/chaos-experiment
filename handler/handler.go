@@ -57,7 +57,6 @@ const (
 	JVMReturn
 	JVMException
 	JVMGarbageCollector
-	JVMRuleData
 	JVMCPUStress
 	JVMMemoryStress
 	JVMMySQLLatency
@@ -88,7 +87,6 @@ var ChaosTypeMap = map[ChaosType]string{
 	JVMReturn:           "JVMReturn",
 	JVMException:        "JVMException",
 	JVMGarbageCollector: "JVMGarbageCollector",
-	JVMRuleData:         "JVMRuleData",
 	JVMCPUStress:        "JVMCPUStress",
 	JVMMemoryStress:     "JVMMemoryStress",
 	JVMMySQLLatency:     "JVMMySQLLatency",
@@ -537,32 +535,6 @@ func (s *DNSRandomSpec) Create(cli cli.Client) string {
 	return controllers.CreateDnsChaos(cli, TargetNamespace, labelArr[s.AppName], action, patterns, duration)
 }
 
-type JVMLatencySpec struct {
-	Duration        int    `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int    `range:"0-0" dynamic:"true" description:"String"`
-	AppName         int    `range:"0-0" dynamic:"true" description:"Array"`
-	Class           string `range:"0-0" description:"Target Java Class"`
-	Method          string `range:"0-0" description:"Target Method"`
-	LatencyDuration int    `range:"1-5000" description:"Latency in ms"`
-}
-
-func (s *JVMLatencySpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
-		return ""
-	}
-	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
-
-	opts := []chaos.OptJVMChaos{
-		chaos.WithJVMClass(s.Class),
-		chaos.WithJVMMethod(s.Method),
-		chaos.WithJVMLatencyDuration(s.LatencyDuration),
-	}
-
-	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
-		chaosmeshv1alpha1.JVMLatencyAction, duration, opts...)
-}
-
 // JVM Return Value Type
 type JVMReturnType int
 
@@ -571,26 +543,62 @@ const (
 	IntReturn    JVMReturnType = 2
 )
 
+// JVM Memory Type
+type JVMMemoryType int
+
+const (
+	HeapMemory  JVMMemoryType = 1
+	StackMemory JVMMemoryType = 2
+)
+
+// JVMLatencySpec defines the JVM latency chaos injection parameters
+type JVMLatencySpec struct {
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	AppName         int `range:"0-0" dynamic:"true" description:"Array"`
+	MethodIndex     int `range:"0-0" dynamic:"true" description:"Index of method to target"`
+	LatencyDuration int `range:"1-5000" description:"Latency in ms"`
+}
+
+func (s *JVMLatencySpec) Create(cli cli.Client) string {
+	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
+	if !ok {
+		return ""
+	}
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	opts := []chaos.OptJVMChaos{
+		chaos.WithJVMClass(className),
+		chaos.WithJVMMethod(methodName),
+		chaos.WithJVMLatencyDuration(s.LatencyDuration),
+	}
+
+	return controllers.CreateJVMChaos(cli, TargetNamespace, appName,
+		chaosmeshv1alpha1.JVMLatencyAction, duration, opts...)
+}
+
+// JVMReturnSpec defines the JVM return value chaos injection parameters
 type JVMReturnSpec struct {
 	Duration       int           `range:"1-60" description:"Time Unit Minute"`
 	Namespace      int           `range:"0-0" dynamic:"true" description:"String"`
 	AppName        int           `range:"0-0" dynamic:"true" description:"Array"`
-	Class          string        `range:"0-0" description:"Target Java Class"`
-	Method         string        `range:"0-0" description:"Target Method"`
+	MethodIndex    int           `range:"0-0" dynamic:"true" description:"Index of method to target"`
 	ReturnType     JVMReturnType `range:"1-2" description:"Return Type (1=String, 2=Int)"`
 	ReturnValueOpt int           `range:"0-1" description:"Return value option (0=Default, 1=Random)"`
 }
 
 func (s *JVMReturnSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
+	if !ok {
 		return ""
 	}
+
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
 	opts := []chaos.OptJVMChaos{
-		chaos.WithJVMClass(s.Class),
-		chaos.WithJVMMethod(s.Method),
+		chaos.WithJVMClass(className),
+		chaos.WithJVMMethod(methodName),
 	}
 
 	if s.ReturnValueOpt == 0 {
@@ -609,29 +617,30 @@ func (s *JVMReturnSpec) Create(cli cli.Client) string {
 		}
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
+	return controllers.CreateJVMChaos(cli, TargetNamespace, appName,
 		chaosmeshv1alpha1.JVMReturnAction, duration, opts...)
 }
 
+// JVMExceptionSpec defines the JVM exception injection parameters
 type JVMExceptionSpec struct {
-	Duration     int    `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int    `range:"0-0" dynamic:"true" description:"String"`
-	AppName      int    `range:"0-0" dynamic:"true" description:"Array"`
-	Class        string `range:"0-0" description:"Target Java Class"`
-	Method       string `range:"0-0" description:"Target Method"`
-	ExceptionOpt int    `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
+	Duration     int `range:"1-60" description:"Time Unit Minute"`
+	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
+	AppName      int `range:"0-0" dynamic:"true" description:"Array"`
+	MethodIndex  int `range:"0-0" dynamic:"true" description:"Index of method to target"`
+	ExceptionOpt int `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
 }
 
 func (s *JVMExceptionSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
+	if !ok {
 		return ""
 	}
+
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
 	opts := []chaos.OptJVMChaos{
-		chaos.WithJVMClass(s.Class),
-		chaos.WithJVMMethod(s.Method),
+		chaos.WithJVMClass(className),
+		chaos.WithJVMMethod(methodName),
 	}
 
 	if s.ExceptionOpt == 0 {
@@ -651,10 +660,11 @@ func (s *JVMExceptionSpec) Create(cli cli.Client) string {
 		opts = append(opts, chaos.WithJVMException(randomExceptions[randomIndex]))
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
+	return controllers.CreateJVMChaos(cli, TargetNamespace, appName,
 		chaosmeshv1alpha1.JVMExceptionAction, duration, opts...)
 }
 
+// JVMGCSpec defines the JVM garbage collector chaos injection parameters
 type JVMGCSpec struct {
 	Duration  int `range:"1-60" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
@@ -672,67 +682,48 @@ func (s *JVMGCSpec) Create(cli cli.Client) string {
 		chaosmeshv1alpha1.JVMGCAction, duration)
 }
 
-// JVM Stress Memory Type
-type JVMMemoryType int
-
-const (
-	HeapMemory  JVMMemoryType = 1
-	StackMemory JVMMemoryType = 2
-)
-
-// JVMStressSpec defines the JVM stress chaos injection parameters
-type JVMStressSpec struct {
-	Duration  int           `range:"1-60" description:"Time Unit Minute"`
-	Namespace int           `range:"0-0" dynamic:"true" description:"String"`
-	AppName   int           `range:"0-0" dynamic:"true" description:"Array"`
-	Class     string        `range:"0-0" description:"Target Java Class"`
-	Method    string        `range:"0-0" description:"Target Method"`
-	CPUCount  int           `range:"1-8" description:"Number of CPU cores to stress"`
-	MemType   JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
-}
-
 // JVMCPUStressSpec defines the JVM CPU stress chaos injection parameters
 type JVMCPUStressSpec struct {
-	Duration  int    `range:"1-60" description:"Time Unit Minute"`
-	Namespace int    `range:"0-0" dynamic:"true" description:"String"`
-	AppName   int    `range:"0-0" dynamic:"true" description:"Array"`
-	Class     string `range:"0-0" description:"Target Java Class"`
-	Method    string `range:"0-0" description:"Target Method"`
-	CPUCount  int    `range:"1-8" description:"Number of CPU cores to stress"`
+	Duration    int `range:"1-60" description:"Time Unit Minute"`
+	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	AppName     int `range:"0-0" dynamic:"true" description:"Array"`
+	MethodIndex int `range:"0-0" dynamic:"true" description:"Index of method to target"`
+	CPUCount    int `range:"1-8" description:"Number of CPU cores to stress"`
 }
 
 func (s *JVMCPUStressSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
+	if !ok {
 		return ""
 	}
+
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
 	opts := []chaos.OptJVMChaos{
-		chaos.WithJVMClass(s.Class),
-		chaos.WithJVMMethod(s.Method),
+		chaos.WithJVMClass(className),
+		chaos.WithJVMMethod(methodName),
 		chaos.WithJVMStressCPUCount(s.CPUCount),
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
+	return controllers.CreateJVMChaos(cli, TargetNamespace, appName,
 		chaosmeshv1alpha1.JVMStressAction, duration, opts...)
 }
 
 // JVMMemoryStressSpec defines the JVM memory stress chaos injection parameters
 type JVMMemoryStressSpec struct {
-	Duration  int           `range:"1-60" description:"Time Unit Minute"`
-	Namespace int           `range:"0-0" dynamic:"true" description:"String"`
-	AppName   int           `range:"0-0" dynamic:"true" description:"Array"`
-	Class     string        `range:"0-0" description:"Target Java Class"`
-	Method    string        `range:"0-0" description:"Target Method"`
-	MemType   JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
+	Duration    int           `range:"1-60" description:"Time Unit Minute"`
+	Namespace   int           `range:"0-0" dynamic:"true" description:"String"`
+	AppName     int           `range:"0-0" dynamic:"true" description:"Array"`
+	MethodIndex int           `range:"0-0" dynamic:"true" description:"Index of method to target"`
+	MemType     JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
 }
 
 func (s *JVMMemoryStressSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
+	if !ok {
 		return ""
 	}
+
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
 	// Convert memory type
@@ -742,38 +733,13 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client) string {
 	}
 
 	opts := []chaos.OptJVMChaos{
-		chaos.WithJVMClass(s.Class),
-		chaos.WithJVMMethod(s.Method),
+		chaos.WithJVMClass(className),
+		chaos.WithJVMMethod(methodName),
 		chaos.WithJVMStressMemType(memType),
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
+	return controllers.CreateJVMChaos(cli, TargetNamespace, appName,
 		chaosmeshv1alpha1.JVMStressAction, duration, opts...)
-}
-
-// JVMRuleDataSpec defines the JVM custom rule injection parameters
-type JVMRuleDataSpec struct {
-	Duration  int    `range:"1-60" description:"Time Unit Minute"`
-	Namespace int    `range:"0-0" dynamic:"true" description:"String"`
-	AppName   int    `range:"0-0" dynamic:"true" description:"Array"`
-	RuleName  string `range:"0-0" description:"Byteman Rule Name"`
-	RuleData  string `range:"0-0" description:"Byteman Rule Data"`
-}
-
-func (s *JVMRuleDataSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
-		return ""
-	}
-	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
-
-	opts := []chaos.OptJVMChaos{
-		chaos.WithJVMName(s.RuleName),
-		chaos.WithJVMRuleData(s.RuleData),
-	}
-
-	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
-		chaosmeshv1alpha1.JVMRuleDataAction, duration, opts...)
 }
 
 // SQL types for JVMMySQL
@@ -953,7 +919,6 @@ var SpecMap = map[ChaosType]any{
 	JVMReturn:           JVMReturnSpec{},
 	JVMException:        JVMExceptionSpec{},
 	JVMGarbageCollector: JVMGCSpec{},
-	JVMRuleData:         JVMRuleDataSpec{},
 	JVMCPUStress:        JVMCPUStressSpec{},
 	JVMMemoryStress:     JVMMemoryStressSpec{},
 	JVMMySQLLatency:     JVMMySQLLatencySpec{},
@@ -981,7 +946,6 @@ var ChaosHandlers = map[ChaosType]Injection{
 	JVMReturn:           &JVMReturnSpec{},
 	JVMException:        &JVMExceptionSpec{},
 	JVMGarbageCollector: &JVMGCSpec{},
-	JVMRuleData:         &JVMRuleDataSpec{},
 	JVMCPUStress:        &JVMCPUStressSpec{},
 	JVMMemoryStress:     &JVMMemoryStressSpec{},
 	JVMMySQLLatency:     &JVMMySQLLatencySpec{},
@@ -1009,7 +973,6 @@ type InjectionConf struct {
 	JVMReturn           *JVMReturnSpec         `range:"0-6"`
 	JVMException        *JVMExceptionSpec      `range:"0-5"`
 	JVMGarbageCollector *JVMGCSpec             `range:"0-2"`
-	JVMRuleData         *JVMRuleDataSpec       `range:"0-4"`
 	JVMCPUStress        *JVMCPUStressSpec      `range:"0-5"`
 	JVMMemoryStress     *JVMMemoryStressSpec   `range:"0-5"`
 	JVMMySQLLatency     *JVMMySQLLatencySpec   `range:"0-5"`

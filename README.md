@@ -1,6 +1,3 @@
-
-
-
 # Init
 
 ```bash
@@ -21,7 +18,7 @@ appList := []string{"checkoutservice", "recommendationservice", "emailservice", 
     appName := "checkoutservice"
     // Example: simple network delay chaos
     controllers.CreateNetworkDelayChaos(k8sClient, namespace, appName, "100ms", "25", "10ms", pointer.String("2m"))
-    
+
 	// Example: Using the simpler helper with target/direction together
 	controllers.CreateNetworkDelayChaos(k8sClient, namespace, appName, "100ms", "25", "10ms", pointer.String("2m"),
 	   chaos.WithNetworkTargetAndDirection(namespace, "productcatalogservice", v1alpha1.Both))
@@ -31,6 +28,62 @@ appList := []string{"checkoutservice", "recommendationservice", "emailservice", 
 	   v1alpha1.Both, pointer.String("3m"),
 	   chaos.WithNetworkDevice("eth0")) // Specify network device
     ```
+- DNSChaos
+    ```go
+    appName := "checkoutservice"
+	controllers.CreateDnsChaos(k8sClient, namespace, appName, "error", []string{"*"}, pointer.String("2m"))
+    controllers.CreateDnsChaos(k8sClient, namespace, appName, "random", []string{"*"}, pointer.String("2m"))
+    ```
+
+## JVM Chaos
+Before using JVM Chaos, you need to analyze the Java services to extract method information:
+
+### Analyzing Java Services
+```bash
+# Build the generator
+go build -o bin/generate-java-methods cmd/generate/main.go
+
+# Run the generator with path to Java services
+./bin/generate-java-methods --services /path/to/java/services
+```
+
+This will generate a file in `internal/javaclassmethods/javaclassmethods.go` with all method information.
+
+
+### JVM Chaos Examples
+- JVM Latency Injection
+    ```go
+    appName := "ts-user-service"
+    // Get a dynamic method by index
+    controllers.CreateJVMChaos(k8sClient, namespace, appName, 
+        chaosmeshv1alpha1.JVMLatencyAction, pointer.String("2m"),
+        chaos.WithJVMClass("com.example.UserService"),
+        chaos.WithJVMMethod("getUserById"),
+        chaos.WithJVMLatencyDuration(1000))
+    ```
+
+- JVM Exception Injection
+    ```go
+    appName := "ts-order-service"
+    controllers.CreateJVMChaos(k8sClient, namespace, appName, 
+        chaosmeshv1alpha1.JVMExceptionAction, pointer.String("2m"),
+        chaos.WithJVMClass("com.example.OrderService"),
+        chaos.WithJVMMethod("createOrder"),
+        chaos.WithJVMDefaultException())
+    ```
+
+- JVM MySQL Latency
+    ```go
+    appName := "ts-order-service"
+    controllers.CreateJVMChaos(k8sClient, namespace, appName, 
+        chaosmeshv1alpha1.JVMMySQLAction, pointer.String("2m"),
+        chaos.WithJVMMySQLConnector("5"),
+        chaos.WithJVMMySQLDatabase("ts"),
+        chaos.WithJVMMySQLTable("orders"),
+        chaos.WithJVMMySQLType("select"),
+        chaos.WithJVMLatencyDuration(1000))
+    ```
+
 ## Schedule chaos
 - StressChaos
     ```go
@@ -98,4 +151,19 @@ opts2 := []chaos.OptHTTPChaos{
 controllers.AddHTTPChaosWorkflowNodes(workflowSpec, namespace, appList, "response-replace", injectTime, sleepTime, opts2...)
 // create workflow
 controllers.CreateWorkflow(k8sClient, workflowSpec, namespace)
+```
+
+## JVM Method Extraction API
+
+The package provides an API to access extracted Java method information:
+
+```go
+// Get all methods for a service name
+methods := handler.GetJVMMethods("user-service")
+
+// Get all services names
+serviceNames := handler.ListJVMServiceNames()
+
+// Get methods for a specific app
+methods := handler.GetJVMMethodsForApp("ts-user-service")
 ```
