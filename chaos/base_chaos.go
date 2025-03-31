@@ -90,6 +90,12 @@ func WithDnsChaosSpec(spec *chaosmeshv1alpha1.DNSChaosSpec) OptChaos {
 	}
 }
 
+func WithJVMChaosSpec(spec *chaosmeshv1alpha1.JVMChaosSpec) OptChaos {
+	return func(config *ConfigChaos) {
+		config.JVMChaos = spec
+	}
+}
+
 func WithWorkflowSpec(spec *chaosmeshv1alpha1.WorkflowSpec) OptChaos {
 	return func(opt *ConfigChaos) {
 		opt.Workflow = spec
