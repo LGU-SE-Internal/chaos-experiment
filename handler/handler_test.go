@@ -25,7 +25,8 @@ func TestHandler(t *testing.T) {
 		t.Errorf("Expected non-nil map, got nil")
 		return
 	}
-	fmt.Println(mapStru)
+	pp.Println(mapStru)
+
 	gend, err := genValue(mapStru)
 	if err != nil {
 		t.Errorf("genValue failed: %v", err)
@@ -37,9 +38,44 @@ func TestHandler(t *testing.T) {
 		return
 	}
 	pp.Println(newNode)
+
 }
 
-func genValue(m map[string]interface{}) (map[string]interface{}, error) {
+func TestHandler2(t *testing.T) {
+	chilren := map[int]any{
+		0: map[string]any{
+			"value": 1,
+		},
+		1: map[string]any{
+			"value": 0,
+		},
+		2: map[string]any{
+			"value": 3,
+		},
+	}
+
+	node, err := MapToNode(map[string]any{
+		"children": map[int]any{
+			0: map[string]any{
+				"children": chilren,
+			},
+		},
+	})
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	test, err := NodeToStruct[InjectionConf](node)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	pp.Println(test)
+}
+
+func genValue(m map[string]any) (map[string]any, error) {
 	var rangeI []int
 	if r, exist := m["range"]; exist {
 		var ok bool

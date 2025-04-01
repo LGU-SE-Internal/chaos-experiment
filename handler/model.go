@@ -48,18 +48,6 @@ func NodeToMap(n *Node) map[string]any {
 func MapToNode(m map[string]any) (*Node, error) {
 	node := &Node{}
 
-	if r, ok := m["range"].([]int); ok {
-		node.Range = r
-	} else {
-		return nil, fmt.Errorf("invalid range format")
-	}
-
-	if name, ok := m["name"].(string); ok {
-		node.Name = name
-	} else {
-		return nil, fmt.Errorf("invalid name format, expected string")
-	}
-
 	if value, ok := m["value"].(int); ok {
 		node.Value = value
 	}
@@ -119,32 +107,14 @@ func buildNode(rt reflect.Type, fieldName string) (*Node, error) {
 }
 
 func buildFieldNode(field reflect.StructField) (*Node, error) {
-	start, end, err := parseRangeTag(field.Tag.Get("range"))
+	start, end, err := getValueRange(field)
 	if err != nil {
-		return nil, fmt.Errorf("field %s: %w", field.Name, err)
+		return nil, err
 	}
-
-	dyn := field.Tag.Get("dynamic")
-	if dyn == "true" {
-		switch field.Name {
-		case "Namespace":
-			start = 0
-			end = 0
-		case "AppName":
-			values, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get labels: %w", err)
-			}
-			start = 0
-			end = len(values) - 1
-		}
-	}
-
-	desp := field.Tag.Get("description")
 
 	child := &Node{
 		Name:        field.Name,
-		Description: desp,
+		Description: field.Tag.Get("description"),
 		Range:       []int{start, end},
 	}
 
@@ -171,8 +141,25 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 		return nil, fmt.Errorf("struct T must be a struct type")
 	}
 
-	if err := validateNodeRange(rt, n); err != nil {
-		return nil, err
+	if rt.Name() == "InjectionConf" && rt.PkgPath() == "github.com/CUHK-SE-Group/chaos-experiment/handler" {
+		if len(n.Children) != 1 {
+			return nil, fmt.Errorf("injection conf must have only one chaos type")
+		}
+
+		var key int
+		for key = range n.Children {
+		}
+
+		if key < 0 || key > rt.NumField() {
+			return nil, fmt.Errorf("invalid key in the children of injection conf")
+		}
+
+		val := reflect.New(rt).Elem()
+		if err := processStructField(rt.Field(key), val.Field(key), n.Children[key]); err != nil {
+			return nil, err
+		}
+
+		return val.Addr().Interface().(*T), nil
 	}
 
 	val := reflect.New(rt).Elem()
@@ -185,20 +172,12 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 	return val.Addr().Interface().(*T), nil
 }
 
-func validateNodeRange(rt reflect.Type, n *Node) error {
-	expected := rt.NumField() - 1
-	if n.Range[1] != expected {
-		return fmt.Errorf("node range mismatch: expected 0-%d, got %d-%d",
-			expected, n.Range[0], n.Range[1])
-	}
-	return nil
-}
-
 func processStructField(field reflect.StructField, val reflect.Value, node *Node) error {
 	if node == nil {
-		if tagValue(field, "optional") == "true" {
+		if field.Tag.Get("optional") == "true" {
 			return nil
 		}
+
 		return fmt.Errorf("missing required field: %s", field.Name)
 	}
 
@@ -215,7 +194,20 @@ func processStructField(field reflect.StructField, val reflect.Value, node *Node
 		return processNestedStruct(fieldType, val, node)
 	}
 
-	return assignBasicType(val, node) // 传入整个node而非range
+	return assignBasicType(field, val, node) // 传入整个node而非range
+}
+
+func processNestedStruct(rt reflect.Type, val reflect.Value, node *Node) error {
+	if rt.Kind() != reflect.Struct {
+		return fmt.Errorf("expected struct type, got %s", rt.Kind())
+	}
+
+	for i := range rt.NumField() {
+		if err := processStructField(rt.Field(i), val.Field(i), node.Children[i]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func typeName(rt reflect.Type, fieldName string) string {
@@ -223,6 +215,64 @@ func typeName(rt reflect.Type, fieldName string) string {
 		return fieldName
 	}
 	return rt.Name()
+}
+
+func assignBasicType(field reflect.StructField, val reflect.Value, node *Node) error {
+	start, end, err := getValueRange(field)
+	if err != nil {
+		return err
+	}
+
+	if node.Value < start || node.Value > end {
+		return fmt.Errorf("value %d out of range [%d, %d]", node.Value, start, end)
+	}
+
+	switch val.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if val.OverflowInt(int64(node.Value)) {
+			return fmt.Errorf("value %d overflow for type %s", node.Value, val.Type())
+		}
+		val.SetInt(int64(node.Value))
+
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if node.Value < 0 {
+			return fmt.Errorf("negative value %d for unsigned type %s", node.Value, val.Type())
+		}
+		if val.OverflowUint(uint64(node.Value)) {
+			return fmt.Errorf("value %d overflow for type %s", node.Value, val.Type())
+		}
+		val.SetUint(uint64(node.Value))
+
+	default:
+		return fmt.Errorf("unsupported type %s", val.Kind())
+	}
+
+	return nil
+}
+
+func getValueRange(field reflect.StructField) (int, int, error) {
+	start, end, err := parseRangeTag(field.Tag.Get("range"))
+	if err != nil {
+		return 0, 0, fmt.Errorf("field %s: %w", field.Name, err)
+	}
+
+	dyn := field.Tag.Get("dynamic")
+	if dyn == "true" {
+		switch field.Name {
+		case "Namespace":
+			start = 0
+			end = 0
+		case "AppName":
+			values, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+			if err != nil {
+				return 0, 0, fmt.Errorf("failed to get labels: %w", err)
+			}
+			start = 0
+			end = len(values) - 1
+		}
+	}
+
+	return start, end, err
 }
 
 func parseRangeTag(tag string) (int, int, error) {
@@ -263,46 +313,4 @@ func parseRangeTag(tag string) (int, int, error) {
 	}
 
 	return start, end, nil
-}
-
-func tagValue(field reflect.StructField, key string) string {
-	return field.Tag.Get(key)
-}
-
-func processNestedStruct(rt reflect.Type, val reflect.Value, node *Node) error {
-	if rt.Kind() != reflect.Struct {
-		return fmt.Errorf("expected struct type, got %s", rt.Kind())
-	}
-
-	for i := range rt.NumField() {
-		if err := processStructField(rt.Field(i), val.Field(i), node.Children[i]); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func assignBasicType(val reflect.Value, node *Node) error {
-	if node.Value < node.Range[0] || node.Value > node.Range[1] {
-		return fmt.Errorf("value %d out of range [%d, %d]", node.Value, node.Range[0], node.Range[1])
-	}
-
-	switch val.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if val.OverflowInt(int64(node.Value)) {
-			return fmt.Errorf("value %d overflow for type %s", node.Value, val.Type())
-		}
-		val.SetInt(int64(node.Value))
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		if node.Value < 0 {
-			return fmt.Errorf("negative value %d for unsigned type %s", node.Value, val.Type())
-		}
-		if val.OverflowUint(uint64(node.Value)) {
-			return fmt.Errorf("value %d overflow for type %s", node.Value, val.Type())
-		}
-		val.SetUint(uint64(node.Value))
-	default:
-		return fmt.Errorf("unsupported type %s", val.Kind())
-	}
-	return nil
 }
