@@ -17,11 +17,11 @@ any node can be converted to a struct, and then to a map
 any map can be converted to a node, and then to a struct
 */
 type Node struct {
-	Name        string        `json:"name"`
-	Range       []int         `json:"range"`
-	Children    map[int]*Node `json:"children,omitempty"`
-	Description string        `json:"description,omitempty"`
-	Value       int           `json:"value,omitempty"`
+	Name        string           `json:"name"`
+	Range       []int            `json:"range"`
+	Children    map[string]*Node `json:"children,omitempty"`
+	Description string           `json:"description,omitempty"`
+	Value       int              `json:"value,omitempty"`
 }
 
 func NodeToMap(n *Node) map[string]any {
@@ -35,7 +35,7 @@ func NodeToMap(n *Node) map[string]any {
 	}
 
 	if len(n.Children) > 0 {
-		childrenMap := make(map[int]any)
+		childrenMap := make(map[string]any)
 		for k, v := range n.Children {
 			childrenMap[k] = NodeToMap(v)
 		}
@@ -52,17 +52,19 @@ func MapToNode(m map[string]any) (*Node, error) {
 		node.Value = value
 	}
 
-	if children, ok := m["children"].(map[int]any); ok {
-		node.Children = make(map[int]*Node)
+	if children, ok := m["children"].(map[string]any); ok {
+		node.Children = make(map[string]*Node)
 		for key, val := range children {
 			childMap, ok := val.(map[string]any)
 			if !ok {
-				return nil, fmt.Errorf("invalid child node at key %d", key)
+				return nil, fmt.Errorf("invalid child node at key [%s]", key)
 			}
+
 			childNode, err := MapToNode(childMap)
 			if err != nil {
 				return nil, err
 			}
+
 			node.Children[key] = childNode
 		}
 	}
@@ -90,7 +92,7 @@ func buildNode(rt reflect.Type, fieldName string) (*Node, error) {
 		Range: []int{0, rt.NumField() - 1},
 	}
 
-	node.Children = make(map[int]*Node)
+	node.Children = make(map[string]*Node)
 
 	if rt.Kind() == reflect.Struct {
 		for i := range rt.NumField() {
@@ -98,7 +100,7 @@ func buildNode(rt reflect.Type, fieldName string) (*Node, error) {
 			if child, err := buildFieldNode(field); err != nil {
 				return nil, err
 			} else {
-				node.Children[i] = child
+				node.Children[strconv.Itoa(i)] = child
 			}
 		}
 	}
@@ -150,11 +152,16 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 	}
 
 	for key := range n.Children {
-		if key < 0 || key >= rt.NumField() {
+		intKey, err := strconv.Atoi(key)
+		if err != nil {
+			return nil, err
+		}
+
+		if intKey < 0 || intKey >= rt.NumField() {
 			return nil, fmt.Errorf("invalid key in the children of node")
 		}
 
-		if err := processStructField(rt.Field(key), val.Field(key), n.Children[key]); err != nil {
+		if err := processStructField(rt.Field(intKey), val.Field(intKey), n.Children[key]); err != nil {
 			return nil, err
 		}
 	}
@@ -192,11 +199,21 @@ func processNestedStruct(rt reflect.Type, val reflect.Value, node *Node) error {
 		return fmt.Errorf("expected struct type, got %s", rt.Kind())
 	}
 
-	for i := range rt.NumField() {
-		if err := processStructField(rt.Field(i), val.Field(i), node.Children[i]); err != nil {
+	for key := range node.Children {
+		intKey, err := strconv.Atoi(key)
+		if err != nil {
+			return err
+		}
+
+		if intKey < 0 || intKey >= rt.NumField() {
+			return fmt.Errorf("invalid key in the children of node")
+		}
+
+		if err := processStructField(rt.Field(intKey), val.Field(intKey), node.Children[key]); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 

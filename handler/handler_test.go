@@ -43,25 +43,29 @@ func TestHandler(t *testing.T) {
 }
 
 func TestHandler2(t *testing.T) {
-	chilren := map[int]any{
-		0: map[string]any{
+	chilren := map[string]any{
+		"0": map[string]any{
 			"value": 1,
 		},
-		1: map[string]any{
+		"1": map[string]any{
 			"value": 0,
 		},
-		2: map[string]any{
+		"2": map[string]any{
 			"value": 3,
 		},
 	}
 
-	node, err := MapToNode(map[string]any{
-		"children": map[int]any{
-			0: map[string]any{
+	mapTest := map[string]any{
+		"children": map[string]any{
+			"0": map[string]any{
 				"children": chilren,
 			},
 		},
-	})
+	}
+
+	pp.Println(mapTest)
+
+	node, err := MapToNode(mapTest)
 	if err != nil {
 		t.Errorf(err.Error())
 		return

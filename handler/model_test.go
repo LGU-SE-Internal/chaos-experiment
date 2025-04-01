@@ -12,38 +12,38 @@ func TestModel(t *testing.T) {
 	root := &Node{
 		Name:  "root",
 		Range: []int{0, 1},
-		Children: map[int]*Node{
-			0: {
+		Children: map[string]*Node{
+			"0": {
 				Name:  "node-0",
 				Range: []int{0, 1},
-				Children: map[int]*Node{
-					0: {
+				Children: map[string]*Node{
+					"0": {
 						Name:  "node-0-0",
 						Range: []int{1, 2},
-						Children: map[int]*Node{
-							1: {
+						Children: map[string]*Node{
+							"1": {
 								Name:  "node-0-0-1",
 								Range: []int{2, 3},
-								Children: map[int]*Node{
-									2: {Name: "leaf-2", Range: []int{0, 7}},
-									3: {Name: "leaf-3", Range: []int{0, 3}},
+								Children: map[string]*Node{
+									"2": {Name: "leaf-2", Range: []int{0, 7}},
+									"3": {Name: "leaf-3", Range: []int{0, 3}},
 								},
 							},
 						},
 					},
-					1: {
+					"1": {
 						Name:  "node-0-1",
 						Range: []int{1, 3},
-						Children: map[int]*Node{
-							1: {Name: "leaf-1", Range: []int{6, 9}},
-							2: {Name: "leaf-2", Range: []int{2, 63}},
-							3: {Name: "leaf-3", Range: []int{3, 4}},
+						Children: map[string]*Node{
+							"1": {Name: "leaf-1", Range: []int{6, 9}},
+							"2": {Name: "leaf-2", Range: []int{2, 63}},
+							"3": {Name: "leaf-3", Range: []int{3, 4}},
 						},
 					},
 				},
 			},
-			1: {Name: "node-1", Range: []int{0, 100}},
-			2: {Name: "node-2", Range: []int{10, 20}},
+			"1": {Name: "node-1", Range: []int{0, 100}},
+			"2": {Name: "node-2", Range: []int{10, 20}},
 		},
 	}
 
