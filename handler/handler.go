@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 	"strconv"
 
 	chaos "github.com/CUHK-SE-Group/chaos-experiment/chaos"
@@ -977,4 +978,21 @@ type InjectionConf struct {
 	JVMMemoryStress     *JVMMemoryStressSpec   `range:"0-5"`
 	JVMMySQLLatency     *JVMMySQLLatencySpec   `range:"0-5"`
 	JVMMySQLException   *JVMMySQLExceptionSpec `range:"0-4"`
+}
+
+func (ic *InjectionConf) Create(cli cli.Client) string {
+	val := reflect.ValueOf(ic).Elem()
+
+	for i := range val.NumField() {
+		field := val.Field(i)
+		if field.IsNil() {
+			continue
+		}
+
+		injectable, _ := field.Interface().(Injection)
+
+		return injectable.Create(cli)
+	}
+
+	return ""
 }

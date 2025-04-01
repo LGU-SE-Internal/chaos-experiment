@@ -147,25 +147,14 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 		if len(n.Children) != 1 {
 			return nil, fmt.Errorf("injection conf must have only one chaos type")
 		}
-
-		var key int
-		for key = range n.Children {
-		}
-
-		if key < 0 || key >= rt.NumField() {
-			return nil, fmt.Errorf("invalid key in the children of injection conf")
-		}
-
-		val := reflect.New(rt).Elem()
-		if err := processStructField(rt.Field(key), val.Field(key), n.Children[key]); err != nil {
-			return nil, err
-		}
-
-		return val.Addr().Interface().(*T), nil
 	}
 
-	for i := range rt.NumField() {
-		if err := processStructField(rt.Field(i), val.Field(i), n.Children[i]); err != nil {
+	for key := range n.Children {
+		if key < 0 || key >= rt.NumField() {
+			return nil, fmt.Errorf("invalid key in the children of node")
+		}
+
+		if err := processStructField(rt.Field(key), val.Field(key), n.Children[key]); err != nil {
 			return nil, err
 		}
 	}

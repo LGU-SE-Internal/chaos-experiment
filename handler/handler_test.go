@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
+	cli "github.com/CUHK-SE-Group/chaos-experiment/client"
 	"github.com/k0kubun/pp"
 )
 
@@ -66,13 +67,17 @@ func TestHandler2(t *testing.T) {
 		return
 	}
 
-	test, err := NodeToStruct[InjectionConf](node)
+	pp.Println(node)
+
+	conf, err := NodeToStruct[InjectionConf](node)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
 	}
 
-	pp.Println(test)
+	pp.Println(conf)
+
+	pp.Println(conf.Create(cli.NewK8sClient()))
 }
 
 func genValue(m map[string]any) (map[string]any, error) {
