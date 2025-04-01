@@ -141,6 +141,8 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 		return nil, fmt.Errorf("struct T must be a struct type")
 	}
 
+	val := reflect.New(rt).Elem()
+
 	if rt.Name() == "InjectionConf" && rt.PkgPath() == "github.com/CUHK-SE-Group/chaos-experiment/handler" {
 		if len(n.Children) != 1 {
 			return nil, fmt.Errorf("injection conf must have only one chaos type")
@@ -150,7 +152,7 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 		for key = range n.Children {
 		}
 
-		if key < 0 || key > rt.NumField() {
+		if key < 0 || key >= rt.NumField() {
 			return nil, fmt.Errorf("invalid key in the children of injection conf")
 		}
 
@@ -162,7 +164,6 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 		return val.Addr().Interface().(*T), nil
 	}
 
-	val := reflect.New(rt).Elem()
 	for i := range rt.NumField() {
 		if err := processStructField(rt.Field(i), val.Field(i), n.Children[i]); err != nil {
 			return nil, err
