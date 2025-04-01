@@ -48,6 +48,10 @@ func NodeToMap(n *Node) map[string]any {
 func MapToNode(m map[string]any) (*Node, error) {
 	node := &Node{}
 
+	if valueFloat, ok := m["value"].(float64); ok {
+		node.Value = int(valueFloat)
+	}
+
 	if value, ok := m["value"].(int); ok {
 		node.Value = value
 	}

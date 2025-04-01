@@ -179,11 +179,11 @@ func (s *PodKillSpec) Create(cli cli.Client) string {
 }
 
 type CPUStressChaosSpec struct {
-	CPULoad   int `range:"1-100" description:"CPU Load Percentage"`
-	CPUWorker int `range:"1-3" description:"CPU Stress Threads"`
 	Duration  int `range:"1-60" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
+	CPULoad   int `range:"1-100" description:"CPU Load Percentage"`
+	CPUWorker int `range:"1-3" description:"CPU Stress Threads"`
 }
 
 func (s *CPUStressChaosSpec) Create(cli cli.Client) string {
@@ -201,11 +201,11 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client) string {
 }
 
 type MemoryStressChaosSpec struct {
-	MemorySize int `range:"1-1024" description:"Memory Size Unit MB"`
-	MemWorker  int `range:"1-4" description:"Memory Stress Threads"`
 	Duration   int `range:"1-60" description:"Time Unit Minute"`
 	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
 	AppName    int `range:"0-0" dynamic:"true" description:"Array"`
+	MemorySize int `range:"1-1024" description:"Memory Size Unit MB"`
+	MemWorker  int `range:"1-4" description:"Memory Stress Threads"`
 }
 
 func (s *MemoryStressChaosSpec) Create(cli cli.Client) string {
@@ -221,11 +221,11 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client) string {
 }
 
 type HTTPChaosReplaceSpec struct {
-	HTTPTarget  HTTPChaosTarget `range:"1-2" description:"HTTP Phase Request/Response"`
-	ReplaceBody HTTPReplaceBody `range:"1-2" description:"Body Replacement Blank/Random"`
 	Duration    int             `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int             `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int             `range:"0-0" dynamic:"true" description:"Array"`
+	HTTPTarget  HTTPChaosTarget `range:"1-2" description:"HTTP Phase Request/Response"`
+	ReplaceBody HTTPReplaceBody `range:"1-2" description:"Body Replacement Blank/Random"`
 }
 
 func (s *HTTPChaosReplaceSpec) Create(cli cli.Client) string {
@@ -245,10 +245,10 @@ func (s *HTTPChaosReplaceSpec) Create(cli cli.Client) string {
 }
 
 type HTTPChaosAbortSpec struct {
-	HTTPTarget HTTPChaosTarget `range:"1-2" description:"HTTP Phase Request/Response"`
 	Duration   int             `range:"1-60" description:"Time Unit Minute"`
 	Namespace  int             `range:"0-0" dynamic:"true" description:"String"`
 	AppName    int             `range:"0-0" dynamic:"true" description:"Array"`
+	HTTPTarget HTTPChaosTarget `range:"1-2" description:"HTTP Phase Request/Response"`
 }
 
 func (s *HTTPChaosAbortSpec) Create(cli cli.Client) string {
@@ -269,10 +269,10 @@ func (s *HTTPChaosAbortSpec) Create(cli cli.Client) string {
 }
 
 type TimeSkewSpec struct {
-	TimeOffset int `range:"-600-600" description:"Time offset in seconds"`
 	Duration   int `range:"1-60" description:"Time Unit Minute"`
 	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
 	AppName    int `range:"0-0" dynamic:"true" description:"Array"`
+	TimeOffset int `range:"-600-600" description:"Time offset in seconds"`
 }
 
 func (s *TimeSkewSpec) Create(cli cli.Client) string {
@@ -328,12 +328,12 @@ func createNetworkChaosWithTargetDirection(cli cli.Client, action chaosmeshv1alp
 }
 
 type NetworkDelaySpec struct {
-	Latency     int `range:"1-2000" description:"Latency in milliseconds"`
-	Correlation int `range:"0-100" description:"Correlation percentage"`
-	Jitter      int `range:"0-1000" description:"Jitter in milliseconds"`
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int `range:"0-0" dynamic:"true" description:"Array"`
+	Latency     int `range:"1-2000" description:"Latency in milliseconds"`
+	Correlation int `range:"0-100" description:"Correlation percentage"`
+	Jitter      int `range:"0-1000" description:"Jitter in milliseconds"`
 	Direction   int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 	TargetApp   int `range:"0-0" dynamic:"true" description:"Target application (if any)"`
 }
@@ -357,11 +357,11 @@ func (s *NetworkDelaySpec) Create(cli cli.Client) string {
 }
 
 type NetworkLossSpec struct {
-	Loss        int `range:"1-100" description:"Packet loss percentage"`
-	Correlation int `range:"0-100" description:"Correlation percentage"`
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int `range:"0-0" dynamic:"true" description:"Array"`
+	Loss        int `range:"1-100" description:"Packet loss percentage"`
+	Correlation int `range:"0-100" description:"Correlation percentage"`
 	Direction   int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 	TargetApp   int `range:"0-0" dynamic:"true" description:"Target application (if any)"`
 }
@@ -384,11 +384,11 @@ func (s *NetworkLossSpec) Create(cli cli.Client) string {
 }
 
 type NetworkDuplicateSpec struct {
-	Duplicate   int `range:"1-100" description:"Packet duplication percentage"`
-	Correlation int `range:"0-100" description:"Correlation percentage"`
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int `range:"0-0" dynamic:"true" description:"Array"`
+	Duplicate   int `range:"1-100" description:"Packet duplication percentage"`
+	Correlation int `range:"0-100" description:"Correlation percentage"`
 	Direction   int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 	TargetApp   int `range:"0-0" dynamic:"true" description:"Target application (if any)"`
 }
@@ -411,11 +411,11 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client) string {
 }
 
 type NetworkCorruptSpec struct {
-	Corrupt     int `range:"1-100" description:"Packet corruption percentage"`
-	Correlation int `range:"0-100" description:"Correlation percentage"`
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int `range:"0-0" dynamic:"true" description:"Array"`
+	Corrupt     int `range:"1-100" description:"Packet corruption percentage"`
+	Correlation int `range:"0-100" description:"Correlation percentage"`
 	Direction   int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 	TargetApp   int `range:"0-0" dynamic:"true" description:"Target application (if any)"`
 }
@@ -438,12 +438,12 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client) string {
 }
 
 type NetworkBandwidthSpec struct {
-	Rate      int `range:"1-1000000" description:"Bandwidth rate in kbps"`
-	Limit     int `range:"1-10000" description:"Number of bytes that can be queued"`
-	Buffer    int `range:"1-10000" description:"Maximum amount of bytes available instantaneously"`
 	Duration  int `range:"1-60" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
+	Rate      int `range:"1-1000000" description:"Bandwidth rate in kbps"`
+	Limit     int `range:"1-10000" description:"Number of bytes that can be queued"`
+	Buffer    int `range:"1-10000" description:"Maximum amount of bytes available instantaneously"`
 	Direction int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 	TargetApp int `range:"0-0" dynamic:"true" description:"Target application (if any)"`
 }
@@ -970,12 +970,12 @@ type InjectionConf struct {
 	NetworkCorrupt      *NetworkCorruptSpec    `range:"0-6"`
 	NetworkBandwidth    *NetworkBandwidthSpec  `range:"0-7"`
 	NetworkPartition    *NetworkPartitionSpec  `range:"0-4"`
-	JVMLatency          *JVMLatencySpec        `range:"0-5"`
-	JVMReturn           *JVMReturnSpec         `range:"0-6"`
-	JVMException        *JVMExceptionSpec      `range:"0-5"`
+	JVMLatency          *JVMLatencySpec        `range:"0-4"`
+	JVMReturn           *JVMReturnSpec         `range:"0-5"`
+	JVMException        *JVMExceptionSpec      `range:"0-4"`
 	JVMGarbageCollector *JVMGCSpec             `range:"0-2"`
-	JVMCPUStress        *JVMCPUStressSpec      `range:"0-5"`
-	JVMMemoryStress     *JVMMemoryStressSpec   `range:"0-5"`
+	JVMCPUStress        *JVMCPUStressSpec      `range:"0-4"`
+	JVMMemoryStress     *JVMMemoryStressSpec   `range:"0-4"`
 	JVMMySQLLatency     *JVMMySQLLatencySpec   `range:"0-5"`
 	JVMMySQLException   *JVMMySQLExceptionSpec `range:"0-4"`
 }
