@@ -48,11 +48,7 @@ func NodeToMap(n *Node) map[string]any {
 func MapToNode(m map[string]any) (*Node, error) {
 	node := &Node{}
 
-	if valueFloat, ok := m["value"].(float64); ok {
-		node.Value = int(valueFloat)
-	}
-
-	if value, ok := m["value"].(int); ok {
+	if value, ok := parseValueToInt(m["value"]); ok {
 		node.Value = value
 	}
 
@@ -195,7 +191,7 @@ func processStructField(field reflect.StructField, val reflect.Value, node *Node
 		return processNestedStruct(fieldType, val, node)
 	}
 
-	return assignBasicType(field, val, node) // 传入整个node而非range
+	return assignBasicType(field, val, node)
 }
 
 func processNestedStruct(rt reflect.Type, val reflect.Value, node *Node) error {
@@ -261,6 +257,202 @@ func assignBasicType(field reflect.StructField, val reflect.Value, node *Node) e
 	return nil
 }
 
+// HumanizeMap converts a machine-readable chaos experiment map into a human-friendly structured format.
+func HumanizeMap(faultType int, m map[string]any) (map[string]any, error) {
+	chaosType := ChaosType(faultType)
+	injection := ChaosHandlers[chaosType]
+	rt := reflect.TypeOf(injection)
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+	}
+
+	node, err := MapToNode(m)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]any)
+	spec := make(map[string]any)
+	for key := range node.Children {
+		intKey, err := strconv.Atoi(key)
+		if err != nil {
+			return nil, fmt.Errorf("invalid non-numeric key: %s", key)
+		}
+
+		if intKey < 0 || intKey >= rt.NumField() {
+			return nil, fmt.Errorf("valid key should in [0-%d]: %s", rt.NumField()-1, key)
+		}
+	}
+
+	for i := range rt.NumField() {
+		field := rt.Field(i)
+
+		if n, exists := node.Children[strconv.Itoa(i)]; exists {
+			humanizeProcessField(i, field.Name, n.Value, result, spec)
+			continue
+		}
+
+		if !isOptional(field) {
+			return nil, fmt.Errorf("missing required key %d[%s] in %s", i, field.Name, ChaosTypeMap[chaosType])
+		}
+
+		start, _, err := getValueRange(field)
+		if err != nil {
+			return nil, err
+		}
+
+		humanizeProcessField(i, field.Name, start, result, spec)
+	}
+
+	if len(spec) != 0 {
+		result["Spec"] = spec
+	}
+
+	return result, nil
+}
+
+// UnhumanizeMap transforms a human-readable structured map back into the original numeric-keyed machine format.
+func UnhumanizeMap(faultType int, m map[string]any) (map[string]any, error) {
+	chaosType := ChaosType(faultType)
+	injection := ChaosHandlers[chaosType]
+	rt := reflect.TypeOf(injection)
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+	}
+
+	processedMap := make(map[string]struct{})
+	root := &Node{}
+	root.Children = make(map[string]*Node)
+
+	var spec map[string]any
+	if specVal, exists := m["Spec"]; exists {
+		var ok bool
+		if spec, ok = specVal.(map[string]any); !ok {
+			return nil, fmt.Errorf("spec must be a map")
+		}
+	}
+
+	for i := range 3 {
+		field := rt.Field(i)
+
+		var val int
+		switch i {
+		case 0:
+			value, exists := m[field.Name]
+			if !exists {
+				return nil, fmt.Errorf("missing required key %s in %s", field.Name, ChaosTypeMap[chaosType])
+			}
+
+			v, ok := parseValueToInt(value)
+			if !ok {
+				return nil, fmt.Errorf("invalid value in key %s in %s: %v", field.Name, ChaosTypeMap[chaosType], value)
+			}
+
+			val = v
+		case 1:
+			val = 0
+		case 2:
+			labels, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read labels: %w", err)
+			}
+
+			value, exists := m[field.Name]
+			if !exists {
+				return nil, fmt.Errorf("missing required key %s in %s", field.Name, ChaosTypeMap[chaosType])
+			}
+
+			v, ok := value.(string)
+			if !ok {
+				return nil, fmt.Errorf("invalid value in key %s in %s: %v", field.Name, ChaosTypeMap[chaosType], value)
+			}
+
+			index := find(labels, v)
+			if index == -1 {
+				return nil, fmt.Errorf("invalid value in key %s in %s: %v", field.Name, ChaosTypeMap[chaosType], value)
+			}
+
+			val = index
+		}
+
+		root.Children[strconv.Itoa(i)] = &Node{Value: val}
+		processedMap[field.Name] = struct{}{}
+	}
+
+	for i := 3; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+
+		if value, exists := spec[field.Name]; exists {
+			v, ok := parseValueToInt(value)
+			if !ok {
+				return nil, fmt.Errorf("invalid value in key %s in %s: %v", field.Name, ChaosTypeMap[chaosType], value)
+			}
+
+			root.Children[strconv.Itoa(i)] = &Node{Value: v}
+			processedMap[field.Name] = struct{}{}
+			continue
+		}
+
+		if !isOptional(field) {
+			return nil, fmt.Errorf("missing required key %s in %s", field.Name, ChaosTypeMap[chaosType])
+		}
+
+		start, _, err := getValueRange(field)
+		if err != nil {
+			return nil, err
+		}
+
+		root.Children[strconv.Itoa(i)] = &Node{Value: start}
+	}
+
+	for key := range m {
+		if _, exists := processedMap[key]; !exists && key != "Spec" {
+			return nil, fmt.Errorf("unknown key: %s", key)
+		}
+	}
+
+	if spec != nil {
+		for key := range spec {
+			if _, exists := processedMap[key]; !exists {
+				return nil, fmt.Errorf("unknown key in Spec: %s", key)
+			}
+		}
+	}
+
+	return NodeToMap(root), nil
+}
+
+func humanizeProcessField(index int, key string, value int, result, spec map[string]any) error {
+	if index >= 3 {
+		spec[key] = value
+	} else {
+		switch index {
+		case 0:
+			result[key] = value
+		case 1:
+			result[key] = TargetNamespace
+		case 2:
+			labels, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+			if err != nil {
+				return fmt.Errorf("failed to read labels: %w", err)
+			}
+
+			result[key] = labels[value]
+		}
+	}
+
+	return nil
+}
+
+func find[T comparable](slice []T, target T) int {
+	for i, v := range slice {
+		if v == target {
+			return i
+		}
+	}
+	return -1
+}
+
 func getValueRange(field reflect.StructField) (int, int, error) {
 	start, end, err := parseRangeTag(field.Tag.Get("range"))
 	if err != nil {
@@ -324,4 +516,22 @@ func parseRangeTag(tag string) (int, int, error) {
 	}
 
 	return start, end, nil
+}
+
+func parseValueToInt(value any) (int, bool) {
+	valFloat, ok := value.(float64)
+	if ok {
+		return int(valFloat), true
+	}
+
+	val, ok := value.(int)
+	if ok {
+		return val, true
+	}
+
+	return 0, false
+}
+
+func isOptional(field reflect.StructField) bool {
+	return field.Tag.Get("optional") != "" && field.Tag.Get("optional") == "true"
 }

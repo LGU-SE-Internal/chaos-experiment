@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/k0kubun/pp/v3"
 )
 
 func TestModel(t *testing.T) {
@@ -57,6 +59,7 @@ func TestModel(t *testing.T) {
 
 	fmt.Println("Correct?", reflect.DeepEqual(root, convertedNode))
 }
+
 func FillRandomValues(node *Node) error {
 	rand.Seed(time.Now().UnixNano())
 	return fillRandom(node)
@@ -100,4 +103,58 @@ func TestGenerateRandomAction(t *testing.T) {
 		}
 		fmt.Println("Correct?", reflect.DeepEqual(podNode, mappedNode))
 	}
+}
+
+func TestHumanizeMap(t *testing.T) {
+	m := map[string]any{
+		"children": map[string]any{
+			"0": map[string]any{
+				"value": 1,
+			},
+			"1": map[string]any{
+				"value": 0,
+			},
+			"2": map[string]any{
+				"value": 42,
+			},
+			"3": map[string]any{
+				"value": 10,
+			},
+			"4": map[string]any{
+				"value": 5,
+			},
+			"5": map[string]any{
+				"value": 3,
+			},
+		},
+	}
+
+	newMap, err := HumanizeMap(25, m)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	pp.Println(newMap)
+}
+
+func TestUnhumanizeMap(t *testing.T) {
+	m := map[string]any{
+		"Duration":  1,
+		"Namespace": "ts",
+		"AppName":   "ts-ui-dashboard",
+		"Spec": map[string]any{
+			"LatencyMs":  10,
+			"SQLType":    3,
+			"TableIndex": 5,
+		},
+	}
+
+	newMap, err := UnhumanizeMap(25, m)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	pp.Println(newMap)
 }
