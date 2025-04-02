@@ -300,31 +300,33 @@ func getDirection(directionCode int) chaosmeshv1alpha1.Direction {
 	return chaosmeshv1alpha1.To // Default to "To" direction
 }
 
-// Common function to create network chaos with direction and optional target
-func createNetworkChaosWithTargetDirection(cli cli.Client, action chaosmeshv1alpha1.NetworkChaosAction,
-	labelArr []string, appNameIdx int, targetAppIdx int, directionCode int,
-	duration *string, networkOpts ...chaos.OptNetworkChaos) string {
-
-	direction := getDirection(directionCode)
-	opts := []chaos.OptNetworkChaos{}
-
-	// Add target and direction if specified and valid
-	if targetAppIdx >= 0 && targetAppIdx < len(labelArr) {
-		targetApp := labelArr[targetAppIdx]
-		opts = append(opts, chaos.WithNetworkTargetAndDirection(TargetNamespace, targetApp, direction))
-	} else {
-		// Only set direction without target
-		opts = append(opts, chaos.WithNetworkDirection(direction))
-	}
-
-	// Add specific network options
-	opts = append(opts, networkOpts...)
-
-	// Create network chaos
-	return controllers.CreateNetworkChaos(cli, TargetNamespace, labelArr[appNameIdx],
-		action, duration, opts...)
+type NetworkPartitionSpec struct {
+	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"String"`
+	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
+	TargetIdx int `range:"0-0" dynamic:"true" description:"Target service index"`
+	Direction int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
+func (s *NetworkPartitionSpec) Create(cli cli.Client) string {
+	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if !ok {
+		return ""
+	}
+
+	duration := pointer.String(fmt.Sprintf("%dm", s.Duration))
+	direction := getDirection(s.Direction)
+
+	// Create network partition between the source and target services
+	opts := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+	}
+
+	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
+		chaosmeshv1alpha1.PartitionAction, duration, opts...)
+}
+
+// Update the NetworkDelaySpec to use the target service index
 type NetworkDelaySpec struct {
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
@@ -333,12 +335,12 @@ type NetworkDelaySpec struct {
 	Correlation int `range:"0-100" description:"Correlation percentage"`
 	Jitter      int `range:"0-1000" description:"Jitter in milliseconds"`
 	Direction   int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	TargetApp   int `range:"0-0" dynamic:"true" description:"Target application (if any)"`
+	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
 func (s *NetworkDelaySpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if !ok {
 		return ""
 	}
 
@@ -347,13 +349,19 @@ func (s *NetworkDelaySpec) Create(cli cli.Client) string {
 	correlation := fmt.Sprintf("%d", s.Correlation)
 	jitter := fmt.Sprintf("%dms", s.Jitter)
 	duration := pointer.String(fmt.Sprintf("%dm", s.Duration))
+	direction := getDirection(s.Direction)
 
-	// Use the common function with specific delay options
-	return createNetworkChaosWithTargetDirection(cli, chaosmeshv1alpha1.DelayAction,
-		labelArr, s.AppName, s.TargetApp, s.Direction, duration,
-		chaos.WithNetworkDelay(latency, correlation, jitter))
+	// Create network delay between the source and target services
+	opts := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+		chaos.WithNetworkDelay(latency, correlation, jitter),
+	}
+
+	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
+		chaosmeshv1alpha1.DelayAction, duration, opts...)
 }
 
+// Update the NetworkLossSpec to use the target service index
 type NetworkLossSpec struct {
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
@@ -361,12 +369,12 @@ type NetworkLossSpec struct {
 	Loss        int `range:"1-100" description:"Packet loss percentage"`
 	Correlation int `range:"0-100" description:"Correlation percentage"`
 	Direction   int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	TargetApp   int `range:"0-0" dynamic:"true" description:"Target application (if any)"`
+	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
 func (s *NetworkLossSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if !ok {
 		return ""
 	}
 
@@ -374,13 +382,19 @@ func (s *NetworkLossSpec) Create(cli cli.Client) string {
 	loss := fmt.Sprintf("%d", s.Loss)
 	correlation := fmt.Sprintf("%d", s.Correlation)
 	duration := pointer.String(fmt.Sprintf("%dm", s.Duration))
+	direction := getDirection(s.Direction)
 
-	// Use the common function with specific loss options
-	return createNetworkChaosWithTargetDirection(cli, chaosmeshv1alpha1.LossAction,
-		labelArr, s.AppName, s.TargetApp, s.Direction, duration,
-		chaos.WithNetworkLoss(loss, correlation))
+	// Create network loss between the source and target services
+	opts := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+		chaos.WithNetworkLoss(loss, correlation),
+	}
+
+	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
+		chaosmeshv1alpha1.LossAction, duration, opts...)
 }
 
+// Update the NetworkDuplicateSpec to use the target service index
 type NetworkDuplicateSpec struct {
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
@@ -388,12 +402,12 @@ type NetworkDuplicateSpec struct {
 	Duplicate   int `range:"1-100" description:"Packet duplication percentage"`
 	Correlation int `range:"0-100" description:"Correlation percentage"`
 	Direction   int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	TargetApp   int `range:"0-0" dynamic:"true" description:"Target application (if any)"`
+	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
 func (s *NetworkDuplicateSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if !ok {
 		return ""
 	}
 
@@ -401,13 +415,19 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client) string {
 	duplicate := fmt.Sprintf("%d", s.Duplicate)
 	correlation := fmt.Sprintf("%d", s.Correlation)
 	duration := pointer.String(fmt.Sprintf("%dm", s.Duration))
+	direction := getDirection(s.Direction)
 
-	// Use the common function with specific duplicate options
-	return createNetworkChaosWithTargetDirection(cli, chaosmeshv1alpha1.DuplicateAction,
-		labelArr, s.AppName, s.TargetApp, s.Direction, duration,
-		chaos.WithNetworkDuplicate(duplicate, correlation))
+	// Create network duplicate between the source and target services
+	opts := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+		chaos.WithNetworkDuplicate(duplicate, correlation),
+	}
+
+	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
+		chaosmeshv1alpha1.DuplicateAction, duration, opts...)
 }
 
+// Update the NetworkCorruptSpec to use the target service index
 type NetworkCorruptSpec struct {
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
@@ -415,12 +435,12 @@ type NetworkCorruptSpec struct {
 	Corrupt     int `range:"1-100" description:"Packet corruption percentage"`
 	Correlation int `range:"0-100" description:"Correlation percentage"`
 	Direction   int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	TargetApp   int `range:"0-0" dynamic:"true" description:"Target application (if any)"`
+	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
 func (s *NetworkCorruptSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if !ok {
 		return ""
 	}
 
@@ -428,13 +448,19 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client) string {
 	corrupt := fmt.Sprintf("%d", s.Corrupt)
 	correlation := fmt.Sprintf("%d", s.Correlation)
 	duration := pointer.String(fmt.Sprintf("%dm", s.Duration))
+	direction := getDirection(s.Direction)
 
-	// Use the common function with specific corrupt options
-	return createNetworkChaosWithTargetDirection(cli, chaosmeshv1alpha1.CorruptAction,
-		labelArr, s.AppName, s.TargetApp, s.Direction, duration,
-		chaos.WithNetworkCorrupt(corrupt, correlation))
+	// Create network corrupt between the source and target services
+	opts := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+		chaos.WithNetworkCorrupt(corrupt, correlation),
+	}
+
+	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
+		chaosmeshv1alpha1.CorruptAction, duration, opts...)
 }
 
+// Update the NetworkBandwidthSpec to use the target service index
 type NetworkBandwidthSpec struct {
 	Duration  int `range:"1-60" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
@@ -443,14 +469,13 @@ type NetworkBandwidthSpec struct {
 	Limit     int `range:"1-10000" description:"Number of bytes that can be queued"`
 	Buffer    int `range:"1-10000" description:"Maximum amount of bytes available instantaneously"`
 	Direction int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	TargetApp int `range:"0-0" dynamic:"true" description:"Target application (if any)"`
+	TargetIdx int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
 func (s *NetworkBandwidthSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if !ok {
 		return ""
-
 	}
 
 	// Convert rate from kbps to string with unit
@@ -458,36 +483,16 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client) string {
 	limit := uint32(s.Limit)
 	buffer := uint32(s.Buffer)
 	duration := pointer.String(fmt.Sprintf("%dm", s.Duration))
+	direction := getDirection(s.Direction)
 
-	// Use the common function with specific bandwidth options
-	return createNetworkChaosWithTargetDirection(cli, chaosmeshv1alpha1.BandwidthAction,
-		labelArr, s.AppName, s.TargetApp, s.Direction, duration,
-		chaos.WithNetworkBandwidth(rate, limit, buffer))
-}
-
-type NetworkPartitionSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
-	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
-	TargetApp int `range:"0-0" dynamic:"true" description:"Target application"`
-	Direction int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-}
-
-func (s *NetworkPartitionSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
-		return ""
+	// Create network bandwidth between the source and target services
+	opts := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+		chaos.WithNetworkBandwidth(rate, limit, buffer),
 	}
 
-	if s.TargetApp < 0 || s.TargetApp >= len(labelArr) {
-		return ""
-	}
-
-	duration := pointer.String(fmt.Sprintf("%dm", s.Duration))
-
-	// Use the common function for partition - this handles target and direction consistently
-	return createNetworkChaosWithTargetDirection(cli, chaosmeshv1alpha1.PartitionAction,
-		labelArr, s.AppName, s.TargetApp, s.Direction, duration)
+	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
+		chaosmeshv1alpha1.BandwidthAction, duration, opts...)
 }
 
 // DNSErrorSpec defines the DNS error chaos injection parameters
