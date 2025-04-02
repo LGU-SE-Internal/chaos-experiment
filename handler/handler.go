@@ -20,11 +20,9 @@ const TargetNamespace = "ts" // todo: make it dynamic (e.g. from config)
 const TargetLabelKey = "app"
 
 const (
-	// Default indicates an unknown Type.
-	Default ChaosType = iota
 
 	// PodChaos
-	PodKill
+	PodKill ChaosType = iota
 	PodFailure
 	ContainerKill
 
