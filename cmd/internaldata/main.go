@@ -8,6 +8,7 @@ import (
 
 	"github.com/CUHK-SE-Group/chaos-experiment/handler"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/networkdependencies"
+	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
 )
 
 func main() {
@@ -37,6 +38,12 @@ func main() {
 		listJVMMethods(os.Args[2])
 	case "list-jvm-services":
 		listJVMServices()
+	case "list-endpoints":
+		if len(os.Args) < 3 {
+			fmt.Println("Please provide a service name")
+			return
+		}
+		listServiceEndpoints(os.Args[2])
 	default:
 		printUsage()
 	}
@@ -49,6 +56,7 @@ func printUsage() {
 	fmt.Println("  cli list-all-dependencies        - List all service dependencies")
 	fmt.Println("  cli list-jvm-methods <service>   - List JVM methods for a specific service")
 	fmt.Println("  cli list-jvm-services            - List all Java services")
+	fmt.Println("  cli list-endpoints <service>     - List endpoints for a specific service")
 }
 
 func listNetworkServices() {
@@ -147,4 +155,44 @@ func listJVMServices() {
 		fmt.Printf("- %s\n", service)
 	}
 	fmt.Printf("Total: %d services\n", len(services))
+}
+
+func listServiceEndpoints(serviceName string) {
+	endpoints := serviceendpoints.GetEndpointsByService(serviceName)
+
+	if len(endpoints) == 0 {
+		fmt.Printf("No endpoints found for service: %s\n", serviceName)
+		return
+	}
+
+	fmt.Printf("Endpoints for service %s:\n", serviceName)
+
+	// Create a tabwriter for aligned output
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "Method\tRoute\tTarget Address\tTarget Port\tResponse Status")
+	fmt.Fprintln(w, "------\t-----\t-------------\t-----------\t--------------")
+
+	for _, endpoint := range endpoints {
+		method := endpoint.RequestMethod
+		if method == "" {
+			method = "N/A"
+		}
+		route := endpoint.Route
+		if route == "" {
+			route = "N/A"
+		}
+		status := endpoint.ResponseStatus
+		if status == "" {
+			status = "N/A"
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+			method,
+			route,
+			endpoint.ServerAddress,
+			endpoint.ServerPort,
+			status)
+	}
+
+	w.Flush()
+	fmt.Printf("Total: %d endpoints\n", len(endpoints))
 }
