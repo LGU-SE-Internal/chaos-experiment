@@ -1,8 +1,23 @@
-# Init
+# Internal Data Generator
+
+## Analyzing Java Services
+```bash
+# Build the generator
+go build -o bin/generate-java-methods cmd/javaanalyzer/main.go
+
+# Run the generator with path to Java services
+./bin/generate-java-methods --services /path/to/java/services
+```
+
+This will generate a file in `internal/javaclassmethods/javaclassmethods.go` with all method information.
+
+## Analyzing service endpoint
 
 ```bash
-git submodule update --init --depth 1 --recursive
+go run cmd/clickhouseanalyzer/main.go --host=10.10.10.58 --username=default --password=password
 ```
+This will generate a file in `internal/serviceendpoints/serviceendpoints.go` with all service endpoint information.
+
 
 # Example
 
@@ -36,21 +51,9 @@ appList := []string{"checkoutservice", "recommendationservice", "emailservice", 
     ```
 
 ## JVM Chaos
-Before using JVM Chaos, you need to analyze the Java services to extract method information:
-
-### Analyzing Java Services
-```bash
-# Build the generator
-go build -o bin/generate-java-methods cmd/generate/main.go
-
-# Run the generator with path to Java services
-./bin/generate-java-methods --services /path/to/java/services
-```
-
-This will generate a file in `internal/javaclassmethods/javaclassmethods.go` with all method information.
 
 
-### JVM Chaos Examples
+
 - JVM Latency Injection
     ```go
     appName := "ts-user-service"
