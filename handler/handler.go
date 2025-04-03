@@ -713,47 +713,44 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client) string {
 
 // DNSErrorSpec defines the DNS error chaos injection parameters
 type DNSErrorSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
-	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int `range:"0-0" dynamic:"true" description:"DNS Target Index"`
 }
 
 func (s *DNSErrorSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	serviceName, patterns, ok := getServiceAndPatternsForDNSChaos(s.AppName, s.EndpointIndex)
+	if !ok {
 		return ""
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.ErrorAction
 
-	// Use a simple pattern that matches all domains
-	patterns := []string{"*"}
-
-	return controllers.CreateDnsChaos(cli, TargetNamespace, labelArr[s.AppName], action, patterns, duration)
+	return controllers.CreateDnsChaos(cli, TargetNamespace, serviceName, action, patterns, duration)
 }
 
 // DNSRandomSpec defines the DNS random chaos injection parameters
 type DNSRandomSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
-	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int `range:"0-0" dynamic:"true" description:"DNS Target Index"`
 }
 
 func (s *DNSRandomSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+	serviceName, patterns, ok := getServiceAndPatternsForDNSChaos(s.AppName, s.EndpointIndex)
+	if !ok {
 		return ""
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.RandomAction
 
-	// Use a simple pattern that matches all domains
-	patterns := []string{"*"}
-
-	return controllers.CreateDnsChaos(cli, TargetNamespace, labelArr[s.AppName], action, patterns, duration)
+	return controllers.CreateDnsChaos(cli, TargetNamespace, serviceName, action, patterns, duration)
 }
+
 
 // JVM Return Value Type
 type JVMReturnType int
@@ -1202,8 +1199,8 @@ type InjectionConf struct {
 	HTTPRequestReplacePath   *HTTPRequestReplacePathSpec   `range:"0-3"`
 	HTTPRequestReplaceMethod *HTTPRequestReplaceMethodSpec `range:"0-4"`
 	HTTPResponseReplaceCode  *HTTPResponseReplaceCodeSpec  `range:"0-4"`
-	DNSError                 *DNSErrorSpec                 `range:"0-2"`
-	DNSRandom                *DNSRandomSpec                `range:"0-2"`
+	DNSError                 *DNSErrorSpec                 `range:"0-3"`
+	DNSRandom                *DNSRandomSpec                `range:"0-3"`
 	TimeSkew                 *TimeSkewSpec                 `range:"0-3"`
 	NetworkDelay             *NetworkDelaySpec             `range:"0-7"`
 	NetworkLoss              *NetworkLossSpec              `range:"0-6"`
