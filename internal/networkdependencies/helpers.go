@@ -11,6 +11,21 @@ type ServiceDependency struct {
 	ConnectionDetails string
 }
 
+// Function variables that can be replaced during testing
+var (
+	// GetServicePairByServiceAndIndex retrieves the target service for a source service based on index
+	GetServicePairByServiceAndIndex = getServicePairByServiceAndIndex
+
+	// GetDependenciesForService returns all target services for a given source service
+	GetDependenciesForService = getDependenciesForService
+
+	// ListAllServiceNames returns a list of all service names with dependencies
+	ListAllServiceNames = listAllServiceNames
+
+	// GetAllServicePairs returns all service dependency pairs
+	GetAllServicePairs = getAllServicePairs
+)
+
 // dependencyGraph is a map of service to its dependent services
 var dependencyGraph map[string][]string
 
@@ -67,7 +82,7 @@ func addDependency(sourceService, targetService string) {
 }
 
 // GetDependenciesForService returns all services that a given service communicates with
-func GetDependenciesForService(serviceName string) []string {
+func getDependenciesForService(serviceName string) []string {
 	if dependencies, exists := dependencyGraph[serviceName]; exists {
 		return dependencies
 	}
@@ -75,7 +90,7 @@ func GetDependenciesForService(serviceName string) []string {
 }
 
 // GetAllServicePairs returns a list of all available service communication pairs
-func GetAllServicePairs() []ServiceDependency {
+func getAllServicePairs() []ServiceDependency {
 	var pairs []ServiceDependency
 
 	for source, targets := range dependencyGraph {
@@ -92,7 +107,7 @@ func GetAllServicePairs() []ServiceDependency {
 }
 
 // GetServicePair returns a specific service pair by index
-func GetServicePair(index int) (source, target string, ok bool) {
+func getServicePair(index int) (source, target string, ok bool) {
 	pairs := GetAllServicePairs()
 	if index < 0 || index >= len(pairs) {
 		return "", "", false
@@ -102,7 +117,7 @@ func GetServicePair(index int) (source, target string, ok bool) {
 }
 
 // GetServicePairByServiceAndIndex returns a target service for a given source service by index
-func GetServicePairByServiceAndIndex(serviceName string, index int) (target string, ok bool) {
+func getServicePairByServiceAndIndex(serviceName string, index int) (target string, ok bool) {
 	dependencies := GetDependenciesForService(serviceName)
 
 	if index < 0 || index >= len(dependencies) {
@@ -118,7 +133,7 @@ func CountDependencies(serviceName string) int {
 }
 
 // ListAllServiceNames returns a list of all available service names with dependencies
-func ListAllServiceNames() []string {
+func listAllServiceNames() []string {
 	serviceNames := []string{}
 
 	for service := range dependencyGraph {

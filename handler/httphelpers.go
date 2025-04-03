@@ -120,7 +120,7 @@ func AddCommonHTTPOptions(endpoint *HTTPEndpoint, opts []chaos.OptHTTPChaos) []c
 // selectHTTPEndpointForService selects an HTTP endpoint for a given service based on the endpoint index
 // and returns the endpoint details and whether the selection was successful
 func selectHTTPEndpointForService(serviceName string, endpointIndex int) (*HTTPEndpoint, bool) {
-	endpoints := serviceendpoints.GetEndpointsByService(serviceName)
+	endpoints := endpointsGetter(serviceName)
 
 	// Filter out non-HTTP endpoints (e.g., database connections)
 	httpEndpoints := make([]serviceendpoints.ServiceEndpoint, 0)
@@ -167,7 +167,7 @@ func getServiceAndEndpointForHTTPChaos(appNameIndex int, endpointIndex int) (ser
 
 // GetHTTPEndpoints returns all available HTTP endpoints for a service
 func GetHTTPEndpoints(serviceName string) []HTTPEndpoint {
-	endpoints := serviceendpoints.GetEndpointsByService(serviceName)
+	endpoints := endpointsGetter(serviceName)
 	result := make([]HTTPEndpoint, 0)
 
 	for _, ep := range endpoints {

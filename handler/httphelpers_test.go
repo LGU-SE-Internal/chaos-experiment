@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/CUHK-SE-Group/chaos-experiment/chaos"
+	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/pointer"
 )
 
@@ -185,17 +186,28 @@ func TestAddCommonHTTPOptions(t *testing.T) {
 }
 
 func TestSelectHTTPEndpointForService(t *testing.T) {
+	cleanup := setupHTTPMocks()
+	defer cleanup()
+
 	tests := []struct {
 		name          string
 		serviceName   string
 		endpointIndex int
 		wantOK        bool
+		wantRoute     string
 	}{
 		{
-			name:          "Valid service and endpoint index",
-			serviceName:   "ts-ui-dashboard",
+			name:          "Valid service with API endpoint",
+			serviceName:   "ts-auth-service",
 			endpointIndex: 0,
 			wantOK:        true,
+			wantRoute:     "/api/v1/verifycode",
+		},
+		{
+			name:          "Valid service with database endpoint should be filtered out",
+			serviceName:   "ts-auth-service",
+			endpointIndex: 1, // After filtering, this would be out of bounds
+			wantOK:        false,
 		},
 		{
 			name:          "Valid service but negative endpoint index",
@@ -221,17 +233,14 @@ func TestSelectHTTPEndpointForService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			endpoint, ok := selectHTTPEndpointForService(tt.serviceName, tt.endpointIndex)
 
-			if ok != tt.wantOK {
-				t.Errorf("selectHTTPEndpointForService() ok = %v, want %v", ok, tt.wantOK)
-				return
-			}
+			assert.Equal(t, tt.wantOK, ok, "Unexpected ok value")
 
 			if tt.wantOK {
-				if endpoint == nil {
-					t.Errorf("selectHTTPEndpointForService() returned nil endpoint when ok = true")
-				} else if endpoint.ServiceName != tt.serviceName {
-					t.Errorf("selectHTTPEndpointForService() endpoint ServiceName = %v, want %v",
-						endpoint.ServiceName, tt.serviceName)
+				assert.NotNil(t, endpoint, "Endpoint should not be nil when ok=true")
+				assert.Equal(t, tt.serviceName, endpoint.ServiceName, "Endpoint ServiceName doesn't match")
+
+				if tt.wantRoute != "" {
+					assert.Equal(t, tt.wantRoute, endpoint.Route, "Endpoint Route doesn't match expected")
 				}
 			}
 		})
@@ -239,7 +248,7 @@ func TestSelectHTTPEndpointForService(t *testing.T) {
 }
 
 func TestGetServiceAndEndpointForHTTPChaos(t *testing.T) {
-	cleanup := setupMocks()
+	cleanup := setupHTTPMocks()
 	defer cleanup()
 
 	tests := []struct {
@@ -248,17 +257,27 @@ func TestGetServiceAndEndpointForHTTPChaos(t *testing.T) {
 		endpointIndex  int
 		wantSourceName string
 		wantOK         bool
+		wantRoute      string
 	}{
 		{
 			name:           "Valid app and endpoint indices",
-			appNameIndex:   0,
+			appNameIndex:   0, // ts-auth-service
 			endpointIndex:  0,
 			wantSourceName: "ts-auth-service",
 			wantOK:         true,
+			wantRoute:      "/api/v1/verifycode",
+		},
+		{
+			name:           "UI Dashboard service with login endpoint",
+			appNameIndex:   5, // ts-ui-dashboard
+			endpointIndex:  0,
+			wantSourceName: "ts-ui-dashboard",
+			wantOK:         true,
+			wantRoute:      "/api/v1/users/login",
 		},
 		{
 			name:           "Invalid app index",
-			appNameIndex:   10,
+			appNameIndex:   20,
 			endpointIndex:  0,
 			wantSourceName: "",
 			wantOK:         false,
@@ -276,18 +295,14 @@ func TestGetServiceAndEndpointForHTTPChaos(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(tt.appNameIndex, tt.endpointIndex)
 
-			if ok != tt.wantOK {
-				t.Errorf("getServiceAndEndpointForHTTPChaos() ok = %v, want %v", ok, tt.wantOK)
-				return
-			}
+			assert.Equal(t, tt.wantOK, ok, "Unexpected ok value")
+			assert.Equal(t, tt.wantSourceName, serviceName, "Service name doesn't match expected")
 
 			if tt.wantOK {
-				if serviceName != tt.wantSourceName {
-					t.Errorf("getServiceAndEndpointForHTTPChaos() serviceName = %v, want %v", serviceName, tt.wantSourceName)
-				}
+				assert.NotNil(t, endpoint, "Endpoint should not be nil when ok=true")
 
-				if endpoint == nil {
-					t.Errorf("getServiceAndEndpointForHTTPChaos() returned nil endpoint when ok = true")
+				if tt.wantRoute != "" {
+					assert.Equal(t, tt.wantRoute, endpoint.Route, "Endpoint Route doesn't match expected")
 				}
 			}
 		})
@@ -295,19 +310,37 @@ func TestGetServiceAndEndpointForHTTPChaos(t *testing.T) {
 }
 
 func TestGetHTTPEndpoints(t *testing.T) {
+	cleanup := setupHTTPMocks()
+	defer cleanup()
+
 	tests := []struct {
 		name        string
 		serviceName string
+		wantCount   int
 		wantEmpty   bool
 	}{
 		{
-			name:        "Service with HTTP endpoints",
+			name:        "Service with valid HTTP endpoints",
 			serviceName: "ts-ui-dashboard",
+			wantCount:   2, // Two HTTP endpoints in mock data
 			wantEmpty:   false,
+		},
+		{
+			name:        "Service with mixed endpoints (HTTP and DB)",
+			serviceName: "ts-auth-service",
+			wantCount:   1, // Only one HTTP endpoint, filtering out DB
+			wantEmpty:   false,
+		},
+		{
+			name:        "Service with no endpoints",
+			serviceName: "ts-empty-service",
+			wantCount:   0,
+			wantEmpty:   true,
 		},
 		{
 			name:        "Non-existent service",
 			serviceName: "non-existent-service",
+			wantCount:   0,
 			wantEmpty:   true,
 		},
 	}
@@ -316,113 +349,113 @@ func TestGetHTTPEndpoints(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			endpoints := GetHTTPEndpoints(tt.serviceName)
 
-			if tt.wantEmpty && len(endpoints) > 0 {
-				t.Errorf("GetHTTPEndpoints() returned %d endpoints, expected empty list", len(endpoints))
-			}
+			assert.Equal(t, tt.wantCount, len(endpoints), "Unexpected number of endpoints")
+			assert.Equal(t, tt.wantEmpty, len(endpoints) == 0, "Unexpected empty status")
 
-			if !tt.wantEmpty && len(endpoints) == 0 {
-				t.Errorf("GetHTTPEndpoints() returned empty list, expected endpoints")
+			// Verify some properties of non-empty endpoint lists
+			if !tt.wantEmpty {
+				for _, ep := range endpoints {
+					assert.Equal(t, tt.serviceName, ep.ServiceName, "Endpoint ServiceName doesn't match service")
+					assert.NotEmpty(t, ep.Route, "HTTP endpoint should have a route")
+				}
 			}
 		})
 	}
 }
 
 func TestListHTTPServiceNames(t *testing.T) {
+	cleanup := setupHTTPMocks()
+	defer cleanup()
+
 	serviceNames := ListHTTPServiceNames()
 
 	// Check that we get back a non-empty list
-	if len(serviceNames) == 0 {
-		t.Errorf("ListHTTPServiceNames() returned empty list, expected service names")
-	}
+	assert.NotEmpty(t, serviceNames, "ListHTTPServiceNames() returned empty list")
 
-	// Check that the list contains the expected service names
+	// Check that the list contains expected service names
 	expectedServices := []string{
-		"ts-ui-dashboard",
+		"ts-auth-service",
+		"ts-order-service",
 		"ts-travel-service",
-		"ts-food-service",
+		"ts-ui-dashboard",
 	}
 
+	// Verify at least some of our expected services are in the list
+	foundCount := 0
 	for _, expected := range expectedServices {
-		found := false
 		for _, actual := range serviceNames {
 			if actual == expected {
-				found = true
+				foundCount++
 				break
 			}
 		}
-		if !found {
-			t.Logf("ListHTTPServiceNames() missing expected service: %s", expected)
-			// Not failing the test as exact service list might change
-		}
 	}
+
+	// At least some of our expected services should be present
+	assert.Greater(t, foundCount, 0, "None of the expected services found in result")
 }
 
 func TestCountHTTPEndpoints(t *testing.T) {
+	cleanup := setupHTTPMocks()
+	defer cleanup()
+
 	tests := []struct {
 		name        string
 		serviceName string
-		wantGreater bool
-		compareWith int
+		wantCount   int
 	}{
 		{
-			name:        "Service with many HTTP endpoints",
+			name:        "Service with multiple HTTP endpoints",
 			serviceName: "ts-ui-dashboard",
-			wantGreater: true,
-			compareWith: 5,
+			wantCount:   2,
+		},
+		{
+			name:        "Service with one HTTP endpoint",
+			serviceName: "ts-auth-service",
+			wantCount:   1,
+		},
+		{
+			name:        "Service with no HTTP endpoints",
+			serviceName: "ts-empty-service",
+			wantCount:   0,
 		},
 		{
 			name:        "Non-existent service",
 			serviceName: "non-existent-service",
-			wantGreater: false,
-			compareWith: 0,
+			wantCount:   0,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			count := CountHTTPEndpoints(tt.serviceName)
-
-			if tt.wantGreater && count <= tt.compareWith {
-				t.Errorf("CountHTTPEndpoints() returned %d, expected > %d", count, tt.compareWith)
-			}
-
-			if !tt.wantGreater && count != tt.compareWith {
-				t.Errorf("CountHTTPEndpoints() returned %d, expected %d", count, tt.compareWith)
-			}
+			assert.Equal(t, tt.wantCount, count, "Count doesn't match expected")
 		})
 	}
 }
 
 func TestHTTPHelpersIntegration(t *testing.T) {
+	cleanup := setupHTTPMocks()
+	defer cleanup()
+
 	// Test that our helper functions work well together
 	serviceNames := ListHTTPServiceNames()
-	if len(serviceNames) == 0 {
-		t.Fatal("No service names returned")
-	}
+	assert.NotEmpty(t, serviceNames, "No service names returned")
 
-	serviceName := serviceNames[0]
+	serviceName := "ts-ui-dashboard" // Use a service we know has HTTP endpoints
 	endpoints := GetHTTPEndpoints(serviceName)
-	if len(endpoints) == 0 {
-		t.Fatalf("No endpoints returned for service %s", serviceName)
-	}
+	assert.NotEmpty(t, endpoints, "No endpoints returned for service")
 
 	// Verify that counting endpoints works
 	count := CountHTTPEndpoints(serviceName)
-	if count != len(endpoints) {
-		t.Errorf("CountHTTPEndpoints() = %d, want %d", count, len(endpoints))
-	}
+	assert.Equal(t, len(endpoints), count, "CountHTTPEndpoints() returned unexpected count")
 
 	// Verify that selecting an endpoint works
 	endpoint, ok := selectHTTPEndpointForService(serviceName, 0)
-	if !ok {
-		t.Errorf("selectHTTPEndpointForService() failed for valid service and index")
-	}
+	assert.True(t, ok, "selectHTTPEndpointForService() failed for valid service and index")
+	assert.NotNil(t, endpoint, "selectHTTPEndpointForService() returned nil endpoint when ok = true")
 
-	if endpoint == nil {
-		t.Fatalf("selectHTTPEndpointForService() returned nil endpoint when ok = true")
-	}
-
-	// Check that the selected endpoint properties match one of the endpoints from GetHTTPEndpoints
+	// Check that the selected endpoint properties match one from GetHTTPEndpoints
 	found := false
 	for _, ep := range endpoints {
 		if ep.Route == endpoint.Route && ep.Method == endpoint.Method {
@@ -430,35 +463,28 @@ func TestHTTPHelpersIntegration(t *testing.T) {
 			break
 		}
 	}
-
-	if !found {
-		t.Errorf("selectHTTPEndpointForService() returned an endpoint not found in GetHTTPEndpoints()")
-	}
+	assert.True(t, found, "selectHTTPEndpointForService() returned an endpoint not in GetHTTPEndpoints()")
 
 	// Test AddCommonHTTPOptions
 	opts := []chaos.OptHTTPChaos{}
 	opts = AddCommonHTTPOptions(endpoint, opts)
-	if len(opts) == 0 {
-		t.Errorf("AddCommonHTTPOptions() returned empty options list")
-	}
+	assert.NotEmpty(t, opts, "AddCommonHTTPOptions() returned empty options list")
 }
 
 func TestHTTPHelpersWithMocks(t *testing.T) {
-	cleanup := setupMocks()
+	cleanup := setupHTTPMocks()
 	defer cleanup()
 
 	// Test getServiceAndEndpointForHTTPChaos with the mocked data
 	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(0, 0)
 
-	if serviceName != "ts-auth-service" {
-		t.Errorf("getServiceAndEndpointForHTTPChaos() with mocked data returned serviceName = %v, want %v",
-			serviceName, "ts-auth-service")
-	}
+	assert.Equal(t, "ts-auth-service", serviceName, "Unexpected service name")
+	assert.True(t, ok, "Expected ok to be true with valid mock data")
+	assert.NotNil(t, endpoint, "Expected non-nil endpoint with valid mock data")
 
-	// Depending on whether the mock service has HTTP endpoints, check the outcome
-	if ok {
-		if endpoint == nil {
-			t.Errorf("getServiceAndEndpointForHTTPChaos() returned nil endpoint when ok = true")
-		}
+	if endpoint != nil {
+		assert.Equal(t, "/api/v1/verifycode", endpoint.Route, "Unexpected route in endpoint")
+		assert.Equal(t, "POST", endpoint.Method, "Unexpected method in endpoint")
+		assert.Equal(t, "ts-verification-code-service", endpoint.TargetService, "Unexpected target service in endpoint")
 	}
 }

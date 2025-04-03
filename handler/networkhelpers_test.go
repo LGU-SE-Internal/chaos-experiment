@@ -2,13 +2,20 @@ package handler
 
 import (
 	"testing"
+
+	"github.com/CUHK-SE-Group/chaos-experiment/handler/testdata"
 )
 
-// We'll reuse the mockGetLabels and setupMocks functions from jvmhelpers_test.go
-
 func TestSelectNetworkTargetForService(t *testing.T) {
-	cleanup := setupMocks()
+	// Setup mocks for network dependencies
+	cleanup := testdata.SetupNetworkDependenciesMock()
 	defer cleanup()
+
+	// Setup mock for labels
+	originalLabelsGetter := labelsGetter
+	labelsGetter = testdata.MockGetLabels
+	defer func() { labelsGetter = originalLabelsGetter }()
+
 	tests := []struct {
 		name           string
 		sourceName     string
@@ -62,8 +69,9 @@ func TestSelectNetworkTargetForService(t *testing.T) {
 	}
 }
 
+
 func TestGetServiceAndTargetForNetworkChaos(t *testing.T) {
-	cleanup := setupMocks()
+	cleanup := setupNetworkMocks() // Update the function call
 	defer cleanup()
 
 	tests := []struct {
@@ -79,7 +87,7 @@ func TestGetServiceAndTargetForNetworkChaos(t *testing.T) {
 			appNameIndex:   0,
 			targetIndex:    0,
 			wantSourceName: "ts-auth-service",
-			wantTargetName: "ts-ui-dashboard", // Assuming this is the first dependency
+			wantTargetName: "ts-verification-code-service",
 			wantOK:         true,
 		},
 		{
@@ -258,7 +266,7 @@ func TestNetworkHelpersIntegration(t *testing.T) {
 }
 
 func TestNetworkHelpersWithMocks(t *testing.T) {
-	cleanup := setupMocks()
+	cleanup := setupNetworkMocks() // Update the function call
 	defer cleanup()
 
 	// Test getServiceAndTargetForNetworkChaos with the mocked data

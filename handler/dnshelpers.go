@@ -4,10 +4,11 @@ import (
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
 )
 
+
 // selectDNSPatternsForService selects server addresses to use as patterns for DNS chaos
 // based on the service name and endpoint index
 func selectDNSPatternsForService(serviceName string, endpointIndex int) ([]string, bool) {
-	endpoints := serviceendpoints.GetEndpointsByService(serviceName)
+	endpoints := endpointsGetter(serviceName)
 
 	// Filter out endpoints with empty server addresses
 	validEndpoints := make([]serviceendpoints.ServiceEndpoint, 0)
@@ -56,20 +57,20 @@ func getServiceAndPatternsForDNSChaos(appNameIndex int, endpointIndex int) (serv
 
 // GetDNSEndpoints returns all unique server addresses that can be targeted by DNS chaos
 func GetDNSEndpoints(serviceName string) []string {
-	endpoints := serviceendpoints.GetEndpointsByService(serviceName)
+	endpoints := endpointsGetter(serviceName)
 	uniqueAddresses := make(map[string]bool)
-	
+
 	for _, ep := range endpoints {
 		if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
 			uniqueAddresses[ep.ServerAddress] = true
 		}
 	}
-	
+
 	result := make([]string, 0, len(uniqueAddresses))
 	for addr := range uniqueAddresses {
 		result = append(result, addr)
 	}
-	
+
 	return result
 }
 
