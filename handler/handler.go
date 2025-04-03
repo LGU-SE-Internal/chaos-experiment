@@ -751,7 +751,6 @@ func (s *DNSRandomSpec) Create(cli cli.Client) string {
 	return controllers.CreateDnsChaos(cli, TargetNamespace, serviceName, action, patterns, duration)
 }
 
-
 // JVM Return Value Type
 type JVMReturnType int
 
@@ -1218,7 +1217,7 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-4"`
 }
 
-func (ic *InjectionConf) Create(cli cli.Client) string {
+func (ic *InjectionConf) Create(cli cli.Client) (Injection, string) {
 	val := reflect.ValueOf(ic).Elem()
 
 	for i := range val.NumField() {
@@ -1228,9 +1227,8 @@ func (ic *InjectionConf) Create(cli cli.Client) string {
 		}
 
 		injectable, _ := field.Interface().(Injection)
-
-		return injectable.Create(cli)
+		return injectable, injectable.Create(cli)
 	}
 
-	return ""
+	return nil, ""
 }
