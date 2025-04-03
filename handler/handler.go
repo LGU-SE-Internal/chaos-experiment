@@ -20,7 +20,6 @@ const TargetNamespace = "ts" // todo: make it dynamic (e.g. from config)
 const TargetLabelKey = "app"
 
 const (
-
 	// PodChaos
 	PodKill ChaosType = iota
 	PodFailure
@@ -31,10 +30,15 @@ const (
 	CPUStress
 
 	// HTTPChaos
-	HTTPAbort
-	HTTPDelay
-	HTTPReplace
-	HTTPPatch
+	HTTPRequestAbort
+	HTTPResponseAbort
+	HTTPRequestDelay
+	HTTPResponseDelay
+	HTTPResponseReplaceBody
+	HTTPResponsePatchBody
+	HTTPRequestReplacePath
+	HTTPRequestReplaceMethod
+	HTTPResponseReplaceCode
 
 	// DNSChaos
 	DNSError
@@ -62,34 +66,39 @@ const (
 	JVMMySQLException
 )
 
-// 定义 ChaosType 对应的 map
+// Define ChaosType to name mapping
 var ChaosTypeMap = map[ChaosType]string{
-	PodKill:             "PodKill",
-	PodFailure:          "PodFailure",
-	ContainerKill:       "ContainerKill",
-	MemoryStress:        "MemoryStress",
-	CPUStress:           "CPUStress",
-	HTTPAbort:           "HTTPAbort",
-	HTTPDelay:           "HTTPDelay",
-	HTTPReplace:         "HTTPReplace",
-	HTTPPatch:           "HTTPPatch",
-	DNSError:            "DNSError",
-	DNSRandom:           "DNSRandom",
-	TimeSkew:            "TimeSkew",
-	NetworkDelay:        "NetworkDelay",
-	NetworkLoss:         "NetworkLoss",
-	NetworkDuplicate:    "NetworkDuplicate",
-	NetworkCorrupt:      "NetworkCorrupt",
-	NetworkBandwidth:    "NetworkBandwidth",
-	NetworkPartition:    "NetworkPartition",
-	JVMLatency:          "JVMLatency",
-	JVMReturn:           "JVMReturn",
-	JVMException:        "JVMException",
-	JVMGarbageCollector: "JVMGarbageCollector",
-	JVMCPUStress:        "JVMCPUStress",
-	JVMMemoryStress:     "JVMMemoryStress",
-	JVMMySQLLatency:     "JVMMySQLLatency",
-	JVMMySQLException:   "JVMMySQLException",
+	PodKill:                  "PodKill",
+	PodFailure:               "PodFailure",
+	ContainerKill:            "ContainerKill",
+	MemoryStress:             "MemoryStress",
+	CPUStress:                "CPUStress",
+	HTTPRequestAbort:         "HTTPRequestAbort",
+	HTTPResponseAbort:        "HTTPResponseAbort",
+	HTTPRequestDelay:         "HTTPRequestDelay",
+	HTTPResponseDelay:        "HTTPResponseDelay",
+	HTTPResponseReplaceBody:  "HTTPResponseReplaceBody",
+	HTTPResponsePatchBody:    "HTTPResponsePatchBody",
+	HTTPRequestReplacePath:   "HTTPRequestReplacePath",
+	HTTPRequestReplaceMethod: "HTTPRequestReplaceMethod",
+	HTTPResponseReplaceCode:  "HTTPResponseReplaceCode",
+	DNSError:                 "DNSError",
+	DNSRandom:                "DNSRandom",
+	TimeSkew:                 "TimeSkew",
+	NetworkDelay:             "NetworkDelay",
+	NetworkLoss:              "NetworkLoss",
+	NetworkDuplicate:         "NetworkDuplicate",
+	NetworkCorrupt:           "NetworkCorrupt",
+	NetworkBandwidth:         "NetworkBandwidth",
+	NetworkPartition:         "NetworkPartition",
+	JVMLatency:               "JVMLatency",
+	JVMReturn:                "JVMReturn",
+	JVMException:             "JVMException",
+	JVMGarbageCollector:      "JVMGarbageCollector",
+	JVMCPUStress:             "JVMCPUStress",
+	JVMMemoryStress:          "JVMMemoryStress",
+	JVMMySQLLatency:          "JVMMySQLLatency",
+	JVMMySQLException:        "JVMMySQLException",
 }
 
 // GetChaosTypeName 根据 ChaosType 获取名称
@@ -100,34 +109,9 @@ func GetChaosTypeName(c ChaosType) string {
 	return "Unknown"
 }
 
-type HTTPChaosTarget int
-
-const (
-	Request  HTTPChaosTarget = 1
-	Response HTTPChaosTarget = 2
-)
-
 type Injection interface {
 	Create(cli cli.Client) string
 }
-
-var httpChaosTargetMap = map[HTTPChaosTarget]chaosmeshv1alpha1.PodHttpChaosTarget{
-	Request:  chaosmeshv1alpha1.PodHttpRequest,
-	Response: chaosmeshv1alpha1.PodHttpResponse,
-}
-
-type HTTPReplaceBody int
-
-const (
-	Blank  HTTPReplaceBody = 1
-	Random HTTPReplaceBody = 2
-)
-
-var httpReplaceBodyMap = map[HTTPReplaceBody]chaos.OptHTTPChaos{
-	Blank:  chaos.WithReplaceBody([]byte("")),
-	Random: chaos.WithRandomReplaceBody(),
-}
-
 type ContainerKillSpec struct {
 	Duration  int `range:"1-60" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
@@ -218,52 +202,284 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client) string {
 	return controllers.CreateStressChaos(cli, TargetNamespace, labelArr[s.AppName], stressors, "memory-exhaustion", pointer.String(strconv.Itoa(s.Duration)+"m"))
 }
 
-type HTTPChaosReplaceSpec struct {
-	Duration    int             `range:"1-60" description:"Time Unit Minute"`
-	Namespace   int             `range:"0-0" dynamic:"true" description:"String"`
-	AppName     int             `range:"0-0" dynamic:"true" description:"Array"`
-	HTTPTarget  HTTPChaosTarget `range:"1-2" description:"HTTP Phase Request/Response"`
-	ReplaceBody HTTPReplaceBody `range:"1-2" description:"Body Replacement Blank/Random"`
+// HTTP Chaos Specs
+
+// HTTPRequestAbortSpec defines HTTP request abort chaos
+type HTTPRequestAbortSpec struct {
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
 }
 
-func (s *HTTPChaosReplaceSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
+func (s *HTTPRequestAbortSpec) Create(cli cli.Client) string {
+	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if !ok {
 		return ""
 	}
+
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
-
-	target := httpChaosTargetMap[s.HTTPTarget]
-	opts := []chaos.OptHTTPChaos{
-		chaos.WithTarget(target),
-		chaos.WithPort(8080),
-		httpReplaceBodyMap[s.ReplaceBody],
-	}
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, labelArr[s.AppName], fmt.Sprintf("%s-replace", target), duration, opts...)
-}
-
-type HTTPChaosAbortSpec struct {
-	Duration   int             `range:"1-60" description:"Time Unit Minute"`
-	Namespace  int             `range:"0-0" dynamic:"true" description:"String"`
-	AppName    int             `range:"0-0" dynamic:"true" description:"Array"`
-	HTTPTarget HTTPChaosTarget `range:"1-2" description:"HTTP Phase Request/Response"`
-}
-
-func (s *HTTPChaosAbortSpec) Create(cli cli.Client) string {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-	if err != nil {
-		return ""
-	}
-	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
-
 	abort := true
-	target := httpChaosTargetMap[s.HTTPTarget]
+
+	// Create options with endpoint-specific values
 	opts := []chaos.OptHTTPChaos{
-		chaos.WithTarget(target),
-		chaos.WithPort(8080),
+		chaos.WithTarget(chaosmeshv1alpha1.PodHttpRequest),
 		chaos.WithAbort(&abort),
 	}
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, labelArr[s.AppName], fmt.Sprintf("%s-abort", target), duration, opts...)
+
+	// Add common HTTP options (port, path and method)
+	opts = AddCommonHTTPOptions(endpoint, opts)
+
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "request-abort", duration, opts...)
+}
+
+// HTTPResponseAbortSpec defines HTTP response abort chaos
+type HTTPResponseAbortSpec struct {
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
+}
+
+func (s *HTTPResponseAbortSpec) Create(cli cli.Client) string {
+	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if !ok {
+		return ""
+	}
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+	abort := true
+
+	// Create options with endpoint-specific values
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
+		chaos.WithAbort(&abort),
+	}
+
+	// Add common HTTP options (port, path and method)
+	opts = AddCommonHTTPOptions(endpoint, opts)
+
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "response-abort", duration, opts...)
+}
+
+// HTTPRequestDelaySpec defines HTTP request delay chaos
+type HTTPRequestDelaySpec struct {
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
+	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
+}
+
+func (s *HTTPRequestDelaySpec) Create(cli cli.Client) string {
+	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if !ok {
+		return ""
+	}
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+	delay := fmt.Sprintf("%dms", s.DelayDuration)
+
+	// Create options with endpoint-specific values
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(chaosmeshv1alpha1.PodHttpRequest),
+		chaos.WithDelay(&delay),
+	}
+
+	// Add common HTTP options (port, path and method)
+	opts = AddCommonHTTPOptions(endpoint, opts)
+
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "request-delay", duration, opts...)
+}
+
+// HTTPResponseDelaySpec defines HTTP response delay chaos
+type HTTPResponseDelaySpec struct {
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
+	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
+}
+
+func (s *HTTPResponseDelaySpec) Create(cli cli.Client) string {
+	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if !ok {
+		return ""
+	}
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+	delay := fmt.Sprintf("%dms", s.DelayDuration)
+
+	// Create options with endpoint-specific values
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
+		chaos.WithDelay(&delay),
+	}
+
+	// Add common HTTP options (port, path and method)
+	opts = AddCommonHTTPOptions(endpoint, opts)
+
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "response-delay", duration, opts...)
+}
+
+// ReplaceBodyType for HTTP response body replacement
+type ReplaceBodyType int
+
+const (
+	EmptyBody ReplaceBodyType = iota
+	RandomBody
+)
+
+// HTTPResponseReplaceBodySpec defines HTTP response body replacement chaos
+type HTTPResponseReplaceBodySpec struct {
+	Duration      int             `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int             `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int             `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int             `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
+	BodyType      ReplaceBodyType `range:"0-1" description:"Body Type (0=Empty, 1=Random)"`
+}
+
+func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client) string {
+	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if !ok {
+		return ""
+	}
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	// Create options with endpoint-specific values
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
+	}
+
+	// Add body replacement based on type
+	if s.BodyType == EmptyBody {
+		opts = append(opts, chaos.WithReplaceBody([]byte("")))
+	} else {
+		opts = append(opts, chaos.WithRandomReplaceBody())
+	}
+
+	// Add common HTTP options (port, path and method)
+	opts = AddCommonHTTPOptions(endpoint, opts)
+
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "response-replace-body", duration, opts...)
+}
+
+// HTTPResponsePatchBodySpec defines HTTP response body patching chaos
+type HTTPResponsePatchBodySpec struct {
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
+}
+
+func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client) string {
+	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if !ok {
+		return ""
+	}
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	// Create options with endpoint-specific values
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
+		chaos.WithPatchBody(`{"foo": "bar"}`),
+	}
+
+	// Add common HTTP options (port, path and method)
+	opts = AddCommonHTTPOptions(endpoint, opts)
+
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "response-patch-body", duration, opts...)
+}
+
+// HTTPRequestReplacePathSpec defines HTTP request path replacement chaos
+type HTTPRequestReplacePathSpec struct {
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
+}
+
+func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client) string {
+	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if !ok {
+		return ""
+	}
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+	newPath := "/api/v2/"
+
+	// Create options with endpoint-specific values
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(chaosmeshv1alpha1.PodHttpRequest),
+		chaos.WithReplacePath(&newPath),
+	}
+
+	// Add common HTTP options (port, path and method)
+	opts = AddCommonHTTPOptions(endpoint, opts)
+
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "request-replace-path", duration, opts...)
+}
+
+// HTTPRequestReplaceMethodSpec defines HTTP request method replacement chaos
+type HTTPRequestReplaceMethodSpec struct {
+	Duration      int        `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int        `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int        `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int        `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
+	ReplaceMethod HTTPMethod `range:"0-6" description:"HTTP Method to replace with"`
+}
+
+func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client) string {
+	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if !ok {
+		return ""
+	}
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+	newMethod := GetHTTPMethodName(s.ReplaceMethod)
+
+	// Create options with endpoint-specific values
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(chaosmeshv1alpha1.PodHttpRequest),
+		chaos.WithReplaceMethod(&newMethod),
+	}
+
+	// Add common HTTP options (port, path and method)
+	opts = AddCommonHTTPOptions(endpoint, opts)
+
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "request-replace-method", duration, opts...)
+}
+
+// HTTPResponseReplaceCodeSpec defines HTTP response status code replacement chaos
+type HTTPResponseReplaceCodeSpec struct {
+	Duration      int            `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int            `range:"0-0" dynamic:"true" description:"String"`
+	AppName       int            `range:"0-0" dynamic:"true" description:"Array"`
+	EndpointIndex int            `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
+	StatusCode    HTTPStatusCode `range:"0-9" description:"HTTP Status Code to replace with"`
+}
+
+func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client) string {
+	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if !ok {
+		return ""
+	}
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+	code := GetHTTPStatusCode(s.StatusCode)
+
+	// Create options with endpoint-specific values
+	opts := []chaos.OptHTTPChaos{
+		chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
+		chaos.WithReplaceCode(&code),
+	}
+
+	// Add common HTTP options (port, path and method)
+	opts = AddCommonHTTPOptions(endpoint, opts)
+
+	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "response-replace-code", duration, opts...)
 }
 
 type TimeSkewSpec struct {
@@ -906,81 +1122,103 @@ func convertSQLTypeToString(sqlType int) string {
 }
 
 var SpecMap = map[ChaosType]any{
-	CPUStress:           CPUStressChaosSpec{},
-	MemoryStress:        MemoryStressChaosSpec{},
-	HTTPAbort:           HTTPChaosAbortSpec{},
-	HTTPReplace:         HTTPChaosReplaceSpec{},
-	DNSError:            DNSErrorSpec{},
-	DNSRandom:           DNSRandomSpec{},
-	TimeSkew:            TimeSkewSpec{},
-	NetworkDelay:        NetworkDelaySpec{},
-	NetworkLoss:         NetworkLossSpec{},
-	NetworkDuplicate:    NetworkDuplicateSpec{},
-	NetworkCorrupt:      NetworkCorruptSpec{},
-	NetworkBandwidth:    NetworkBandwidthSpec{},
-	NetworkPartition:    NetworkPartitionSpec{},
-	JVMLatency:          JVMLatencySpec{},
-	JVMReturn:           JVMReturnSpec{},
-	JVMException:        JVMExceptionSpec{},
-	JVMGarbageCollector: JVMGCSpec{},
-	JVMCPUStress:        JVMCPUStressSpec{},
-	JVMMemoryStress:     JVMMemoryStressSpec{},
-	JVMMySQLLatency:     JVMMySQLLatencySpec{},
-	JVMMySQLException:   JVMMySQLExceptionSpec{},
+
+	CPUStress:                CPUStressChaosSpec{},
+	MemoryStress:             MemoryStressChaosSpec{},
+	HTTPRequestAbort:         HTTPRequestAbortSpec{},
+	HTTPResponseAbort:        HTTPResponseAbortSpec{},
+	HTTPRequestDelay:         HTTPRequestDelaySpec{},
+	HTTPResponseDelay:        HTTPResponseDelaySpec{},
+	HTTPResponseReplaceBody:  HTTPResponseReplaceBodySpec{},
+	HTTPResponsePatchBody:    HTTPResponsePatchBodySpec{},
+	HTTPRequestReplacePath:   HTTPRequestReplacePathSpec{},
+	HTTPRequestReplaceMethod: HTTPRequestReplaceMethodSpec{},
+	HTTPResponseReplaceCode:  HTTPResponseReplaceCodeSpec{},
+	DNSError:                 DNSErrorSpec{},
+	DNSRandom:                DNSRandomSpec{},
+	TimeSkew:                 TimeSkewSpec{},
+	NetworkDelay:             NetworkDelaySpec{},
+	NetworkLoss:              NetworkLossSpec{},
+	NetworkDuplicate:         NetworkDuplicateSpec{},
+	NetworkCorrupt:           NetworkCorruptSpec{},
+	NetworkBandwidth:         NetworkBandwidthSpec{},
+	NetworkPartition:         NetworkPartitionSpec{},
+	JVMLatency:               JVMLatencySpec{},
+	JVMReturn:                JVMReturnSpec{},
+	JVMException:             JVMExceptionSpec{},
+	JVMGarbageCollector:      JVMGCSpec{},
+	JVMCPUStress:             JVMCPUStressSpec{},
+	JVMMemoryStress:          JVMMemoryStressSpec{},
+	JVMMySQLLatency:          JVMMySQLLatencySpec{},
+	JVMMySQLException:        JVMMySQLExceptionSpec{},
 }
 
 var ChaosHandlers = map[ChaosType]Injection{
-	PodKill:             &PodKillSpec{},
-	PodFailure:          &PodFailureSpec{},
-	ContainerKill:       &ContainerKillSpec{},
-	MemoryStress:        &MemoryStressChaosSpec{},
-	CPUStress:           &CPUStressChaosSpec{},
-	HTTPAbort:           &HTTPChaosAbortSpec{},
-	HTTPReplace:         &HTTPChaosReplaceSpec{},
-	DNSError:            &DNSErrorSpec{},
-	DNSRandom:           &DNSRandomSpec{},
-	TimeSkew:            &TimeSkewSpec{},
-	NetworkDelay:        &NetworkDelaySpec{},
-	NetworkLoss:         &NetworkLossSpec{},
-	NetworkDuplicate:    &NetworkDuplicateSpec{},
-	NetworkCorrupt:      &NetworkCorruptSpec{},
-	NetworkBandwidth:    &NetworkBandwidthSpec{},
-	NetworkPartition:    &NetworkPartitionSpec{},
-	JVMLatency:          &JVMLatencySpec{},
-	JVMReturn:           &JVMReturnSpec{},
-	JVMException:        &JVMExceptionSpec{},
-	JVMGarbageCollector: &JVMGCSpec{},
-	JVMCPUStress:        &JVMCPUStressSpec{},
-	JVMMemoryStress:     &JVMMemoryStressSpec{},
-	JVMMySQLLatency:     &JVMMySQLLatencySpec{},
-	JVMMySQLException:   &JVMMySQLExceptionSpec{},
+	PodKill:                  &PodKillSpec{},
+	PodFailure:               &PodFailureSpec{},
+	ContainerKill:            &ContainerKillSpec{},
+	MemoryStress:             &MemoryStressChaosSpec{},
+	CPUStress:                &CPUStressChaosSpec{},
+	HTTPRequestAbort:         &HTTPRequestAbortSpec{},
+	HTTPResponseAbort:        &HTTPResponseAbortSpec{},
+	HTTPRequestDelay:         &HTTPRequestDelaySpec{},
+	HTTPResponseDelay:        &HTTPResponseDelaySpec{},
+	HTTPResponseReplaceBody:  &HTTPResponseReplaceBodySpec{},
+	HTTPResponsePatchBody:    &HTTPResponsePatchBodySpec{},
+	HTTPRequestReplacePath:   &HTTPRequestReplacePathSpec{},
+	HTTPRequestReplaceMethod: &HTTPRequestReplaceMethodSpec{},
+	HTTPResponseReplaceCode:  &HTTPResponseReplaceCodeSpec{},
+	DNSError:                 &DNSErrorSpec{},
+	DNSRandom:                &DNSRandomSpec{},
+	TimeSkew:                 &TimeSkewSpec{},
+	NetworkDelay:             &NetworkDelaySpec{},
+	NetworkLoss:              &NetworkLossSpec{},
+	NetworkDuplicate:         &NetworkDuplicateSpec{},
+	NetworkCorrupt:           &NetworkCorruptSpec{},
+	NetworkBandwidth:         &NetworkBandwidthSpec{},
+	NetworkPartition:         &NetworkPartitionSpec{},
+	JVMLatency:               &JVMLatencySpec{},
+	JVMReturn:                &JVMReturnSpec{},
+	JVMException:             &JVMExceptionSpec{},
+	JVMGarbageCollector:      &JVMGCSpec{},
+	JVMCPUStress:             &JVMCPUStressSpec{},
+	JVMMemoryStress:          &JVMMemoryStressSpec{},
+	JVMMySQLLatency:          &JVMMySQLLatencySpec{},
+	JVMMySQLException:        &JVMMySQLExceptionSpec{},
 }
 
 type InjectionConf struct {
-	PodKill             *PodKillSpec           `range:"0-2"`
-	PodFailure          *PodFailureSpec        `range:"0-2"`
-	ContainerKill       *ContainerKillSpec     `range:"0-2"`
-	MemoryStress        *MemoryStressChaosSpec `range:"0-4"`
-	CPUStress           *CPUStressChaosSpec    `range:"0-4"`
-	HTTPAbort           *HTTPChaosAbortSpec    `range:"0-3"`
-	HTTPReplace         *HTTPChaosReplaceSpec  `range:"0-4"`
-	DNSError            *DNSErrorSpec          `range:"0-2"`
-	DNSRandom           *DNSRandomSpec         `range:"0-2"`
-	TimeSkew            *TimeSkewSpec          `range:"0-3"`
-	NetworkDelay        *NetworkDelaySpec      `range:"0-7"`
-	NetworkLoss         *NetworkLossSpec       `range:"0-6"`
-	NetworkDuplicate    *NetworkDuplicateSpec  `range:"0-6"`
-	NetworkCorrupt      *NetworkCorruptSpec    `range:"0-6"`
-	NetworkBandwidth    *NetworkBandwidthSpec  `range:"0-7"`
-	NetworkPartition    *NetworkPartitionSpec  `range:"0-4"`
-	JVMLatency          *JVMLatencySpec        `range:"0-4"`
-	JVMReturn           *JVMReturnSpec         `range:"0-5"`
-	JVMException        *JVMExceptionSpec      `range:"0-4"`
-	JVMGarbageCollector *JVMGCSpec             `range:"0-2"`
-	JVMCPUStress        *JVMCPUStressSpec      `range:"0-4"`
-	JVMMemoryStress     *JVMMemoryStressSpec   `range:"0-4"`
-	JVMMySQLLatency     *JVMMySQLLatencySpec   `range:"0-5"`
-	JVMMySQLException   *JVMMySQLExceptionSpec `range:"0-4"`
+	PodKill                  *PodKillSpec                  `range:"0-2"`
+	PodFailure               *PodFailureSpec               `range:"0-2"`
+	ContainerKill            *ContainerKillSpec            `range:"0-2"`
+	MemoryStress             *MemoryStressChaosSpec        `range:"0-4"`
+	CPUStress                *CPUStressChaosSpec           `range:"0-4"`
+	HTTPRequestAbort         *HTTPRequestAbortSpec         `range:"0-3"`
+	HTTPResponseAbort        *HTTPResponseAbortSpec        `range:"0-3"`
+	HTTPRequestDelay         *HTTPRequestDelaySpec         `range:"0-4"`
+	HTTPResponseDelay        *HTTPResponseDelaySpec        `range:"0-4"`
+	HTTPResponseReplaceBody  *HTTPResponseReplaceBodySpec  `range:"0-4"`
+	HTTPResponsePatchBody    *HTTPResponsePatchBodySpec    `range:"0-3"`
+	HTTPRequestReplacePath   *HTTPRequestReplacePathSpec   `range:"0-3"`
+	HTTPRequestReplaceMethod *HTTPRequestReplaceMethodSpec `range:"0-4"`
+	HTTPResponseReplaceCode  *HTTPResponseReplaceCodeSpec  `range:"0-4"`
+	DNSError                 *DNSErrorSpec                 `range:"0-2"`
+	DNSRandom                *DNSRandomSpec                `range:"0-2"`
+	TimeSkew                 *TimeSkewSpec                 `range:"0-3"`
+	NetworkDelay             *NetworkDelaySpec             `range:"0-7"`
+	NetworkLoss              *NetworkLossSpec              `range:"0-6"`
+	NetworkDuplicate         *NetworkDuplicateSpec         `range:"0-6"`
+	NetworkCorrupt           *NetworkCorruptSpec           `range:"0-6"`
+	NetworkBandwidth         *NetworkBandwidthSpec         `range:"0-7"`
+	NetworkPartition         *NetworkPartitionSpec         `range:"0-4"`
+	JVMLatency               *JVMLatencySpec               `range:"0-4"`
+	JVMReturn                *JVMReturnSpec                `range:"0-5"`
+	JVMException             *JVMExceptionSpec             `range:"0-4"`
+	JVMGarbageCollector      *JVMGCSpec                    `range:"0-2"`
+	JVMCPUStress             *JVMCPUStressSpec             `range:"0-4"`
+	JVMMemoryStress          *JVMMemoryStressSpec          `range:"0-4"`
+	JVMMySQLLatency          *JVMMySQLLatencySpec          `range:"0-5"`
+	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-4"`
 }
 
 func (ic *InjectionConf) Create(cli cli.Client) string {
