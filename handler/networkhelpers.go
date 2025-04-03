@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"github.com/CUHK-SE-Group/chaos-experiment/client"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/networkdependencies"
 )
 
@@ -11,12 +10,11 @@ func selectNetworkTargetForService(sourceName string, targetIndex int) (targetNa
 	return networkdependencies.GetServicePairByServiceAndIndex(sourceName, targetIndex)
 }
 
-
 // getServiceAndTargetForNetworkChaos is a helper function that retrieves the source and target
 // services for a network chaos specification
 func getServiceAndTargetForNetworkChaos(appNameIndex int, targetIndex int) (sourceName, targetName string, ok bool) {
 	// Get the app labels
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+	labelArr, err := labelsGetter(TargetNamespace, TargetLabelKey)
 	if err != nil || appNameIndex < 0 || appNameIndex >= len(labelArr) {
 		return "", "", false
 	}
