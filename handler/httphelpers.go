@@ -126,8 +126,8 @@ func selectHTTPEndpointForService(serviceName string, endpointIndex int) (*HTTPE
 	// Filter out non-HTTP endpoints (e.g., database connections)
 	httpEndpoints := make([]serviceendpoints.ServiceEndpoint, 0)
 	for _, ep := range endpoints {
-		// Skip endpoints related to rabbitmq or database services
-		if ep.ServerAddress == "ts-rabbitmq" || ep.ServerAddress == "mysql" {
+		// Skip endpoints related to rabbitmq
+		if ep.ServerAddress == "ts-rabbitmq" {
 			continue
 		}
 
@@ -172,8 +172,8 @@ func GetHTTPEndpoints(serviceName string) []HTTPEndpoint {
 	result := make([]HTTPEndpoint, 0)
 
 	for _, ep := range endpoints {
-		// Skip endpoints related to rabbitmq or database services
-		if ep.ServerAddress == "ts-rabbitmq" || ep.ServerAddress == "mysql" {
+		// Skip endpoints related to rabbitmq
+		if ep.ServerAddress == "ts-rabbitmq" {
 			continue
 		}
 
