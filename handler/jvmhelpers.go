@@ -5,6 +5,8 @@ import (
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/javaclassmethods"
 )
 
+// Add a package-level variable for dependency injection
+var labelsGetter = client.GetLabels
 
 // selectJVMMethodForService selects a method for a service based on the method index
 // and returns the class name, method name, and whether the selection was successful
@@ -27,8 +29,8 @@ func getAvailableJVMMethodsForApp(appName string) []string {
 // getServiceAndMethodForChaosSpec is a helper function that retrieves the label array,
 // selects the app name, and finds an appropriate method for a JVM chaos spec
 func getServiceAndMethodForChaosSpec(appNameIndex int, methodIndex int) (appName, className, methodName string, ok bool) {
-	// Get the app labels
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+	// Get the app labels using labelsGetter instead of client.GetLabels
+	labelArr, err := labelsGetter(TargetNamespace, TargetLabelKey)
 	if err != nil || appNameIndex < 0 || appNameIndex >= len(labelArr) {
 		return "", "", "", false
 	}
