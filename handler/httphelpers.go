@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"github.com/CUHK-SE-Group/chaos-experiment/chaos"
-	"github.com/CUHK-SE-Group/chaos-experiment/client"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
 )
 
@@ -156,7 +155,7 @@ func selectHTTPEndpointForService(serviceName string, endpointIndex int) (*HTTPE
 // for an HTTP chaos specification
 func getServiceAndEndpointForHTTPChaos(appNameIndex int, endpointIndex int) (serviceName string, endpoint *HTTPEndpoint, ok bool) {
 	// Get the app labels
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+	labelArr, err := labelsGetter(TargetNamespace, TargetLabelKey)
 	if err != nil || appNameIndex < 0 || appNameIndex >= len(labelArr) {
 		return "", nil, false
 	}
