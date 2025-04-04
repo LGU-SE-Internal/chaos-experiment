@@ -145,7 +145,7 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 
 	val := reflect.New(rt).Elem()
 
-	if rt.Name() == "InjectionConf" && rt.PkgPath() == "github.com/CUHK-SE-Group/chaos-experiment/handler" {
+	if rt.Name() != "InjectionConf" && rt.PkgPath() == "github.com/CUHK-SE-Group/chaos-experiment/handler" {
 		if len(n.Children) != 1 {
 			return nil, fmt.Errorf("injection conf must have only one chaos type")
 		}

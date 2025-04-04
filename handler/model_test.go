@@ -82,27 +82,26 @@ func fillRandom(n *Node) error {
 	return nil
 }
 func TestGenerateRandomAction(t *testing.T) {
-
-	for i := 0; i < 1; i++ {
-		podNode, err := StructToNode[InjectionConf]()
-		if err != nil {
-			t.Error(err)
-		}
-		FillRandomValues(podNode)
-		_, err = NodeToStruct[InjectionConf](podNode)
-		if err != nil {
-			t.Error(err)
-		}
-
-		m := NodeToMap(podNode)
-		fmt.Printf("transformed:\n%#v\n\n", m)
-
-		mappedNode, err := MapToNode(m)
-		if err != nil {
-			t.Fatal(err)
-		}
-		fmt.Println("Correct?", reflect.DeepEqual(podNode, mappedNode))
+	podNode, err := StructToNode[InjectionConf]()
+	if err != nil {
+		t.Error(err)
 	}
+
+	FillRandomValues(podNode)
+	_, err = NodeToStruct[InjectionConf](podNode)
+	if err != nil {
+		t.Error(err)
+	}
+
+	m := NodeToMap(podNode)
+	fmt.Printf("transformed:\n%#v\n\n", m)
+
+	mappedNode, err := MapToNode(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println("Correct?", reflect.DeepEqual(podNode, mappedNode))
 }
 
 func TestHumanizeMap(t *testing.T) {

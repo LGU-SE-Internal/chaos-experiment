@@ -9,6 +9,7 @@ import (
 	chaos "github.com/CUHK-SE-Group/chaos-experiment/chaos"
 	"github.com/CUHK-SE-Group/chaos-experiment/client"
 	controllers "github.com/CUHK-SE-Group/chaos-experiment/controllers"
+	"github.com/CUHK-SE-Group/chaos-experiment/utils"
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"k8s.io/utils/pointer"
 	cli "sigs.k8s.io/controller-runtime/pkg/client"
@@ -1217,7 +1218,17 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-4"`
 }
 
-func (ic *InjectionConf) Create(cli cli.Client) (Injection, string) {
+func (ic *InjectionConf) Create() (map[string]any, string, error) {
+	cli := client.NewK8sClient()
+	instance, config, err := ic.getActiveInjection()
+	if err != nil {
+		return nil, "", err
+	}
+
+	return config, instance.Create(cli), nil
+}
+
+func (ic *InjectionConf) getActiveInjection() (Injection, map[string]any, error) {
 	val := reflect.ValueOf(ic).Elem()
 
 	for i := range val.NumField() {
@@ -1226,9 +1237,49 @@ func (ic *InjectionConf) Create(cli cli.Client) (Injection, string) {
 			continue
 		}
 
-		injectable, _ := field.Interface().(Injection)
-		return injectable, injectable.Create(cli)
+		instance := field.Interface().(Injection)
+		instanceValue := reflect.ValueOf(instance).Elem()
+		instanceType := instanceValue.Type()
+
+		result := make(map[string]any, instanceValue.NumField())
+		for i := range instanceValue.NumField() {
+			key := utils.ToSnakeCase(instanceType.Field(i).Name)
+			switch i {
+			case 1:
+				result[key] = TargetNamespace
+			case 2:
+				labels, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				index, err := getIntValue(instanceValue.Field(i))
+				if err != nil {
+					return nil, nil, err
+				}
+
+				result[key] = labels[index]
+			default:
+				value, err := getIntValue(instanceValue.Field(i))
+				if err != nil {
+					return nil, nil, err
+				}
+
+				result[key] = value
+			}
+		}
+
+		return instance, result, nil
 	}
 
-	return nil, ""
+	return nil, nil, fmt.Errorf("failed to get the non-empty injection")
+}
+
+func getIntValue(field reflect.Value) (int64, error) {
+	switch field.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return field.Int(), nil
+	default:
+		return 0, fmt.Errorf("unsupported field type: %v", field.Kind())
+	}
 }

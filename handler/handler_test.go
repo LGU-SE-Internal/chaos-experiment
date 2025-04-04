@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"testing"
 
-	cli "github.com/CUHK-SE-Group/chaos-experiment/client"
 	"github.com/k0kubun/pp"
 )
 
@@ -81,7 +80,13 @@ func TestHandler2(t *testing.T) {
 
 	pp.Println(conf)
 
-	pp.Println(conf.Create(cli.NewK8sClient()))
+	config, name, err := conf.Create()
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	pp.Println(config, name)
 }
 
 func genValue(m map[string]any) (map[string]any, error) {

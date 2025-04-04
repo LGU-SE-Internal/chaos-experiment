@@ -74,7 +74,7 @@ func GetLabels(namespace string, key string) ([]string, error) {
 		Namespace: namespace,
 	})
 	if err != nil {
-		fmt.Printf("Error listing pods in namespace %s: %v\n", namespace, err)
+		fmt.Printf("failed to list pods in namespace %s: %v\n", namespace, err)
 		return nil, err
 	}
 
