@@ -13,26 +13,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateJVMChaos(cli client.Client, namespace string, appName string, action v1alpha1.JVMChaosAction, duration *string, opts ...chaos.OptJVMChaos) string {
+func CreateJVMChaos(cli client.Client, namespace string, appName string, action v1alpha1.JVMChaosAction, duration *string, opts ...chaos.OptJVMChaos) (string, error) {
 	spec := chaos.GenerateJVMChaosSpec(namespace, appName, duration, append([]chaos.OptJVMChaos{chaos.WithJVMAction(action)}, opts...)...)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6)))
 	jvmChaos, err := chaos.NewJvmChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithJVMChaosSpec(spec))
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
-		return ""
+		return "", err
 	}
 	create, err := jvmChaos.ValidateCreate()
 	if err != nil {
 		logrus.Errorf("Failed to validate create chaos: %v", err)
-		return ""
+		return "", err
 	}
 	logrus.Infof("create warning: %v", create)
 	err = cli.Create(context.Background(), jvmChaos)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
-		return ""
+		return "", err
 	}
-	return name
+	return name, nil
 }
 
 func AddJVMChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, action v1alpha1.JVMChaosAction, injectTime *string, sleepTime *string, opts ...chaos.OptJVMChaos) *v1alpha1.WorkflowSpec {

@@ -111,7 +111,7 @@ func GetChaosTypeName(c ChaosType) string {
 }
 
 type Injection interface {
-	Create(cli cli.Client) string
+	Create(cli cli.Client) (string, error)
 }
 type ContainerKillSpec struct {
 	Duration  int `range:"1-60" description:"Time Unit Minute"`
@@ -119,10 +119,10 @@ type ContainerKillSpec struct {
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
-func (s *ContainerKillSpec) Create(cli cli.Client) string {
+func (s *ContainerKillSpec) Create(cli cli.Client) (string, error) {
 	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.ContainerKillAction
@@ -135,10 +135,10 @@ type PodFailureSpec struct {
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
-func (s *PodFailureSpec) Create(cli cli.Client) string {
+func (s *PodFailureSpec) Create(cli cli.Client) (string, error) {
 	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodFailureAction
@@ -151,10 +151,10 @@ type PodKillSpec struct {
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
-func (s *PodKillSpec) Create(cli cli.Client) string {
+func (s *PodKillSpec) Create(cli cli.Client) (string, error) {
 	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodKillAction
@@ -169,10 +169,10 @@ type CPUStressChaosSpec struct {
 	CPUWorker int `range:"1-3" description:"CPU Stress Threads"`
 }
 
-func (s *CPUStressChaosSpec) Create(cli cli.Client) string {
+func (s *CPUStressChaosSpec) Create(cli cli.Client) (string, error) {
 	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
@@ -191,10 +191,10 @@ type MemoryStressChaosSpec struct {
 	MemWorker  int `range:"1-4" description:"Memory Stress Threads"`
 }
 
-func (s *MemoryStressChaosSpec) Create(cli cli.Client) string {
+func (s *MemoryStressChaosSpec) Create(cli cli.Client) (string, error) {
 	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	stressors := controllers.MakeMemoryStressors(
 		strconv.Itoa(s.MemorySize)+"MiB",
@@ -213,10 +213,10 @@ type HTTPRequestAbortSpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
 }
 
-func (s *HTTPRequestAbortSpec) Create(cli cli.Client) string {
+func (s *HTTPRequestAbortSpec) Create(cli cli.Client) (string, error) {
 	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -242,10 +242,10 @@ type HTTPResponseAbortSpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
 }
 
-func (s *HTTPResponseAbortSpec) Create(cli cli.Client) string {
+func (s *HTTPResponseAbortSpec) Create(cli cli.Client) (string, error) {
 	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -272,10 +272,10 @@ type HTTPRequestDelaySpec struct {
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
 }
 
-func (s *HTTPRequestDelaySpec) Create(cli cli.Client) string {
+func (s *HTTPRequestDelaySpec) Create(cli cli.Client) (string, error) {
 	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -302,10 +302,10 @@ type HTTPResponseDelaySpec struct {
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
 }
 
-func (s *HTTPResponseDelaySpec) Create(cli cli.Client) string {
+func (s *HTTPResponseDelaySpec) Create(cli cli.Client) (string, error) {
 	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -340,10 +340,10 @@ type HTTPResponseReplaceBodySpec struct {
 	BodyType      ReplaceBodyType `range:"0-1" description:"Body Type (0=Empty, 1=Random)"`
 }
 
-func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client) string {
+func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client) (string, error) {
 	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -374,10 +374,10 @@ type HTTPResponsePatchBodySpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
 }
 
-func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client) string {
+func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client) (string, error) {
 	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -402,10 +402,10 @@ type HTTPRequestReplacePathSpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
 }
 
-func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client) string {
+func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client) (string, error) {
 	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -432,10 +432,10 @@ type HTTPRequestReplaceMethodSpec struct {
 	ReplaceMethod HTTPMethod `range:"0-6" description:"HTTP Method to replace with"`
 }
 
-func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client) string {
+func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client) (string, error) {
 	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -462,10 +462,10 @@ type HTTPResponseReplaceCodeSpec struct {
 	StatusCode    HTTPStatusCode `range:"0-9" description:"HTTP Status Code to replace with"`
 }
 
-func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client) string {
+func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client) (string, error) {
 	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -490,10 +490,10 @@ type TimeSkewSpec struct {
 	TimeOffset int `range:"-600-600" description:"Time offset in seconds"`
 }
 
-func (s *TimeSkewSpec) Create(cli cli.Client) string {
+func (s *TimeSkewSpec) Create(cli cli.Client) (string, error) {
 	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	// Format the TimeOffset with "s" unit
@@ -525,10 +525,10 @@ type NetworkPartitionSpec struct {
 	Direction int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkPartitionSpec) Create(cli cli.Client) string {
+func (s *NetworkPartitionSpec) Create(cli cli.Client) (string, error) {
 	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and target for network chaos")
 	}
 
 	duration := pointer.String(fmt.Sprintf("%dm", s.Duration))
@@ -555,10 +555,10 @@ type NetworkDelaySpec struct {
 	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
-func (s *NetworkDelaySpec) Create(cli cli.Client) string {
+func (s *NetworkDelaySpec) Create(cli cli.Client) (string, error) {
 	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and target for network chaos")
 	}
 
 	// Convert int values to appropriate string format
@@ -589,10 +589,10 @@ type NetworkLossSpec struct {
 	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
-func (s *NetworkLossSpec) Create(cli cli.Client) string {
+func (s *NetworkLossSpec) Create(cli cli.Client) (string, error) {
 	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and target for network chaos")
 	}
 
 	// Convert int values to appropriate string format
@@ -622,10 +622,10 @@ type NetworkDuplicateSpec struct {
 	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
-func (s *NetworkDuplicateSpec) Create(cli cli.Client) string {
+func (s *NetworkDuplicateSpec) Create(cli cli.Client) (string, error) {
 	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and target for network chaos")
 	}
 
 	// Convert int values to appropriate string format
@@ -655,10 +655,10 @@ type NetworkCorruptSpec struct {
 	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
-func (s *NetworkCorruptSpec) Create(cli cli.Client) string {
+func (s *NetworkCorruptSpec) Create(cli cli.Client) (string, error) {
 	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and target for network chaos")
 	}
 
 	// Convert int values to appropriate string format
@@ -689,10 +689,10 @@ type NetworkBandwidthSpec struct {
 	TargetIdx int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
-func (s *NetworkBandwidthSpec) Create(cli cli.Client) string {
+func (s *NetworkBandwidthSpec) Create(cli cli.Client) (string, error) {
 	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and target for network chaos")
 	}
 
 	// Convert rate from kbps to string with unit
@@ -720,10 +720,10 @@ type DNSErrorSpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"DNS Target Index"`
 }
 
-func (s *DNSErrorSpec) Create(cli cli.Client) string {
+func (s *DNSErrorSpec) Create(cli cli.Client) (string, error) {
 	serviceName, patterns, ok := getServiceAndPatternsForDNSChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and patterns for DNS chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -740,10 +740,10 @@ type DNSRandomSpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"DNS Target Index"`
 }
 
-func (s *DNSRandomSpec) Create(cli cli.Client) string {
+func (s *DNSRandomSpec) Create(cli cli.Client) (string, error) {
 	serviceName, patterns, ok := getServiceAndPatternsForDNSChaos(s.AppName, s.EndpointIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and patterns for DNS chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -777,10 +777,10 @@ type JVMLatencySpec struct {
 	LatencyDuration int `range:"1-5000" description:"Latency in ms"`
 }
 
-func (s *JVMLatencySpec) Create(cli cli.Client) string {
+func (s *JVMLatencySpec) Create(cli cli.Client) (string, error) {
 	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and method for JVM chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -805,10 +805,10 @@ type JVMReturnSpec struct {
 	ReturnValueOpt int           `range:"0-1" description:"Return value option (0=Default, 1=Random)"`
 }
 
-func (s *JVMReturnSpec) Create(cli cli.Client) string {
+func (s *JVMReturnSpec) Create(cli cli.Client) (string, error) {
 	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and method for JVM chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -847,10 +847,10 @@ type JVMExceptionSpec struct {
 	ExceptionOpt int `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
 }
 
-func (s *JVMExceptionSpec) Create(cli cli.Client) string {
+func (s *JVMExceptionSpec) Create(cli cli.Client) (string, error) {
 	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and method for JVM chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -888,10 +888,10 @@ type JVMGCSpec struct {
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
-func (s *JVMGCSpec) Create(cli cli.Client) string {
+func (s *JVMGCSpec) Create(cli cli.Client) (string, error) {
 	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
@@ -908,10 +908,10 @@ type JVMCPUStressSpec struct {
 	CPUCount    int `range:"1-8" description:"Number of CPU cores to stress"`
 }
 
-func (s *JVMCPUStressSpec) Create(cli cli.Client) string {
+func (s *JVMCPUStressSpec) Create(cli cli.Client) (string, error) {
 	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and method for JVM chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -935,10 +935,10 @@ type JVMMemoryStressSpec struct {
 	MemType     JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
 }
 
-func (s *JVMMemoryStressSpec) Create(cli cli.Client) string {
+func (s *JVMMemoryStressSpec) Create(cli cli.Client) (string, error) {
 	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
 	if !ok {
-		return ""
+		return "", fmt.Errorf("failed to get service and method for JVM chaos")
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -1028,10 +1028,10 @@ type JVMMySQLLatencySpec struct {
 	SQLType    int `range:"0-5" description:"SQL Type (0=All, 1=Select, 2=Insert, 3=Update, 4=Delete, 5=Replace)"`
 }
 
-func (s *JVMMySQLLatencySpec) Create(cli cli.Client) string {
+func (s *JVMMySQLLatencySpec) Create(cli cli.Client) (string, error) {
 	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
@@ -1067,10 +1067,10 @@ type JVMMySQLExceptionSpec struct {
 	SQLType    int `range:"0-5" description:"SQL Type (0=All, 1=Select, 2=Insert, 3=Update, 4=Delete, 5=Replace)"`
 }
 
-func (s *JVMMySQLExceptionSpec) Create(cli cli.Client) string {
+func (s *JVMMySQLExceptionSpec) Create(cli cli.Client) (string, error) {
 	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
@@ -1225,9 +1225,9 @@ func (ic *InjectionConf) Create() (map[string]any, string, error) {
 		return nil, "", err
 	}
 
-	name := instance.Create(cli)
-	if name == "" {
-		return nil, "", fmt.Errorf("failed to inject chaos")
+	name, err := instance.Create(cli)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
 	}
 
 	return config, name, nil

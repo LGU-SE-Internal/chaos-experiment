@@ -13,26 +13,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateTimeChaos(cli client.Client, namespace string, appName string, timeOffset string, duration *string) string {
+func CreateTimeChaos(cli client.Client, namespace string, appName string, timeOffset string, duration *string) (string, error) {
 	spec := chaos.GenerateTimeChaosSpec(namespace, appName, duration, timeOffset)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-time-%s", namespace, appName, rand.String(6)))
 	timeChaos, err := chaos.NewTimeChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithTimeChaosSpec(spec))
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
-		return ""
+		return "", err
 	}
 	create, err := timeChaos.ValidateCreate()
 	if err != nil {
 		logrus.Errorf("Failed to validate create chaos: %v", err)
-		return ""
+		return "", err
 	}
 	logrus.Infof("create warning: %v", create)
 	err = cli.Create(context.Background(), timeChaos)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
-		return ""
+		return "", err
 	}
-	return name
+	return name, nil
 }
 
 func AddTimeChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, timeOffset string, injectTime *string, sleepTime *string) *v1alpha1.WorkflowSpec {

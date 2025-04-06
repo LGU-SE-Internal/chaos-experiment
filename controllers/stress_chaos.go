@@ -14,26 +14,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateStressChaos(cli client.Client, namespace string, appName string, stressors v1alpha1.Stressors, stressType string, duration *string) string {
+func CreateStressChaos(cli client.Client, namespace string, appName string, stressors v1alpha1.Stressors, stressType string, duration *string) (string, error) {
 	spec := chaos.GenerateStressChaosSpec(namespace, appName, duration, stressors)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6)))
 	stressChaos, err := chaos.NewStressChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithStressChaosSpec(spec))
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
-		return ""
+		return "", err
 	}
 	create, err := stressChaos.ValidateCreate()
 	if err != nil {
 		logrus.Errorf("Failed to validate create chaos: %v", err)
-		return ""
+		return "", err
 	}
 	logrus.Infof("create warning: %v", create)
 	err = cli.Create(context.Background(), stressChaos)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
-		return ""
+		return "", err
 	}
-	return name
+	return name, nil
 }
 
 func MakeCPUStressors(load int, worker int) v1alpha1.Stressors {

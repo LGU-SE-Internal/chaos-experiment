@@ -15,30 +15,30 @@ import (
 )
 
 // CreateNetworkChaos creates a NetworkChaos resource
-func CreateNetworkChaos(cli client.Client, namespace string, appName string, action v1alpha1.NetworkChaosAction, duration *string, opts ...chaos.OptNetworkChaos) string {
+func CreateNetworkChaos(cli client.Client, namespace string, appName string, action v1alpha1.NetworkChaosAction, duration *string, opts ...chaos.OptNetworkChaos) (string, error) {
 	spec := chaos.GenerateNetworkChaosSpec(namespace, appName, duration, action, opts...)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, string(action), rand.String(6)))
 	networkChaos, err := chaos.NewNetworkChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithNetworkChaosSpec(spec))
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
-		return ""
+		return "", err
 	}
 	create, err := networkChaos.ValidateCreate()
 	if err != nil {
 		logrus.Errorf("Failed to validate create chaos: %v", err)
-		return ""
+		return "", err
 	}
 	logrus.Infof("create warning: %v", create)
 	err = cli.Create(context.Background(), networkChaos)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
-		return ""
+		return "", err
 	}
-	return name
+	return name, nil
 }
 
 // Helper functions for common network chaos types with additional options support
-func CreateNetworkDelayChaos(cli client.Client, namespace string, appName string, latency string, correlation string, jitter string, duration *string, additionalOpts ...chaos.OptNetworkChaos) string {
+func CreateNetworkDelayChaos(cli client.Client, namespace string, appName string, latency string, correlation string, jitter string, duration *string, additionalOpts ...chaos.OptNetworkChaos) (string, error) {
 	opts := []chaos.OptNetworkChaos{
 		chaos.WithNetworkDelay(latency, correlation, jitter),
 	}
@@ -56,7 +56,7 @@ func CreateNetworkDelayChaos(cli client.Client, namespace string, appName string
 	)
 }
 
-func CreateNetworkLossChaos(cli client.Client, namespace string, appName string, loss string, correlation string, duration *string, additionalOpts ...chaos.OptNetworkChaos) string {
+func CreateNetworkLossChaos(cli client.Client, namespace string, appName string, loss string, correlation string, duration *string, additionalOpts ...chaos.OptNetworkChaos) (string, error) {
 	opts := []chaos.OptNetworkChaos{
 		chaos.WithNetworkLoss(loss, correlation),
 	}
@@ -74,7 +74,7 @@ func CreateNetworkLossChaos(cli client.Client, namespace string, appName string,
 	)
 }
 
-func CreateNetworkDuplicateChaos(cli client.Client, namespace string, appName string, duplicate string, correlation string, duration *string, additionalOpts ...chaos.OptNetworkChaos) string {
+func CreateNetworkDuplicateChaos(cli client.Client, namespace string, appName string, duplicate string, correlation string, duration *string, additionalOpts ...chaos.OptNetworkChaos) (string, error) {
 	opts := []chaos.OptNetworkChaos{
 		chaos.WithNetworkDuplicate(duplicate, correlation),
 	}
@@ -92,7 +92,7 @@ func CreateNetworkDuplicateChaos(cli client.Client, namespace string, appName st
 	)
 }
 
-func CreateNetworkCorruptChaos(cli client.Client, namespace string, appName string, corrupt string, correlation string, duration *string, additionalOpts ...chaos.OptNetworkChaos) string {
+func CreateNetworkCorruptChaos(cli client.Client, namespace string, appName string, corrupt string, correlation string, duration *string, additionalOpts ...chaos.OptNetworkChaos) (string, error) {
 	opts := []chaos.OptNetworkChaos{
 		chaos.WithNetworkCorrupt(corrupt, correlation),
 	}
@@ -110,7 +110,7 @@ func CreateNetworkCorruptChaos(cli client.Client, namespace string, appName stri
 	)
 }
 
-func CreateNetworkBandwidthChaos(cli client.Client, namespace string, appName string, rate string, limit uint32, buffer uint32, duration *string, additionalOpts ...chaos.OptNetworkChaos) string {
+func CreateNetworkBandwidthChaos(cli client.Client, namespace string, appName string, rate string, limit uint32, buffer uint32, duration *string, additionalOpts ...chaos.OptNetworkChaos) (string, error) {
 	opts := []chaos.OptNetworkChaos{
 		chaos.WithNetworkBandwidth(rate, limit, buffer),
 	}
@@ -129,7 +129,7 @@ func CreateNetworkBandwidthChaos(cli client.Client, namespace string, appName st
 }
 
 // Updated signature to match other helper functions (without explicit target and direction)
-func CreateNetworkPartitionChaos(cli client.Client, namespace string, appName string, duration *string, additionalOpts ...chaos.OptNetworkChaos) string {
+func CreateNetworkPartitionChaos(cli client.Client, namespace string, appName string, duration *string, additionalOpts ...chaos.OptNetworkChaos) (string, error) {
 	return CreateNetworkChaos(
 		cli,
 		namespace,
@@ -139,6 +139,7 @@ func CreateNetworkPartitionChaos(cli client.Client, namespace string, appName st
 		additionalOpts...,
 	)
 }
+
 
 // AddNetworkChaosWorkflowNodes adds network chaos nodes to a workflow
 func AddNetworkChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, action v1alpha1.NetworkChaosAction, injectTime *string, sleepTime *string, opts ...chaos.OptNetworkChaos) *v1alpha1.WorkflowSpec {

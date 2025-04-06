@@ -15,26 +15,26 @@ import (
 )
 
 // CreateDnsChaos creates a DNS chaos experiment with the specified parameters
-func CreateDnsChaos(cli client.Client, namespace string, appName string, action v1alpha1.DNSChaosAction, patterns []string, duration *string) string {
+func CreateDnsChaos(cli client.Client, namespace string, appName string, action v1alpha1.DNSChaosAction, patterns []string, duration *string) (string, error) {
 	spec := chaos.GenerateDnsChaosSpec(namespace, appName, duration, action, patterns)
-	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6)))
+	name := strings.ToLower(fmt.Sprintf("%s-%s-dns-%s", namespace, appName, rand.String(6)))
 	dnsChaos, err := chaos.NewDnsChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithDnsChaosSpec(spec))
 	if err != nil {
-		logrus.Errorf("Failed to create chaos: %v", err)
-		return ""
+		logrus.Errorf("Failed to create DNS chaos: %v", err)
+		return "", err
 	}
 	create, err := dnsChaos.ValidateCreate()
 	if err != nil {
-		logrus.Errorf("Failed to validate create chaos: %v", err)
-		return ""
+		logrus.Errorf("Failed to validate create DNS chaos: %v", err)
+		return "", err
 	}
-	logrus.Infof("create warning: %v", create)
+	logrus.Infof("Create warning: %v", create)
 	err = cli.Create(context.Background(), dnsChaos)
 	if err != nil {
-		logrus.Errorf("Failed to create chaos: %v", err)
-		return ""
+		logrus.Errorf("Failed to create DNS chaos: %v", err)
+		return "", err
 	}
-	return name
+	return name, nil
 }
 
 // AddDnsChaosWorkflowNodes adds DNS chaos nodes to a workflow
