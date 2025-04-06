@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/CUHK-SE-Group/chaos-experiment/chaos"
@@ -118,8 +119,8 @@ func AddCommonHTTPOptions(endpoint *HTTPEndpoint, opts []chaos.OptHTTPChaos) []c
 }
 
 // selectHTTPEndpointForService selects an HTTP endpoint for a given service based on the endpoint index
-// and returns the endpoint details and whether the selection was successful
-func selectHTTPEndpointForService(serviceName string, endpointIndex int) (*HTTPEndpoint, bool) {
+// and returns the endpoint details and any error
+func selectHTTPEndpointForService(serviceName string, endpointIndex int) (*HTTPEndpoint, error) {
 	endpoints := endpointsGetter(serviceName)
 
 	// Filter out non-HTTP endpoints (e.g., database connections)
@@ -136,8 +137,13 @@ func selectHTTPEndpointForService(serviceName string, endpointIndex int) (*HTTPE
 		}
 	}
 
-	if len(httpEndpoints) == 0 || endpointIndex < 0 || endpointIndex >= len(httpEndpoints) {
-		return nil, false
+	if len(httpEndpoints) == 0 {
+		return nil, fmt.Errorf("no HTTP endpoints found for service %s", serviceName)
+	}
+
+	if endpointIndex < 0 || endpointIndex >= len(httpEndpoints) {
+		return nil, fmt.Errorf("endpoint index %d out of range for service %s (max: %d)",
+			endpointIndex, serviceName, len(httpEndpoints)-1)
 	}
 
 	ep := httpEndpoints[endpointIndex]
@@ -148,21 +154,30 @@ func selectHTTPEndpointForService(serviceName string, endpointIndex int) (*HTTPE
 		ResponseStatus: ep.ResponseStatus,
 		TargetService:  ep.ServerAddress,
 		Port:           ep.ServerPort,
-	}, true
+	}, nil
 }
 
 // getServiceAndEndpointForHTTPChaos is a helper function that retrieves the source and endpoint
 // for an HTTP chaos specification
-func getServiceAndEndpointForHTTPChaos(appNameIndex int, endpointIndex int) (serviceName string, endpoint *HTTPEndpoint, ok bool) {
+func getServiceAndEndpointForHTTPChaos(appNameIndex int, endpointIndex int) (serviceName string, endpoint *HTTPEndpoint, err error) {
 	// Get the app labels
 	labelArr, err := labelsGetter(TargetNamespace, TargetLabelKey)
-	if err != nil || appNameIndex < 0 || appNameIndex >= len(labelArr) {
-		return "", nil, false
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to get service labels: %w", err)
+	}
+
+	if appNameIndex < 0 || appNameIndex >= len(labelArr) {
+		return "", nil, fmt.Errorf("app index %d out of range (max: %d)",
+			appNameIndex, len(labelArr)-1)
 	}
 
 	serviceName = labelArr[appNameIndex]
-	endpoint, ok = selectHTTPEndpointForService(serviceName, endpointIndex)
-	return serviceName, endpoint, ok
+	endpoint, err = selectHTTPEndpointForService(serviceName, endpointIndex)
+	if err != nil {
+		return serviceName, nil, err
+	}
+
+	return serviceName, endpoint, nil
 }
 
 // GetHTTPEndpoints returns all available HTTP endpoints for a service

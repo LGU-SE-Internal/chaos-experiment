@@ -21,54 +21,53 @@ func TestSelectNetworkTargetForService(t *testing.T) {
 		sourceName     string
 		targetIndex    int
 		wantTargetName string
-		wantOK         bool
+		wantErr        bool
 	}{
 		{
 			name:           "Valid source and target index",
 			sourceName:     "ts-auth-service",
 			targetIndex:    0,
 			wantTargetName: "ts-verification-code-service", // Assuming this is the first dependency
-			wantOK:         true,
+			wantErr:        false,
 		},
 		{
 			name:           "Valid source but negative target index",
 			sourceName:     "ts-auth-service",
 			targetIndex:    -1,
 			wantTargetName: "",
-			wantOK:         false,
+			wantErr:        true,
 		},
 		{
 			name:           "Valid source but out of bounds target index",
 			sourceName:     "ts-auth-service",
 			targetIndex:    100,
 			wantTargetName: "",
-			wantOK:         false,
+			wantErr:        true,
 		},
 		{
 			name:           "Non-existent source service",
 			sourceName:     "non-existent-service",
 			targetIndex:    0,
 			wantTargetName: "",
-			wantOK:         false,
+			wantErr:        true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			targetName, ok := selectNetworkTargetForService(tt.sourceName, tt.targetIndex)
+			targetName, err := selectNetworkTargetForService(tt.sourceName, tt.targetIndex)
 
-			if ok != tt.wantOK {
-				t.Errorf("selectNetworkTargetForService() ok = %v, want %v", ok, tt.wantOK)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("selectNetworkTargetForService() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
-			if tt.wantOK && targetName != tt.wantTargetName {
+			if !tt.wantErr && targetName != tt.wantTargetName {
 				t.Errorf("selectNetworkTargetForService() targetName = %v, want %v", targetName, tt.wantTargetName)
 			}
 		})
 	}
 }
-
 
 func TestGetServiceAndTargetForNetworkChaos(t *testing.T) {
 	cleanup := setupNetworkMocks() // Update the function call
@@ -80,7 +79,7 @@ func TestGetServiceAndTargetForNetworkChaos(t *testing.T) {
 		targetIndex    int
 		wantSourceName string
 		wantTargetName string
-		wantOK         bool
+		wantErr        bool
 	}{
 		{
 			name:           "Valid app and target indices",
@@ -88,7 +87,7 @@ func TestGetServiceAndTargetForNetworkChaos(t *testing.T) {
 			targetIndex:    0,
 			wantSourceName: "ts-auth-service",
 			wantTargetName: "ts-verification-code-service",
-			wantOK:         true,
+			wantErr:        false,
 		},
 		{
 			name:           "Invalid app index",
@@ -96,7 +95,7 @@ func TestGetServiceAndTargetForNetworkChaos(t *testing.T) {
 			targetIndex:    0,
 			wantSourceName: "",
 			wantTargetName: "",
-			wantOK:         false,
+			wantErr:        true,
 		},
 		{
 			name:           "Valid app index but invalid target index",
@@ -104,20 +103,20 @@ func TestGetServiceAndTargetForNetworkChaos(t *testing.T) {
 			targetIndex:    100,
 			wantSourceName: "ts-auth-service",
 			wantTargetName: "",
-			wantOK:         false,
+			wantErr:        true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(tt.appNameIndex, tt.targetIndex)
+			sourceName, targetName, err := getServiceAndTargetForNetworkChaos(tt.appNameIndex, tt.targetIndex)
 
-			if ok != tt.wantOK {
-				t.Errorf("getServiceAndTargetForNetworkChaos() ok = %v, want %v", ok, tt.wantOK)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getServiceAndTargetForNetworkChaos() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
-			if tt.wantOK {
+			if !tt.wantErr {
 				if sourceName != tt.wantSourceName {
 					t.Errorf("getServiceAndTargetForNetworkChaos() sourceName = %v, want %v", sourceName, tt.wantSourceName)
 				}
@@ -240,9 +239,9 @@ func TestNetworkHelpersIntegration(t *testing.T) {
 	}
 
 	// Test that selectNetworkTargetForService works with the dependencies
-	targetName, ok := selectNetworkTargetForService(sourceName, 0)
-	if !ok {
-		t.Errorf("selectNetworkTargetForService() failed for valid service and index")
+	targetName, err := selectNetworkTargetForService(sourceName, 0)
+	if err != nil {
+		t.Errorf("selectNetworkTargetForService() failed for valid service and index: %v", err)
 	}
 
 	if targetName != dependencies[0] {
@@ -270,10 +269,10 @@ func TestNetworkHelpersWithMocks(t *testing.T) {
 	defer cleanup()
 
 	// Test getServiceAndTargetForNetworkChaos with the mocked data
-	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(0, 0)
+	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(0, 0)
 
-	if !ok {
-		t.Errorf("getServiceAndTargetForNetworkChaos() with mocked data returned ok = false, want true")
+	if err != nil {
+		t.Errorf("getServiceAndTargetForNetworkChaos() with mocked data failed: %v", err)
 	}
 
 	if sourceName != "ts-auth-service" {

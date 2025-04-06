@@ -16,7 +16,7 @@ func TestSelectJVMMethodForService(t *testing.T) {
 		methodIndex   int
 		wantClassName string
 		wantMethod    string
-		wantOK        bool
+		wantErr       bool
 	}{
 		{
 			name:          "Valid service and method index",
@@ -24,7 +24,7 @@ func TestSelectJVMMethodForService(t *testing.T) {
 			methodIndex:   0,
 			wantClassName: "auth.AuthApplication",
 			wantMethod:    "login",
-			wantOK:        true,
+			wantErr:       false,
 		},
 		{
 			name:          "Valid service and second method index",
@@ -32,13 +32,13 @@ func TestSelectJVMMethodForService(t *testing.T) {
 			methodIndex:   1,
 			wantClassName: "auth.AuthService",
 			wantMethod:    "verifyCode",
-			wantOK:        true,
+			wantErr:       false,
 		},
 		{
 			name:        "Valid service but out of bounds method index",
 			serviceName: "ts-auth-service",
 			methodIndex: 100,
-			wantOK:      false, // Should fail with out of bounds index
+			wantErr:     true, // Should fail with out of bounds index
 		},
 		{
 			name:          "Another service with method",
@@ -46,23 +46,26 @@ func TestSelectJVMMethodForService(t *testing.T) {
 			methodIndex:   0,
 			wantClassName: "order.OrderService",
 			wantMethod:    "createOrder",
-			wantOK:        true,
+			wantErr:       false,
 		},
 		{
 			name:        "Non-existent service",
 			serviceName: "non-existent-service",
 			methodIndex: 0,
-			wantOK:      false,
+			wantErr:     true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			className, methodName, ok := selectJVMMethodForService(tt.serviceName, tt.methodIndex)
+			className, methodName, err := selectJVMMethodForService(tt.serviceName, tt.methodIndex)
 
-			assert.Equal(t, tt.wantOK, ok, "Unexpected ok value")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("selectJVMMethodForService() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
 
-			if tt.wantOK {
+			if !tt.wantErr {
 				assert.Equal(t, tt.wantClassName, className, "Class name doesn't match expected")
 				assert.Equal(t, tt.wantMethod, methodName, "Method name doesn't match expected")
 			}
@@ -79,40 +82,51 @@ func TestGetAvailableJVMMethodsForApp(t *testing.T) {
 		appName   string
 		wantCount int
 		wantEmpty bool
+		wantErr   bool
 	}{
 		{
 			name:      "Service with multiple methods",
 			appName:   "ts-auth-service",
 			wantCount: 2,
 			wantEmpty: false,
+			wantErr:   false,
 		},
 		{
 			name:      "Service with one method",
 			appName:   "ts-order-service",
 			wantCount: 1,
 			wantEmpty: false,
+			wantErr:   false,
 		},
 		{
 			name:      "Non-existent service",
 			appName:   "non-existent-service",
 			wantCount: 0,
 			wantEmpty: true,
+			wantErr:   true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			methods := getAvailableJVMMethodsForApp(tt.appName)
+			methods, err := getAvailableJVMMethodsForApp(tt.appName)
 
-			assert.Equal(t, tt.wantCount, len(methods), "Method count doesn't match expected")
-			assert.Equal(t, tt.wantEmpty, len(methods) == 0, "Empty status doesn't match expected")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getAvailableJVMMethodsForApp() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
 
-			// Verify the methods have the correct format if not empty
-			if !tt.wantEmpty {
-				for _, method := range methods {
-					assert.NotEmpty(t, method, "Method descriptor should not be empty")
-					// Check it has the expected format "ClassName.methodName"
-					assert.Contains(t, method, ".", "Method descriptor should have Class.method format")
+			if !tt.wantErr {
+				assert.Equal(t, tt.wantCount, len(methods), "Method count doesn't match expected")
+				assert.Equal(t, tt.wantEmpty, len(methods) == 0, "Empty status doesn't match expected")
+
+				// Verify the methods have the correct format if not empty
+				if !tt.wantEmpty {
+					for _, method := range methods {
+						assert.NotEmpty(t, method, "Method descriptor should not be empty")
+						// Check it has the expected format "ClassName.methodName"
+						assert.Contains(t, method, ".", "Method descriptor should have Class.method format")
+					}
 				}
 			}
 		})
@@ -130,7 +144,7 @@ func TestGetServiceAndMethodForChaosSpec(t *testing.T) {
 		wantAppName  string
 		wantClass    string
 		wantMethod   string
-		wantOK       bool
+		wantErr      bool
 	}{
 		{
 			name:         "Valid app and method indices",
@@ -139,32 +153,36 @@ func TestGetServiceAndMethodForChaosSpec(t *testing.T) {
 			wantAppName:  "ts-auth-service",
 			wantClass:    "auth.AuthApplication",
 			wantMethod:   "login",
-			wantOK:       true,
+			wantErr:      false,
 		},
 		{
 			name:         "Valid app but out-of-bounds method index",
 			appNameIndex: 0,
 			methodIndex:  100,
 			wantAppName:  "ts-auth-service",
-			wantOK:       false,
+			wantErr:      true,
 		},
 		{
 			name:         "Invalid app index",
 			appNameIndex: 20,
 			methodIndex:  0,
 			wantAppName:  "",
-			wantOK:       false,
+			wantErr:      true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			appName, className, methodName, ok := getServiceAndMethodForChaosSpec(tt.appNameIndex, tt.methodIndex)
+			appName, className, methodName, err := getServiceAndMethodForChaosSpec(tt.appNameIndex, tt.methodIndex)
 
-			assert.Equal(t, tt.wantOK, ok, "Unexpected ok value")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getServiceAndMethodForChaosSpec() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
 			assert.Equal(t, tt.wantAppName, appName, "App name doesn't match expected")
 
-			if tt.wantOK {
+			if !tt.wantErr {
 				assert.Equal(t, tt.wantClass, className, "Class name doesn't match expected")
 				assert.Equal(t, tt.wantMethod, methodName, "Method name doesn't match expected")
 			}
@@ -306,14 +324,14 @@ func TestJVMHelpersIntegration(t *testing.T) {
 	assert.Equal(t, methods, methodsFromApp, "Methods from GetJVMMethods and GetJVMMethodsForApp are not consistent")
 
 	// Check that selectJVMMethodForService works with our mock data
-	className, methodName, ok := selectJVMMethodForService(serviceName, 0)
-	assert.True(t, ok, "selectJVMMethodForService() failed for valid service and index")
+	className, methodName, err := selectJVMMethodForService(serviceName, 0)
+	assert.NoError(t, err, "selectJVMMethodForService() failed for valid service and index")
 	assert.Equal(t, "auth.AuthApplication", className, "Unexpected class name")
 	assert.Equal(t, "login", methodName, "Unexpected method name")
 
 	// Test getServiceAndMethodForChaosSpec with the mocked data
-	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(0, 0)
-	assert.True(t, ok, "getServiceAndMethodForChaosSpec() failed with valid indices")
+	appName, className, methodName, err := getServiceAndMethodForChaosSpec(0, 0)
+	assert.NoError(t, err, "getServiceAndMethodForChaosSpec() failed with valid indices")
 	assert.Equal(t, "ts-auth-service", appName, "Unexpected app name")
 	assert.Equal(t, "auth.AuthApplication", className, "Unexpected class name")
 	assert.Equal(t, "login", methodName, "Unexpected method name")

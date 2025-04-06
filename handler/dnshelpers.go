@@ -1,13 +1,14 @@
 package handler
 
 import (
+	"fmt"
+
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
 )
 
-
 // selectDNSPatternsForService selects server addresses to use as patterns for DNS chaos
 // based on the service name and endpoint index
-func selectDNSPatternsForService(serviceName string, endpointIndex int) ([]string, bool) {
+func selectDNSPatternsForService(serviceName string, endpointIndex int) ([]string, error) {
 	endpoints := endpointsGetter(serviceName)
 
 	// Filter out endpoints with empty server addresses
@@ -19,12 +20,12 @@ func selectDNSPatternsForService(serviceName string, endpointIndex int) ([]strin
 	}
 
 	if len(validEndpoints) == 0 {
-		return []string{"*"}, false // Fallback to all domains
+		return []string{"*"}, fmt.Errorf("no valid DNS endpoints found for service %s", serviceName)
 	}
 
 	// Use a specific endpoint if the index is valid
 	if endpointIndex >= 0 && endpointIndex < len(validEndpoints) {
-		return []string{validEndpoints[endpointIndex].ServerAddress}, true
+		return []string{validEndpoints[endpointIndex].ServerAddress}, nil
 	}
 
 	// Otherwise collect all unique server addresses
@@ -38,21 +39,30 @@ func selectDNSPatternsForService(serviceName string, endpointIndex int) ([]strin
 		patterns = append(patterns, addr)
 	}
 
-	return patterns, true
+	return patterns, nil
 }
 
 // getServiceAndPatternsForDNSChaos retrieves the service name and DNS patterns
 // for a DNS chaos experiment
-func getServiceAndPatternsForDNSChaos(appNameIndex int, endpointIndex int) (serviceName string, patterns []string, ok bool) {
+func getServiceAndPatternsForDNSChaos(appNameIndex int, endpointIndex int) (serviceName string, patterns []string, err error) {
 	// Get the app labels
 	labelArr, err := labelsGetter(TargetNamespace, TargetLabelKey)
-	if err != nil || appNameIndex < 0 || appNameIndex >= len(labelArr) {
-		return "", []string{"*"}, false
+	if err != nil {
+		return "", []string{"*"}, fmt.Errorf("failed to get service labels: %w", err)
+	}
+
+	if appNameIndex < 0 || appNameIndex >= len(labelArr) {
+		return "", []string{"*"}, fmt.Errorf("app index %d out of range (max: %d)",
+			appNameIndex, len(labelArr)-1)
 	}
 
 	serviceName = labelArr[appNameIndex]
-	patterns, ok = selectDNSPatternsForService(serviceName, endpointIndex)
-	return serviceName, patterns, ok
+	patterns, err = selectDNSPatternsForService(serviceName, endpointIndex)
+	if err != nil {
+		return serviceName, []string{"*"}, err
+	}
+
+	return serviceName, patterns, nil
 }
 
 // GetDNSEndpoints returns all unique server addresses that can be targeted by DNS chaos

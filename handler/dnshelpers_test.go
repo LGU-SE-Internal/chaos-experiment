@@ -15,64 +15,69 @@ func TestSelectDNSPatternsForService(t *testing.T) {
 		serviceName   string
 		endpointIndex int
 		wantPatterns  []string
-		wantOk        bool
+		wantErr       bool
 	}{
 		{
 			name:          "Service with endpoint with server address",
 			serviceName:   "ts-auth-service",
 			endpointIndex: 0,
 			wantPatterns:  []string{"ts-verification-code-service"},
-			wantOk:        true,
+			wantErr:       false,
 		},
 		{
 			name:          "Service with database endpoint",
 			serviceName:   "ts-auth-service",
 			endpointIndex: 1,
 			wantPatterns:  []string{"mysql"},
-			wantOk:        true,
+			wantErr:       false,
 		},
 		{
 			name:          "Service with multiple endpoints, all patterns",
 			serviceName:   "ts-auth-service",
 			endpointIndex: -1,
 			wantPatterns:  []string{"ts-verification-code-service", "mysql"},
-			wantOk:        true,
+			wantErr:       false,
 		},
 		{
 			name:          "Service with no valid patterns",
 			serviceName:   "ts-empty-service",
 			endpointIndex: 0,
 			wantPatterns:  []string{"*"},
-			wantOk:        false,
+			wantErr:       true,
 		},
 		{
 			name:          "Service with only self reference",
 			serviceName:   "ts-self-service",
 			endpointIndex: 0,
 			wantPatterns:  []string{"*"},
-			wantOk:        false,
+			wantErr:       true,
 		},
 		{
 			name:          "Service with index out of range",
 			serviceName:   "ts-auth-service",
 			endpointIndex: 10, // Out of range
 			wantPatterns:  []string{"ts-verification-code-service", "mysql"},
-			wantOk:        true, // Still returns all patterns
+			wantErr:       false, // Still returns all patterns
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			patterns, ok := selectDNSPatternsForService(tt.serviceName, tt.endpointIndex)
+			patterns, err := selectDNSPatternsForService(tt.serviceName, tt.endpointIndex)
 
-			assert.Equal(t, tt.wantOk, ok, "Unexpected ok value")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("selectDNSPatternsForService() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
 
 			// For multiple patterns we need to check they contain the same elements
 			// regardless of order
-			if len(patterns) > 1 && len(tt.wantPatterns) > 1 {
-				assert.ElementsMatch(t, tt.wantPatterns, patterns, "Patterns don't match expected")
-			} else {
-				assert.Equal(t, tt.wantPatterns, patterns, "Patterns don't match expected")
+			if !tt.wantErr {
+				if len(patterns) > 1 && len(tt.wantPatterns) > 1 {
+					assert.ElementsMatch(t, tt.wantPatterns, patterns, "Patterns don't match expected")
+				} else {
+					assert.Equal(t, tt.wantPatterns, patterns, "Patterns don't match expected")
+				}
 			}
 		})
 	}
@@ -91,7 +96,7 @@ func TestGetServiceAndPatternsForDNSChaos(t *testing.T) {
 		endpointIndex   int
 		wantServiceName string
 		wantPatterns    []string
-		wantOk          bool
+		wantErr         bool
 	}{
 		{
 			name:            "Valid app name and endpoint index",
@@ -99,7 +104,7 @@ func TestGetServiceAndPatternsForDNSChaos(t *testing.T) {
 			endpointIndex:   0,
 			wantServiceName: "ts-auth-service",
 			wantPatterns:    []string{"ts-verification-code-service"},
-			wantOk:          true,
+			wantErr:         false,
 		},
 		{
 			name:            "Valid app name and all endpoints",
@@ -107,7 +112,7 @@ func TestGetServiceAndPatternsForDNSChaos(t *testing.T) {
 			endpointIndex:   -1,
 			wantServiceName: "ts-auth-service",
 			wantPatterns:    []string{"ts-verification-code-service", "mysql"},
-			wantOk:          true,
+			wantErr:         false,
 		},
 		{
 			name:            "Service with database endpoint",
@@ -115,7 +120,7 @@ func TestGetServiceAndPatternsForDNSChaos(t *testing.T) {
 			endpointIndex:   0,
 			wantServiceName: "ts-order-service",
 			wantPatterns:    []string{"mysql"},
-			wantOk:          true,
+			wantErr:         false,
 		},
 		{
 			name:            "Invalid app name index",
@@ -123,7 +128,7 @@ func TestGetServiceAndPatternsForDNSChaos(t *testing.T) {
 			endpointIndex:   0,
 			wantServiceName: "",
 			wantPatterns:    []string{"*"},
-			wantOk:          false,
+			wantErr:         true,
 		},
 		{
 			name:            "Service with no valid endpoints",
@@ -131,23 +136,29 @@ func TestGetServiceAndPatternsForDNSChaos(t *testing.T) {
 			endpointIndex:   0,
 			wantServiceName: "ts-empty-service",
 			wantPatterns:    []string{"*"},
-			wantOk:          false,
+			wantErr:         true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			serviceName, patterns, ok := getServiceAndPatternsForDNSChaos(tt.appNameIndex, tt.endpointIndex)
+			serviceName, patterns, err := getServiceAndPatternsForDNSChaos(tt.appNameIndex, tt.endpointIndex)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getServiceAndPatternsForDNSChaos() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
 
 			assert.Equal(t, tt.wantServiceName, serviceName, "Service name doesn't match expected")
-			assert.Equal(t, tt.wantOk, ok, "Unexpected ok value")
 
 			// For multiple patterns we need to check they contain the same elements
 			// regardless of order
-			if len(patterns) > 1 && len(tt.wantPatterns) > 1 {
-				assert.ElementsMatch(t, tt.wantPatterns, patterns, "Patterns don't match expected")
-			} else {
-				assert.Equal(t, tt.wantPatterns, patterns, "Patterns don't match expected")
+			if !tt.wantErr && len(patterns) > 0 {
+				if len(patterns) > 1 && len(tt.wantPatterns) > 1 {
+					assert.ElementsMatch(t, tt.wantPatterns, patterns, "Patterns don't match expected")
+				} else {
+					assert.Equal(t, tt.wantPatterns, patterns, "Patterns don't match expected")
+				}
 			}
 		})
 	}

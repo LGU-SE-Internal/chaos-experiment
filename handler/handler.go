@@ -214,9 +214,9 @@ type HTTPRequestAbortSpec struct {
 }
 
 func (s *HTTPRequestAbortSpec) Create(cli cli.Client) (string, error) {
-	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
+	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -243,9 +243,9 @@ type HTTPResponseAbortSpec struct {
 }
 
 func (s *HTTPResponseAbortSpec) Create(cli cli.Client) (string, error) {
-	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
+	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -273,9 +273,9 @@ type HTTPRequestDelaySpec struct {
 }
 
 func (s *HTTPRequestDelaySpec) Create(cli cli.Client) (string, error) {
-	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
+	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -303,9 +303,9 @@ type HTTPResponseDelaySpec struct {
 }
 
 func (s *HTTPResponseDelaySpec) Create(cli cli.Client) (string, error) {
-	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
+	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -341,9 +341,9 @@ type HTTPResponseReplaceBodySpec struct {
 }
 
 func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client) (string, error) {
-	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
+	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -375,9 +375,9 @@ type HTTPResponsePatchBodySpec struct {
 }
 
 func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client) (string, error) {
-	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
+	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -403,9 +403,9 @@ type HTTPRequestReplacePathSpec struct {
 }
 
 func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client) (string, error) {
-	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
+	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -433,9 +433,9 @@ type HTTPRequestReplaceMethodSpec struct {
 }
 
 func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client) (string, error) {
-	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
+	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -463,9 +463,9 @@ type HTTPResponseReplaceCodeSpec struct {
 }
 
 func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client) (string, error) {
-	serviceName, endpoint, ok := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos")
+	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -526,9 +526,9 @@ type NetworkPartitionSpec struct {
 }
 
 func (s *NetworkPartitionSpec) Create(cli cli.Client) (string, error) {
-	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and target for network chaos")
+	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
 	}
 
 	duration := pointer.String(fmt.Sprintf("%dm", s.Duration))
@@ -556,9 +556,9 @@ type NetworkDelaySpec struct {
 }
 
 func (s *NetworkDelaySpec) Create(cli cli.Client) (string, error) {
-	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and target for network chaos")
+	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
 	}
 
 	// Convert int values to appropriate string format
@@ -590,9 +590,9 @@ type NetworkLossSpec struct {
 }
 
 func (s *NetworkLossSpec) Create(cli cli.Client) (string, error) {
-	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and target for network chaos")
+	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
 	}
 
 	// Convert int values to appropriate string format
@@ -623,9 +623,9 @@ type NetworkDuplicateSpec struct {
 }
 
 func (s *NetworkDuplicateSpec) Create(cli cli.Client) (string, error) {
-	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and target for network chaos")
+	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
 	}
 
 	// Convert int values to appropriate string format
@@ -656,9 +656,9 @@ type NetworkCorruptSpec struct {
 }
 
 func (s *NetworkCorruptSpec) Create(cli cli.Client) (string, error) {
-	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and target for network chaos")
+	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
 	}
 
 	// Convert int values to appropriate string format
@@ -690,9 +690,9 @@ type NetworkBandwidthSpec struct {
 }
 
 func (s *NetworkBandwidthSpec) Create(cli cli.Client) (string, error) {
-	sourceName, targetName, ok := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and target for network chaos")
+	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
 	}
 
 	// Convert rate from kbps to string with unit
@@ -721,9 +721,9 @@ type DNSErrorSpec struct {
 }
 
 func (s *DNSErrorSpec) Create(cli cli.Client) (string, error) {
-	serviceName, patterns, ok := getServiceAndPatternsForDNSChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and patterns for DNS chaos")
+	serviceName, patterns, err := getServiceAndPatternsForDNSChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and patterns for DNS chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -741,9 +741,9 @@ type DNSRandomSpec struct {
 }
 
 func (s *DNSRandomSpec) Create(cli cli.Client) (string, error) {
-	serviceName, patterns, ok := getServiceAndPatternsForDNSChaos(s.AppName, s.EndpointIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and patterns for DNS chaos")
+	serviceName, patterns, err := getServiceAndPatternsForDNSChaos(s.AppName, s.EndpointIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and patterns for DNS chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -778,9 +778,9 @@ type JVMLatencySpec struct {
 }
 
 func (s *JVMLatencySpec) Create(cli cli.Client) (string, error) {
-	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and method for JVM chaos")
+	appName, className, methodName, err := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and method for JVM chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -806,9 +806,9 @@ type JVMReturnSpec struct {
 }
 
 func (s *JVMReturnSpec) Create(cli cli.Client) (string, error) {
-	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and method for JVM chaos")
+	appName, className, methodName, err := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and method for JVM chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -848,9 +848,9 @@ type JVMExceptionSpec struct {
 }
 
 func (s *JVMExceptionSpec) Create(cli cli.Client) (string, error) {
-	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and method for JVM chaos")
+	appName, className, methodName, err := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and method for JVM chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -909,9 +909,9 @@ type JVMCPUStressSpec struct {
 }
 
 func (s *JVMCPUStressSpec) Create(cli cli.Client) (string, error) {
-	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and method for JVM chaos")
+	appName, className, methodName, err := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and method for JVM chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
@@ -936,9 +936,9 @@ type JVMMemoryStressSpec struct {
 }
 
 func (s *JVMMemoryStressSpec) Create(cli cli.Client) (string, error) {
-	appName, className, methodName, ok := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
-	if !ok {
-		return "", fmt.Errorf("failed to get service and method for JVM chaos")
+	appName, className, methodName, err := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get service and method for JVM chaos: %w", err)
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
