@@ -1225,7 +1225,12 @@ func (ic *InjectionConf) Create() (map[string]any, string, error) {
 		return nil, "", err
 	}
 
-	return config, instance.Create(cli), nil
+	name := instance.Create(cli)
+	if name == "" {
+		return nil, "", fmt.Errorf("failed to inject chaos")
+	}
+
+	return config, name, nil
 }
 
 func (ic *InjectionConf) getActiveInjection() (Injection, map[string]any, error) {

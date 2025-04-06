@@ -50,16 +50,23 @@ func TestHandler2(t *testing.T) {
 			"value": 0,
 		},
 		"2": map[string]any{
-			"value": 3,
+			"value": 0,
+		},
+		"3": map[string]any{
+			"value": 0,
+		},
+		"4": map[string]any{
+			"value": 1,
 		},
 	}
 
 	mapTest := map[string]any{
 		"children": map[string]any{
-			"0": map[string]any{
+			"27": map[string]any{
 				"children": chilren,
 			},
 		},
+		"value": 27,
 	}
 
 	pp.Println(mapTest)
