@@ -110,8 +110,19 @@ func GetChaosTypeName(c ChaosType) string {
 	return "Unknown"
 }
 
+type Conf struct {
+	Namespace string
+}
+type Option func(*Conf)
+
+func WithNs(ns string) Option {
+	return func(c *Conf) {
+		c.Namespace = ns
+	}
+}
+
 type Injection interface {
-	Create(cli cli.Client) (string, error)
+	Create(cli cli.Client, opt ...Option) (string, error)
 }
 type ContainerKillSpec struct {
 	Duration  int `range:"1-60" description:"Time Unit Minute"`
@@ -119,14 +130,23 @@ type ContainerKillSpec struct {
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
-func (s *ContainerKillSpec) Create(cli cli.Client) (string, error) {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+
+	labelArr, err := client.GetLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.ContainerKillAction
-	return controllers.CreatePodChaos(cli, TargetNamespace, labelArr[s.AppName], action, duration)
+	return controllers.CreatePodChaos(cli, ns, labelArr[s.AppName], action, duration)
 }
 
 type PodFailureSpec struct {
@@ -135,14 +155,22 @@ type PodFailureSpec struct {
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
-func (s *PodFailureSpec) Create(cli cli.Client) (string, error) {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+	labelArr, err := client.GetLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodFailureAction
-	return controllers.CreatePodChaos(cli, TargetNamespace, labelArr[s.AppName], action, duration)
+	return controllers.CreatePodChaos(cli, ns, labelArr[s.AppName], action, duration)
 }
 
 type PodKillSpec struct {
@@ -151,14 +179,22 @@ type PodKillSpec struct {
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
-func (s *PodKillSpec) Create(cli cli.Client) (string, error) {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+	labelArr, err := client.GetLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodKillAction
-	return controllers.CreatePodChaos(cli, TargetNamespace, labelArr[s.AppName], action, duration)
+	return controllers.CreatePodChaos(cli, ns, labelArr[s.AppName], action, duration)
 }
 
 type CPUStressChaosSpec struct {
@@ -169,8 +205,16 @@ type CPUStressChaosSpec struct {
 	CPUWorker int `range:"1-3" description:"CPU Stress Threads"`
 }
 
-func (s *CPUStressChaosSpec) Create(cli cli.Client) (string, error) {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+	labelArr, err := client.GetLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", err
 	}
@@ -180,7 +224,7 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client) (string, error) {
 		s.CPULoad,
 		s.CPUWorker,
 	)
-	return controllers.CreateStressChaos(cli, TargetNamespace, labelArr[s.AppName], stressors, "cpu-exhaustion", duration)
+	return controllers.CreateStressChaos(cli, ns, labelArr[s.AppName], stressors, "cpu-exhaustion", duration)
 }
 
 type MemoryStressChaosSpec struct {
@@ -191,8 +235,16 @@ type MemoryStressChaosSpec struct {
 	MemWorker  int `range:"1-4" description:"Memory Stress Threads"`
 }
 
-func (s *MemoryStressChaosSpec) Create(cli cli.Client) (string, error) {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+	labelArr, err := client.GetLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", err
 	}
@@ -200,7 +252,7 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client) (string, error) {
 		strconv.Itoa(s.MemorySize)+"MiB",
 		s.MemWorker,
 	)
-	return controllers.CreateStressChaos(cli, TargetNamespace, labelArr[s.AppName], stressors, "memory-exhaustion", pointer.String(strconv.Itoa(s.Duration)+"m"))
+	return controllers.CreateStressChaos(cli, ns, labelArr[s.AppName], stressors, "memory-exhaustion", pointer.String(strconv.Itoa(s.Duration)+"m"))
 }
 
 // HTTP Chaos Specs
@@ -213,7 +265,15 @@ type HTTPRequestAbortSpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
 }
 
-func (s *HTTPRequestAbortSpec) Create(cli cli.Client) (string, error) {
+func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
@@ -223,15 +283,15 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client) (string, error) {
 	abort := true
 
 	// Create options with endpoint-specific values
-	opts := []chaos.OptHTTPChaos{
+	optss := []chaos.OptHTTPChaos{
 		chaos.WithTarget(chaosmeshv1alpha1.PodHttpRequest),
 		chaos.WithAbort(&abort),
 	}
 
 	// Add common HTTP options (port, path and method)
-	opts = AddCommonHTTPOptions(endpoint, opts)
+	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "request-abort", duration, opts...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-abort", duration, optss...)
 }
 
 // HTTPResponseAbortSpec defines HTTP response abort chaos
@@ -242,7 +302,15 @@ type HTTPResponseAbortSpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
 }
 
-func (s *HTTPResponseAbortSpec) Create(cli cli.Client) (string, error) {
+func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
@@ -252,15 +320,15 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client) (string, error) {
 	abort := true
 
 	// Create options with endpoint-specific values
-	opts := []chaos.OptHTTPChaos{
+	optss := []chaos.OptHTTPChaos{
 		chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
 		chaos.WithAbort(&abort),
 	}
 
 	// Add common HTTP options (port, path and method)
-	opts = AddCommonHTTPOptions(endpoint, opts)
+	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "response-abort", duration, opts...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-abort", duration, optss...)
 }
 
 // HTTPRequestDelaySpec defines HTTP request delay chaos
@@ -272,7 +340,15 @@ type HTTPRequestDelaySpec struct {
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
 }
 
-func (s *HTTPRequestDelaySpec) Create(cli cli.Client) (string, error) {
+func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
@@ -282,15 +358,15 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client) (string, error) {
 	delay := fmt.Sprintf("%dms", s.DelayDuration)
 
 	// Create options with endpoint-specific values
-	opts := []chaos.OptHTTPChaos{
+	optss := []chaos.OptHTTPChaos{
 		chaos.WithTarget(chaosmeshv1alpha1.PodHttpRequest),
 		chaos.WithDelay(&delay),
 	}
 
 	// Add common HTTP options (port, path and method)
-	opts = AddCommonHTTPOptions(endpoint, opts)
+	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "request-delay", duration, opts...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-delay", duration, optss...)
 }
 
 // HTTPResponseDelaySpec defines HTTP response delay chaos
@@ -302,7 +378,15 @@ type HTTPResponseDelaySpec struct {
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
 }
 
-func (s *HTTPResponseDelaySpec) Create(cli cli.Client) (string, error) {
+func (s *HTTPResponseDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
@@ -312,15 +396,15 @@ func (s *HTTPResponseDelaySpec) Create(cli cli.Client) (string, error) {
 	delay := fmt.Sprintf("%dms", s.DelayDuration)
 
 	// Create options with endpoint-specific values
-	opts := []chaos.OptHTTPChaos{
+	optss := []chaos.OptHTTPChaos{
 		chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
 		chaos.WithDelay(&delay),
 	}
 
 	// Add common HTTP options (port, path and method)
-	opts = AddCommonHTTPOptions(endpoint, opts)
+	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "response-delay", duration, opts...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-delay", duration, optss...)
 }
 
 // ReplaceBodyType for HTTP response body replacement
@@ -340,7 +424,15 @@ type HTTPResponseReplaceBodySpec struct {
 	BodyType      ReplaceBodyType `range:"0-1" description:"Body Type (0=Empty, 1=Random)"`
 }
 
-func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client) (string, error) {
+func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
@@ -349,21 +441,21 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
 	// Create options with endpoint-specific values
-	opts := []chaos.OptHTTPChaos{
+	optss := []chaos.OptHTTPChaos{
 		chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
 	}
 
 	// Add body replacement based on type
 	if s.BodyType == EmptyBody {
-		opts = append(opts, chaos.WithReplaceBody([]byte("")))
+		optss = append(optss, chaos.WithReplaceBody([]byte("")))
 	} else {
-		opts = append(opts, chaos.WithRandomReplaceBody())
+		optss = append(optss, chaos.WithRandomReplaceBody())
 	}
 
 	// Add common HTTP options (port, path and method)
-	opts = AddCommonHTTPOptions(endpoint, opts)
+	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "response-replace-body", duration, opts...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-replace-body", duration, optss...)
 }
 
 // HTTPResponsePatchBodySpec defines HTTP response body patching chaos
@@ -374,7 +466,15 @@ type HTTPResponsePatchBodySpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
 }
 
-func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client) (string, error) {
+func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
@@ -383,15 +483,15 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
 	// Create options with endpoint-specific values
-	opts := []chaos.OptHTTPChaos{
+	optss := []chaos.OptHTTPChaos{
 		chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
 		chaos.WithPatchBody(`{"foo": "bar"}`),
 	}
 
 	// Add common HTTP options (port, path and method)
-	opts = AddCommonHTTPOptions(endpoint, opts)
+	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "response-patch-body", duration, opts...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-patch-body", duration, optss...)
 }
 
 // HTTPRequestReplacePathSpec defines HTTP request path replacement chaos
@@ -402,7 +502,15 @@ type HTTPRequestReplacePathSpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
 }
 
-func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client) (string, error) {
+func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
@@ -412,15 +520,15 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client) (string, error) {
 	newPath := "/api/v2/"
 
 	// Create options with endpoint-specific values
-	opts := []chaos.OptHTTPChaos{
+	optss := []chaos.OptHTTPChaos{
 		chaos.WithTarget(chaosmeshv1alpha1.PodHttpRequest),
 		chaos.WithReplacePath(&newPath),
 	}
 
 	// Add common HTTP options (port, path and method)
-	opts = AddCommonHTTPOptions(endpoint, opts)
+	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "request-replace-path", duration, opts...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-replace-path", duration, optss...)
 }
 
 // HTTPRequestReplaceMethodSpec defines HTTP request method replacement chaos
@@ -432,7 +540,15 @@ type HTTPRequestReplaceMethodSpec struct {
 	ReplaceMethod HTTPMethod `range:"0-6" description:"HTTP Method to replace with"`
 }
 
-func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client) (string, error) {
+func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
@@ -442,15 +558,15 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client) (string, error) {
 	newMethod := GetHTTPMethodName(s.ReplaceMethod)
 
 	// Create options with endpoint-specific values
-	opts := []chaos.OptHTTPChaos{
+	optss := []chaos.OptHTTPChaos{
 		chaos.WithTarget(chaosmeshv1alpha1.PodHttpRequest),
 		chaos.WithReplaceMethod(&newMethod),
 	}
 
 	// Add common HTTP options (port, path and method)
-	opts = AddCommonHTTPOptions(endpoint, opts)
+	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "request-replace-method", duration, opts...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-replace-method", duration, optss...)
 }
 
 // HTTPResponseReplaceCodeSpec defines HTTP response status code replacement chaos
@@ -462,7 +578,15 @@ type HTTPResponseReplaceCodeSpec struct {
 	StatusCode    HTTPStatusCode `range:"0-9" description:"HTTP Status Code to replace with"`
 }
 
-func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client) (string, error) {
+func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, endpoint, err := getServiceAndEndpointForHTTPChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and endpoint for HTTP chaos: %w", err)
@@ -472,15 +596,15 @@ func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client) (string, error) {
 	code := GetHTTPStatusCode(s.StatusCode)
 
 	// Create options with endpoint-specific values
-	opts := []chaos.OptHTTPChaos{
+	optss := []chaos.OptHTTPChaos{
 		chaos.WithTarget(chaosmeshv1alpha1.PodHttpResponse),
 		chaos.WithReplaceCode(&code),
 	}
 
 	// Add common HTTP options (port, path and method)
-	opts = AddCommonHTTPOptions(endpoint, opts)
+	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, TargetNamespace, serviceName, "response-replace-code", duration, opts...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-replace-code", duration, optss...)
 }
 
 type TimeSkewSpec struct {
@@ -490,8 +614,16 @@ type TimeSkewSpec struct {
 	TimeOffset int `range:"-600-600" description:"Time offset in seconds"`
 }
 
-func (s *TimeSkewSpec) Create(cli cli.Client) (string, error) {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+	labelArr, err := client.GetLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", err
 	}
@@ -499,7 +631,7 @@ func (s *TimeSkewSpec) Create(cli cli.Client) (string, error) {
 	// Format the TimeOffset with "s" unit
 	timeOffset := fmt.Sprintf("%ds", s.TimeOffset)
 
-	return controllers.CreateTimeChaos(cli, TargetNamespace, labelArr[s.AppName], timeOffset, duration)
+	return controllers.CreateTimeChaos(cli, ns, labelArr[s.AppName], timeOffset, duration)
 }
 
 // Map for Direction conversion from int to chaos-mesh Direction type
@@ -525,7 +657,15 @@ type NetworkPartitionSpec struct {
 	Direction int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkPartitionSpec) Create(cli cli.Client) (string, error) {
+func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
@@ -535,12 +675,12 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client) (string, error) {
 	direction := getDirection(s.Direction)
 
 	// Create network partition between the source and target services
-	opts := []chaos.OptNetworkChaos{
-		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+	optss := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(ns, targetName, direction),
 	}
 
-	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
-		chaosmeshv1alpha1.PartitionAction, duration, opts...)
+	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+		chaosmeshv1alpha1.PartitionAction, duration, optss...)
 }
 
 // Update the NetworkDelaySpec to use the target service index
@@ -555,7 +695,15 @@ type NetworkDelaySpec struct {
 	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
-func (s *NetworkDelaySpec) Create(cli cli.Client) (string, error) {
+func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
@@ -569,13 +717,13 @@ func (s *NetworkDelaySpec) Create(cli cli.Client) (string, error) {
 	direction := getDirection(s.Direction)
 
 	// Create network delay between the source and target services
-	opts := []chaos.OptNetworkChaos{
-		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+	optss := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(ns, targetName, direction),
 		chaos.WithNetworkDelay(latency, correlation, jitter),
 	}
 
-	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
-		chaosmeshv1alpha1.DelayAction, duration, opts...)
+	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+		chaosmeshv1alpha1.DelayAction, duration, optss...)
 }
 
 // Update the NetworkLossSpec to use the target service index
@@ -589,7 +737,15 @@ type NetworkLossSpec struct {
 	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
-func (s *NetworkLossSpec) Create(cli cli.Client) (string, error) {
+func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
@@ -602,13 +758,13 @@ func (s *NetworkLossSpec) Create(cli cli.Client) (string, error) {
 	direction := getDirection(s.Direction)
 
 	// Create network loss between the source and target services
-	opts := []chaos.OptNetworkChaos{
-		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+	optss := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(ns, targetName, direction),
 		chaos.WithNetworkLoss(loss, correlation),
 	}
 
-	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
-		chaosmeshv1alpha1.LossAction, duration, opts...)
+	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+		chaosmeshv1alpha1.LossAction, duration, optss...)
 }
 
 // Update the NetworkDuplicateSpec to use the target service index
@@ -622,7 +778,15 @@ type NetworkDuplicateSpec struct {
 	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
-func (s *NetworkDuplicateSpec) Create(cli cli.Client) (string, error) {
+func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
@@ -635,13 +799,13 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client) (string, error) {
 	direction := getDirection(s.Direction)
 
 	// Create network duplicate between the source and target services
-	opts := []chaos.OptNetworkChaos{
-		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+	optss := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(ns, targetName, direction),
 		chaos.WithNetworkDuplicate(duplicate, correlation),
 	}
 
-	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
-		chaosmeshv1alpha1.DuplicateAction, duration, opts...)
+	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+		chaosmeshv1alpha1.DuplicateAction, duration, optss...)
 }
 
 // Update the NetworkCorruptSpec to use the target service index
@@ -655,7 +819,15 @@ type NetworkCorruptSpec struct {
 	TargetIdx   int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
-func (s *NetworkCorruptSpec) Create(cli cli.Client) (string, error) {
+func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
@@ -668,13 +840,13 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client) (string, error) {
 	direction := getDirection(s.Direction)
 
 	// Create network corrupt between the source and target services
-	opts := []chaos.OptNetworkChaos{
-		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+	optss := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(ns, targetName, direction),
 		chaos.WithNetworkCorrupt(corrupt, correlation),
 	}
 
-	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
-		chaosmeshv1alpha1.CorruptAction, duration, opts...)
+	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+		chaosmeshv1alpha1.CorruptAction, duration, optss...)
 }
 
 // Update the NetworkBandwidthSpec to use the target service index
@@ -689,7 +861,15 @@ type NetworkBandwidthSpec struct {
 	TargetIdx int `range:"0-0" dynamic:"true" description:"Target service index"`
 }
 
-func (s *NetworkBandwidthSpec) Create(cli cli.Client) (string, error) {
+func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	sourceName, targetName, err := getServiceAndTargetForNetworkChaos(s.AppName, s.TargetIdx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and target for network chaos: %w", err)
@@ -703,13 +883,13 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client) (string, error) {
 	direction := getDirection(s.Direction)
 
 	// Create network bandwidth between the source and target services
-	opts := []chaos.OptNetworkChaos{
-		chaos.WithNetworkTargetAndDirection(TargetNamespace, targetName, direction),
+	optss := []chaos.OptNetworkChaos{
+		chaos.WithNetworkTargetAndDirection(ns, targetName, direction),
 		chaos.WithNetworkBandwidth(rate, limit, buffer),
 	}
 
-	return controllers.CreateNetworkChaos(cli, TargetNamespace, sourceName,
-		chaosmeshv1alpha1.BandwidthAction, duration, opts...)
+	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+		chaosmeshv1alpha1.BandwidthAction, duration, optss...)
 }
 
 // DNSErrorSpec defines the DNS error chaos injection parameters
@@ -720,7 +900,15 @@ type DNSErrorSpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"DNS Target Index"`
 }
 
-func (s *DNSErrorSpec) Create(cli cli.Client) (string, error) {
+func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, patterns, err := getServiceAndPatternsForDNSChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and patterns for DNS chaos: %w", err)
@@ -729,7 +917,7 @@ func (s *DNSErrorSpec) Create(cli cli.Client) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.ErrorAction
 
-	return controllers.CreateDnsChaos(cli, TargetNamespace, serviceName, action, patterns, duration)
+	return controllers.CreateDnsChaos(cli, ns, serviceName, action, patterns, duration)
 }
 
 // DNSRandomSpec defines the DNS random chaos injection parameters
@@ -740,7 +928,15 @@ type DNSRandomSpec struct {
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"DNS Target Index"`
 }
 
-func (s *DNSRandomSpec) Create(cli cli.Client) (string, error) {
+func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	serviceName, patterns, err := getServiceAndPatternsForDNSChaos(s.AppName, s.EndpointIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and patterns for DNS chaos: %w", err)
@@ -749,7 +945,7 @@ func (s *DNSRandomSpec) Create(cli cli.Client) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.RandomAction
 
-	return controllers.CreateDnsChaos(cli, TargetNamespace, serviceName, action, patterns, duration)
+	return controllers.CreateDnsChaos(cli, ns, serviceName, action, patterns, duration)
 }
 
 // JVM Return Value Type
@@ -777,7 +973,15 @@ type JVMLatencySpec struct {
 	LatencyDuration int `range:"1-5000" description:"Latency in ms"`
 }
 
-func (s *JVMLatencySpec) Create(cli cli.Client) (string, error) {
+func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	appName, className, methodName, err := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and method for JVM chaos: %w", err)
@@ -785,14 +989,14 @@ func (s *JVMLatencySpec) Create(cli cli.Client) (string, error) {
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
-	opts := []chaos.OptJVMChaos{
+	optss := []chaos.OptJVMChaos{
 		chaos.WithJVMClass(className),
 		chaos.WithJVMMethod(methodName),
 		chaos.WithJVMLatencyDuration(s.LatencyDuration),
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, appName,
-		chaosmeshv1alpha1.JVMLatencyAction, duration, opts...)
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMLatencyAction, duration, optss...)
 }
 
 // JVMReturnSpec defines the JVM return value chaos injection parameters
@@ -805,7 +1009,15 @@ type JVMReturnSpec struct {
 	ReturnValueOpt int           `range:"0-1" description:"Return value option (0=Default, 1=Random)"`
 }
 
-func (s *JVMReturnSpec) Create(cli cli.Client) (string, error) {
+func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	appName, className, methodName, err := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and method for JVM chaos: %w", err)
@@ -813,7 +1025,7 @@ func (s *JVMReturnSpec) Create(cli cli.Client) (string, error) {
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
-	opts := []chaos.OptJVMChaos{
+	optss := []chaos.OptJVMChaos{
 		chaos.WithJVMClass(className),
 		chaos.WithJVMMethod(methodName),
 	}
@@ -821,21 +1033,21 @@ func (s *JVMReturnSpec) Create(cli cli.Client) (string, error) {
 	if s.ReturnValueOpt == 0 {
 		// Use default value
 		if s.ReturnType == StringReturn {
-			opts = append(opts, chaos.WithJVMDefaultStringReturn())
+			optss = append(optss, chaos.WithJVMDefaultStringReturn())
 		} else {
-			opts = append(opts, chaos.WithJVMDefaultIntReturn())
+			optss = append(optss, chaos.WithJVMDefaultIntReturn())
 		}
 	} else {
 		// Use random value
 		if s.ReturnType == StringReturn {
-			opts = append(opts, chaos.WithJVMRandomStringReturn(8))
+			optss = append(optss, chaos.WithJVMRandomStringReturn(8))
 		} else {
-			opts = append(opts, chaos.WithJVMRandomIntReturn(1, 1000))
+			optss = append(optss, chaos.WithJVMRandomIntReturn(1, 1000))
 		}
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, appName,
-		chaosmeshv1alpha1.JVMReturnAction, duration, opts...)
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMReturnAction, duration, optss...)
 }
 
 // JVMExceptionSpec defines the JVM exception injection parameters
@@ -847,7 +1059,15 @@ type JVMExceptionSpec struct {
 	ExceptionOpt int `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
 }
 
-func (s *JVMExceptionSpec) Create(cli cli.Client) (string, error) {
+func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	appName, className, methodName, err := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and method for JVM chaos: %w", err)
@@ -855,14 +1075,14 @@ func (s *JVMExceptionSpec) Create(cli cli.Client) (string, error) {
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
-	opts := []chaos.OptJVMChaos{
+	optss := []chaos.OptJVMChaos{
 		chaos.WithJVMClass(className),
 		chaos.WithJVMMethod(methodName),
 	}
 
 	if s.ExceptionOpt == 0 {
 		// Use default exception
-		opts = append(opts, chaos.WithJVMDefaultException())
+		optss = append(optss, chaos.WithJVMDefaultException())
 	} else {
 		// Use random exception
 		randomExceptions := []string{
@@ -874,11 +1094,11 @@ func (s *JVMExceptionSpec) Create(cli cli.Client) (string, error) {
 		}
 		// Pick a random exception from the list
 		randomIndex := rand.Intn(len(randomExceptions))
-		opts = append(opts, chaos.WithJVMException(randomExceptions[randomIndex]))
+		optss = append(optss, chaos.WithJVMException(randomExceptions[randomIndex]))
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, appName,
-		chaosmeshv1alpha1.JVMExceptionAction, duration, opts...)
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMExceptionAction, duration, optss...)
 }
 
 // JVMGCSpec defines the JVM garbage collector chaos injection parameters
@@ -888,14 +1108,22 @@ type JVMGCSpec struct {
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
 
-func (s *JVMGCSpec) Create(cli cli.Client) (string, error) {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+	labelArr, err := client.GetLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", err
 	}
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
+	return controllers.CreateJVMChaos(cli, ns, labelArr[s.AppName],
 		chaosmeshv1alpha1.JVMGCAction, duration)
 }
 
@@ -908,7 +1136,15 @@ type JVMCPUStressSpec struct {
 	CPUCount    int `range:"1-8" description:"Number of CPU cores to stress"`
 }
 
-func (s *JVMCPUStressSpec) Create(cli cli.Client) (string, error) {
+func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	appName, className, methodName, err := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and method for JVM chaos: %w", err)
@@ -916,14 +1152,14 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client) (string, error) {
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
-	opts := []chaos.OptJVMChaos{
+	optss := []chaos.OptJVMChaos{
 		chaos.WithJVMClass(className),
 		chaos.WithJVMMethod(methodName),
 		chaos.WithJVMStressCPUCount(s.CPUCount),
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, appName,
-		chaosmeshv1alpha1.JVMStressAction, duration, opts...)
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMStressAction, duration, optss...)
 }
 
 // JVMMemoryStressSpec defines the JVM memory stress chaos injection parameters
@@ -935,7 +1171,15 @@ type JVMMemoryStressSpec struct {
 	MemType     JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
 }
 
-func (s *JVMMemoryStressSpec) Create(cli cli.Client) (string, error) {
+func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
 	appName, className, methodName, err := getServiceAndMethodForChaosSpec(s.AppName, s.MethodIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get service and method for JVM chaos: %w", err)
@@ -949,14 +1193,14 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client) (string, error) {
 		memType = "stack"
 	}
 
-	opts := []chaos.OptJVMChaos{
+	optss := []chaos.OptJVMChaos{
 		chaos.WithJVMClass(className),
 		chaos.WithJVMMethod(methodName),
 		chaos.WithJVMStressMemType(memType),
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, appName,
-		chaosmeshv1alpha1.JVMStressAction, duration, opts...)
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMStressAction, duration, optss...)
 }
 
 // SQL types for JVMMySQL
@@ -1028,8 +1272,16 @@ type JVMMySQLLatencySpec struct {
 	SQLType    int `range:"0-5" description:"SQL Type (0=All, 1=Select, 2=Insert, 3=Update, 4=Delete, 5=Replace)"`
 }
 
-func (s *JVMMySQLLatencySpec) Create(cli cli.Client) (string, error) {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+	labelArr, err := client.GetLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", err
 	}
@@ -1046,7 +1298,7 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client) (string, error) {
 		tableStr = AvailableMySQLTables[s.TableIndex]
 	}
 
-	opts := []chaos.OptJVMChaos{
+	optss := []chaos.OptJVMChaos{
 		chaos.WithJVMMySQLConnector("5"), // Hardcoded to version 5
 		chaos.WithJVMMySQLDatabase("ts"), // Hardcoded to ts database
 		chaos.WithJVMMySQLTable(tableStr),
@@ -1054,8 +1306,8 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client) (string, error) {
 		chaos.WithJVMLatencyDuration(s.LatencyMs),
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
-		chaosmeshv1alpha1.JVMMySQLAction, duration, opts...)
+	return controllers.CreateJVMChaos(cli, ns, labelArr[s.AppName],
+		chaosmeshv1alpha1.JVMMySQLAction, duration, optss...)
 }
 
 // JVMMySQLExceptionSpec defines the JVM MySQL exception chaos injection parameters
@@ -1067,8 +1319,16 @@ type JVMMySQLExceptionSpec struct {
 	SQLType    int `range:"0-5" description:"SQL Type (0=All, 1=Select, 2=Insert, 3=Update, 4=Delete, 5=Replace)"`
 }
 
-func (s *JVMMySQLExceptionSpec) Create(cli cli.Client) (string, error) {
-	labelArr, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+	labelArr, err := client.GetLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", err
 	}
@@ -1088,7 +1348,7 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client) (string, error) {
 	// Always use "BOOM" as the exception message
 	exceptionMsg := "BOOM"
 
-	opts := []chaos.OptJVMChaos{
+	optss := []chaos.OptJVMChaos{
 		chaos.WithJVMMySQLConnector("5"), // Hardcoded to version 5
 		chaos.WithJVMMySQLDatabase("ts"), // Hardcoded to ts database
 		chaos.WithJVMMySQLTable(tableStr),
@@ -1096,8 +1356,8 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client) (string, error) {
 		chaos.WithJVMException(exceptionMsg),
 	}
 
-	return controllers.CreateJVMChaos(cli, TargetNamespace, labelArr[s.AppName],
-		chaosmeshv1alpha1.JVMMySQLAction, duration, opts...)
+	return controllers.CreateJVMChaos(cli, ns, labelArr[s.AppName],
+		chaosmeshv1alpha1.JVMMySQLAction, duration, optss...)
 }
 
 // Helper function to convert SQL type from int to string
@@ -1218,14 +1478,14 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-4"`
 }
 
-func (ic *InjectionConf) Create() (map[string]any, string, error) {
+func (ic *InjectionConf) Create(opts ...Option) (map[string]any, string, error) {
 	cli := client.NewK8sClient()
 	instance, config, err := ic.getActiveInjection()
 	if err != nil {
 		return nil, "", err
 	}
 
-	name, err := instance.Create(cli)
+	name, err := instance.Create(cli, opts...)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
 	}
