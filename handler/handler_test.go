@@ -73,7 +73,7 @@ func TestHandler2(t *testing.T) {
 
 	node, err := MapToNode(mapTest)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -81,7 +81,7 @@ func TestHandler2(t *testing.T) {
 
 	conf, err := NodeToStruct[InjectionConf](node)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
