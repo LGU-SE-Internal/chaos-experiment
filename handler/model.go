@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/CUHK-SE-Group/chaos-experiment/client"
+	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
 )
 
 /*
@@ -465,13 +466,53 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 		case "Namespace":
 			start = 0
 			end = 0
-		case "AppName":
+		case "AppName", "AppIdx":
 			values, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 			if err != nil {
 				return 0, 0, fmt.Errorf("failed to get labels: %w", err)
 			}
 			start = 0
 			end = len(values) - 1
+		case "MethodIdx":
+			// For flattened JVM methods
+			methods, err := resourcelookup.GetAllJVMMethods()
+			if err != nil {
+				return 0, 0, fmt.Errorf("failed to get JVM methods: %w", err)
+			}
+			start = 0
+			end = len(methods) - 1
+		case "EndpointIdx":
+			// For flattened HTTP endpoints
+			endpoints, err := resourcelookup.GetAllHTTPEndpoints()
+			if err != nil {
+				return 0, 0, fmt.Errorf("failed to get HTTP endpoints: %w", err)
+			}
+			start = 0
+			end = len(endpoints) - 1
+		case "NetworkPairIdx":
+			// For flattened network pairs
+			pairs, err := resourcelookup.GetAllNetworkPairs()
+			if err != nil {
+				return 0, 0, fmt.Errorf("failed to get network pairs: %w", err)
+			}
+			start = 0
+			end = len(pairs) - 1
+		case "ContainerIdx":
+			// For flattened containers
+			containers, err := resourcelookup.GetAllContainers()
+			if err != nil {
+				return 0, 0, fmt.Errorf("failed to get containers: %w", err)
+			}
+			start = 0
+			end = len(containers) - 1
+		case "DNSEndpointIdx":
+			// For flattened DNS endpoints
+			endpoints, err := resourcelookup.GetAllDNSEndpoints()
+			if err != nil {
+				return 0, 0, fmt.Errorf("failed to get DNS endpoints: %w", err)
+			}
+			start = 0
+			end = len(endpoints) - 1
 		}
 	}
 
