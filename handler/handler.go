@@ -125,9 +125,9 @@ type Injection interface {
 	Create(cli cli.Client, opt ...Option) (string, error)
 }
 type ContainerKillSpec struct {
-	Duration  int `range:"15-15" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
-	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
+	Duration     int `range:"15-15" description:"Time Unit Minute"`
+	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
+	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
 }
 
 func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -140,13 +140,24 @@ func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, erro
 		ns = conf.Namespace
 	}
 
-	labelArr, err := client.GetLabels(ns, TargetLabelKey)
+	containers, err := client.GetContainersWithAppLabel(ns)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get containers: %w", err)
 	}
+
+	if s.ContainerIdx < 0 || s.ContainerIdx >= len(containers) {
+		return "", fmt.Errorf("container index out of range: %d (max: %d)", s.ContainerIdx, len(containers)-1)
+	}
+
+	containerInfo := containers[s.ContainerIdx]
+	appName := containerInfo["appLabel"]
+	containerName := containerInfo["containerName"]
+
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.ContainerKillAction
-	return controllers.CreatePodChaos(cli, ns, labelArr[s.AppName], action, duration)
+
+	// Use the updated CreatePodChaosWithContainer function
+	return controllers.CreatePodChaosWithContainer(cli, ns, appName, action, duration, []string{containerName})
 }
 
 type PodFailureSpec struct {

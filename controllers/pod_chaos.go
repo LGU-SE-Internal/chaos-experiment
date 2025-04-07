@@ -36,6 +36,29 @@ func CreatePodChaos(cli client.Client, namespace string, appName string, action 
 	return name, nil
 }
 
+// CreatePodChaosWithContainer creates a pod chaos experiment with specified container names
+func CreatePodChaosWithContainer(cli client.Client, namespace string, appName string, action v1alpha1.PodChaosAction, duration *string, containerNames []string) (string, error) {
+	spec := chaos.GeneratePodChaosSpecWithContainers(namespace, appName, duration, action, containerNames)
+	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6)))
+	podChaos, err := chaos.NewPodChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithPodChaosSpec(spec))
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+		return "", err
+	}
+	create, err := podChaos.ValidateCreate()
+	if err != nil {
+		logrus.Errorf("Failed to validate create chaos: %v", err)
+		return "", err
+	}
+	logrus.Infof("create warning: %v", create)
+	err = cli.Create(context.Background(), podChaos)
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+		return "", err
+	}
+	return name, nil
+}
+
 func AddPodChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, action v1alpha1.PodChaosAction, injectTime *string, sleepTime *string) *v1alpha1.WorkflowSpec {
 	for _, appName := range appList {
 

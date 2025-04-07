@@ -89,6 +89,38 @@ func GetLabels(namespace string, key string) ([]string, error) {
 	return labelValues, nil
 }
 
+// GetContainersWithAppLabel retrieves all containers along with their pod names and app labels
+// in the specified namespace
+func GetContainersWithAppLabel(namespace string) ([]map[string]string, error) {
+	cli := NewK8sClient()
+	result := []map[string]string{}
+
+	// List all pods in the specified namespace
+	podList := &corev1.PodList{}
+	err := cli.List(context.Background(), podList, &client.ListOptions{
+		Namespace: namespace,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list pods in namespace %s: %v", namespace, err)
+	}
+
+	for _, pod := range podList.Items {
+		appLabel := pod.Labels["app"]
+
+		// Add each container with its pod name and app label
+		for _, container := range pod.Spec.Containers {
+			containerInfo := map[string]string{
+				"podName":       pod.Name,
+				"appLabel":      appLabel,
+				"containerName": container.Name,
+			}
+			result = append(result, containerInfo)
+		}
+	}
+
+	return result, nil
+}
+
 // TODO: 添加需要的类型
 func GetCRDMapping() map[schema.GroupVersionResource]client.Object {
 	return map[schema.GroupVersionResource]client.Object{
