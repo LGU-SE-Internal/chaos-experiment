@@ -125,7 +125,7 @@ type Injection interface {
 	Create(cli cli.Client, opt ...Option) (string, error)
 }
 type ContainerKillSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Duration  int `range:"15-15" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
@@ -150,7 +150,7 @@ func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, erro
 }
 
 type PodFailureSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Duration  int `range:"15-15" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
@@ -174,7 +174,7 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 }
 
 type PodKillSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Duration  int `range:"15-15" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
@@ -198,7 +198,7 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 }
 
 type CPUStressChaosSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Duration  int `range:"15-15" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 	CPULoad   int `range:"1-100" description:"CPU Load Percentage"`
@@ -228,7 +228,7 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 }
 
 type MemoryStressChaosSpec struct {
-	Duration   int `range:"1-60" description:"Time Unit Minute"`
+	Duration   int `range:"15-15" description:"Time Unit Minute"`
 	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
 	AppName    int `range:"0-0" dynamic:"true" description:"Array"`
 	MemorySize int `range:"1-1024" description:"Memory Size Unit MB"`
@@ -259,7 +259,7 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 
 // HTTPRequestAbortSpec defines HTTP request abort chaos
 type HTTPRequestAbortSpec struct {
-	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Duration      int `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
@@ -296,7 +296,7 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // HTTPResponseAbortSpec defines HTTP response abort chaos
 type HTTPResponseAbortSpec struct {
-	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Duration      int `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
@@ -333,7 +333,7 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, 
 
 // HTTPRequestDelaySpec defines HTTP request delay chaos
 type HTTPRequestDelaySpec struct {
-	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Duration      int `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
@@ -371,7 +371,7 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // HTTPResponseDelaySpec defines HTTP response delay chaos
 type HTTPResponseDelaySpec struct {
-	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Duration      int `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
@@ -417,7 +417,7 @@ const (
 
 // HTTPResponseReplaceBodySpec defines HTTP response body replacement chaos
 type HTTPResponseReplaceBodySpec struct {
-	Duration      int             `range:"1-60" description:"Time Unit Minute"`
+	Duration      int             `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int             `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int             `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int             `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
@@ -460,7 +460,7 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (st
 
 // HTTPResponsePatchBodySpec defines HTTP response body patching chaos
 type HTTPResponsePatchBodySpec struct {
-	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Duration      int `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
@@ -496,7 +496,7 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (stri
 
 // HTTPRequestReplacePathSpec defines HTTP request path replacement chaos
 type HTTPRequestReplacePathSpec struct {
-	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Duration      int `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
@@ -533,7 +533,7 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 
 // HTTPRequestReplaceMethodSpec defines HTTP request method replacement chaos
 type HTTPRequestReplaceMethodSpec struct {
-	Duration      int        `range:"1-60" description:"Time Unit Minute"`
+	Duration      int        `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int        `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int        `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int        `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
@@ -571,7 +571,7 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 
 // HTTPResponseReplaceCodeSpec defines HTTP response status code replacement chaos
 type HTTPResponseReplaceCodeSpec struct {
-	Duration      int            `range:"1-60" description:"Time Unit Minute"`
+	Duration      int            `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int            `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int            `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int            `range:"0-0" dynamic:"true" description:"HTTP Endpoint Index"`
@@ -608,7 +608,7 @@ func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (st
 }
 
 type TimeSkewSpec struct {
-	Duration   int `range:"1-60" description:"Time Unit Minute"`
+	Duration   int `range:"15-15" description:"Time Unit Minute"`
 	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
 	AppName    int `range:"0-0" dynamic:"true" description:"Array"`
 	TimeOffset int `range:"-600-600" description:"Time offset in seconds"`
@@ -650,7 +650,7 @@ func getDirection(directionCode int) chaosmeshv1alpha1.Direction {
 }
 
 type NetworkPartitionSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Duration  int `range:"15-15" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 	TargetIdx int `range:"0-0" dynamic:"true" description:"Target service index"`
@@ -685,7 +685,7 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // Update the NetworkDelaySpec to use the target service index
 type NetworkDelaySpec struct {
-	Duration    int `range:"1-60" description:"Time Unit Minute"`
+	Duration    int `range:"15-15" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int `range:"0-0" dynamic:"true" description:"Array"`
 	Latency     int `range:"1-2000" description:"Latency in milliseconds"`
@@ -728,7 +728,7 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 
 // Update the NetworkLossSpec to use the target service index
 type NetworkLossSpec struct {
-	Duration    int `range:"1-60" description:"Time Unit Minute"`
+	Duration    int `range:"15-15" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int `range:"0-0" dynamic:"true" description:"Array"`
 	Loss        int `range:"1-100" description:"Packet loss percentage"`
@@ -769,7 +769,7 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 
 // Update the NetworkDuplicateSpec to use the target service index
 type NetworkDuplicateSpec struct {
-	Duration    int `range:"1-60" description:"Time Unit Minute"`
+	Duration    int `range:"15-15" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int `range:"0-0" dynamic:"true" description:"Array"`
 	Duplicate   int `range:"1-100" description:"Packet duplication percentage"`
@@ -810,7 +810,7 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // Update the NetworkCorruptSpec to use the target service index
 type NetworkCorruptSpec struct {
-	Duration    int `range:"1-60" description:"Time Unit Minute"`
+	Duration    int `range:"15-15" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int `range:"0-0" dynamic:"true" description:"Array"`
 	Corrupt     int `range:"1-100" description:"Packet corruption percentage"`
@@ -851,7 +851,7 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 
 // Update the NetworkBandwidthSpec to use the target service index
 type NetworkBandwidthSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Duration  int `range:"15-15" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 	Rate      int `range:"1-1000000" description:"Bandwidth rate in kbps"`
@@ -894,7 +894,7 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // DNSErrorSpec defines the DNS error chaos injection parameters
 type DNSErrorSpec struct {
-	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Duration      int `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"DNS Target Index"`
@@ -922,7 +922,7 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 
 // DNSRandomSpec defines the DNS random chaos injection parameters
 type DNSRandomSpec struct {
-	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Duration      int `range:"15-15" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
 	AppName       int `range:"0-0" dynamic:"true" description:"Array"`
 	EndpointIndex int `range:"0-0" dynamic:"true" description:"DNS Target Index"`
@@ -966,7 +966,7 @@ const (
 
 // JVMLatencySpec defines the JVM latency chaos injection parameters
 type JVMLatencySpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Duration        int `range:"15-15" description:"Time Unit Minute"`
 	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
 	AppName         int `range:"0-0" dynamic:"true" description:"Array"`
 	MethodIndex     int `range:"0-0" dynamic:"true" description:"Index of method to target"`
@@ -1001,7 +1001,7 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 
 // JVMReturnSpec defines the JVM return value chaos injection parameters
 type JVMReturnSpec struct {
-	Duration       int           `range:"1-60" description:"Time Unit Minute"`
+	Duration       int           `range:"15-15" description:"Time Unit Minute"`
 	Namespace      int           `range:"0-0" dynamic:"true" description:"String"`
 	AppName        int           `range:"0-0" dynamic:"true" description:"Array"`
 	MethodIndex    int           `range:"0-0" dynamic:"true" description:"Index of method to target"`
@@ -1052,7 +1052,7 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 
 // JVMExceptionSpec defines the JVM exception injection parameters
 type JVMExceptionSpec struct {
-	Duration     int `range:"1-60" description:"Time Unit Minute"`
+	Duration     int `range:"15-15" description:"Time Unit Minute"`
 	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
 	AppName      int `range:"0-0" dynamic:"true" description:"Array"`
 	MethodIndex  int `range:"0-0" dynamic:"true" description:"Index of method to target"`
@@ -1103,7 +1103,7 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 
 // JVMGCSpec defines the JVM garbage collector chaos injection parameters
 type JVMGCSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Duration  int `range:"15-15" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppName   int `range:"0-0" dynamic:"true" description:"Array"`
 }
@@ -1129,7 +1129,7 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 
 // JVMCPUStressSpec defines the JVM CPU stress chaos injection parameters
 type JVMCPUStressSpec struct {
-	Duration    int `range:"1-60" description:"Time Unit Minute"`
+	Duration    int `range:"15-15" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int `range:"0-0" dynamic:"true" description:"Array"`
 	MethodIndex int `range:"0-0" dynamic:"true" description:"Index of method to target"`
@@ -1164,7 +1164,7 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 
 // JVMMemoryStressSpec defines the JVM memory stress chaos injection parameters
 type JVMMemoryStressSpec struct {
-	Duration    int           `range:"1-60" description:"Time Unit Minute"`
+	Duration    int           `range:"15-15" description:"Time Unit Minute"`
 	Namespace   int           `range:"0-0" dynamic:"true" description:"String"`
 	AppName     int           `range:"0-0" dynamic:"true" description:"Array"`
 	MethodIndex int           `range:"0-0" dynamic:"true" description:"Index of method to target"`
@@ -1264,7 +1264,7 @@ var AvailableMySQLTables = []string{
 
 // JVMMySQLLatencySpec defines the JVM MySQL latency chaos injection parameters
 type JVMMySQLLatencySpec struct {
-	Duration   int `range:"1-60" description:"Time Unit Minute"`
+	Duration   int `range:"15-15" description:"Time Unit Minute"`
 	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
 	AppName    int `range:"0-0" dynamic:"true" description:"Array"`
 	LatencyMs  int `range:"10-5000" description:"Latency in ms"`
@@ -1312,7 +1312,7 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 
 // JVMMySQLExceptionSpec defines the JVM MySQL exception chaos injection parameters
 type JVMMySQLExceptionSpec struct {
-	Duration   int `range:"1-60" description:"Time Unit Minute"`
+	Duration   int `range:"15-15" description:"Time Unit Minute"`
 	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
 	AppName    int `range:"0-0" dynamic:"true" description:"Array"`
 	TableIndex int `range:"0-38" description:"Index of table to target (or -1 for all)"`
