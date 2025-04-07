@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/CUHK-SE-Group/chaos-experiment/handler/testdata"
+	"github.com/CUHK-SE-Group/chaos-experiment/internal/testdata"
 )
 
 func setupCommonMocks() func() {

@@ -5,12 +5,19 @@ import (
 	"strings"
 )
 
+// Function variables that can be replaced during testing
+var (
+	// GetClassMethodsByServiceFunc is the implementation for GetClassMethodsByService
+	GetClassMethodsByServiceFunc = GetClassMethodsByService
 
+	// GetAllServicesFunc is the implementation for GetAllServices
+	GetAllServicesFunc = GetAllServices
+)
 
 // GetMethodByIndex returns a specific method by index for a service
 // If index is out of bounds, it returns either the first method or nil if no methods exist
 func GetMethodByIndex(serviceName string, index int) *ClassMethodEntry {
-	methods := GetClassMethodsByService(serviceName)
+	methods := GetClassMethodsByServiceFunc(serviceName)
 	if len(methods) == 0 {
 		return nil
 	}
@@ -25,7 +32,7 @@ func GetMethodByIndex(serviceName string, index int) *ClassMethodEntry {
 // GetRandomMethod returns a random method for a service
 // If no methods exist, it returns nil
 func GetRandomMethod(serviceName string) *ClassMethodEntry {
-	methods := GetClassMethodsByService(serviceName)
+	methods := GetClassMethodsByServiceFunc(serviceName)
 	if len(methods) == 0 {
 		return nil
 	}
@@ -37,7 +44,7 @@ func GetRandomMethod(serviceName string) *ClassMethodEntry {
 // GetMethodByIndexOrRandom returns a method by index, or a random one if index is out of bounds
 // If no methods exist, it returns nil
 func GetMethodByIndexOrRandom(serviceName string, index int) *ClassMethodEntry {
-	methods := GetClassMethodsByService(serviceName)
+	methods := GetClassMethodsByServiceFunc(serviceName)
 	if len(methods) == 0 {
 		return nil
 	}
@@ -51,7 +58,7 @@ func GetMethodByIndexOrRandom(serviceName string, index int) *ClassMethodEntry {
 
 // CountMethods returns the number of methods available for a service
 func CountMethods(serviceName string) int {
-	return len(GetClassMethodsByService(serviceName))
+	return len(GetClassMethodsByServiceFunc(serviceName))
 }
 
 // GetMethodDisplayName returns a short display name for a method (ClassName.methodName)
@@ -67,12 +74,12 @@ func GetMethodDisplayName(entry ClassMethodEntry) string {
 
 // ListAllServiceNames returns a list of all available service names
 func ListAllServiceNames() []string {
-	return GetAllServices()
+	return GetAllServicesFunc()
 }
 
 // ListAvailableMethods returns a list of display names for all methods in a service
 func ListAvailableMethods(serviceName string) []string {
-	methods := GetClassMethodsByService(serviceName)
+	methods := GetClassMethodsByServiceFunc(serviceName)
 	result := make([]string, len(methods))
 
 	for i, method := range methods {

@@ -8,10 +8,9 @@ import (
 
 // Type definitions for function types that will be mocked
 type (
-	EndpointsGetterFunc      func(string) []serviceendpoints.ServiceEndpoint
-	LabelsGetterFunc         func(string, string) ([]string, error)
-	NetworkDependencyFunc    func(string, int) (string, bool)
-	JavaMethodGetterFunc     func(string, int) *javaclassmethods.ClassMethodEntry
+	EndpointsGetterFunc  func(string) []serviceendpoints.ServiceEndpoint
+	LabelsGetterFunc     func(string, string) ([]string, error)
+	JavaMethodGetterFunc func(string, int) *javaclassmethods.ClassMethodEntry
 )
 
 // SetupLabelsMock replaces the labels getter function with mock implementation
@@ -34,22 +33,22 @@ func SetupEndpointsMock(originalGetter EndpointsGetterFunc) func() {
 // and returns a cleanup function
 func SetupNetworkDependenciesMock() func() {
 	// Store original functions
-	originalGetServicePair := networkdependencies.GetServicePairByServiceAndIndex
-	originalGetDependencies := networkdependencies.GetDependenciesForService
-	originalListServiceNames := networkdependencies.ListAllServiceNames
-	originalGetAllPairs := networkdependencies.GetAllServicePairs
+	originalGetServicePair := networkdependencies.GetServicePairByServiceAndIndexFunc
+	originalGetDependencies := networkdependencies.GetDependenciesForServiceFunc
+	originalListServiceNames := networkdependencies.ListAllServiceNamesFunc
+	originalGetAllPairs := networkdependencies.GetAllServicePairsFunc
 
 	// Replace with mock implementations
-	networkdependencies.GetServicePairByServiceAndIndex = MockGetServicePairByServiceAndIndex
-	networkdependencies.GetDependenciesForService = MockGetDependenciesForService
-	networkdependencies.ListAllServiceNames = MockListAllServiceNames
-	networkdependencies.GetAllServicePairs = MockGetAllServicePairs
+	networkdependencies.GetServicePairByServiceAndIndexFunc = MockGetServicePairByServiceAndIndex
+	networkdependencies.GetDependenciesForServiceFunc = MockGetDependenciesForService
+	networkdependencies.ListAllServiceNamesFunc = MockListAllServiceNames
+	networkdependencies.GetAllServicePairsFunc = MockGetAllServicePairs
 
 	// Return cleanup function
 	return func() {
-		networkdependencies.GetServicePairByServiceAndIndex = originalGetServicePair
-		networkdependencies.GetDependenciesForService = originalGetDependencies
-		networkdependencies.ListAllServiceNames = originalListServiceNames
-		networkdependencies.GetAllServicePairs = originalGetAllPairs
+		networkdependencies.GetServicePairByServiceAndIndexFunc = originalGetServicePair
+		networkdependencies.GetDependenciesForServiceFunc = originalGetDependencies
+		networkdependencies.ListAllServiceNamesFunc = originalListServiceNames
+		networkdependencies.GetAllServicePairsFunc = originalGetAllPairs
 	}
 }

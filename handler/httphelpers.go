@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/CUHK-SE-Group/chaos-experiment/chaos"
+	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
 )
 
@@ -225,4 +226,69 @@ func ListHTTPServiceNames() []string {
 // CountHTTPEndpoints returns the number of HTTP endpoints for a service
 func CountHTTPEndpoints(serviceName string) int {
 	return len(GetHTTPEndpoints(serviceName))
+}
+
+// Helper function to create HTTPEndpoint from resourcelookup.AppEndpointPair
+func createHTTPEndpointFromPair(pair resourcelookup.AppEndpointPair) HTTPEndpoint {
+	return HTTPEndpoint{
+		ServiceName:   pair.AppName,
+		Route:         pair.Route,
+		Method:        pair.Method,
+		TargetService: pair.ServerAddress,
+		Port:          pair.ServerPort,
+	}
+}
+
+// GetFlattenedHTTPEndpoints returns all HTTP endpoints as a flattened list
+func GetFlattenedHTTPEndpoints() ([]HTTPEndpoint, error) {
+	pairs, err := resourcelookup.GetAllHTTPEndpoints()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get HTTP endpoints: %w", err)
+	}
+
+	result := make([]HTTPEndpoint, 0, len(pairs))
+	for _, pair := range pairs {
+		result = append(result, createHTTPEndpointFromPair(pair))
+	}
+
+	return result, nil
+}
+
+// ValidateHTTPEndpointIndex validates that an endpoint index is within range
+func ValidateHTTPEndpointIndex(endpointIdx int) error {
+	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
+	if err != nil {
+		return fmt.Errorf("failed to get HTTP endpoints: %w", err)
+	}
+
+	if endpointIdx < 0 || endpointIdx >= len(endpoints) {
+		return fmt.Errorf("HTTP endpoint index out of range: %d (max: %d)",
+			endpointIdx, len(endpoints)-1)
+	}
+
+	return nil
+}
+
+// GetHTTPEndpointByIndex returns an HTTPEndpoint for the given index
+func GetHTTPEndpointByIndex(endpointIdx int) (*HTTPEndpoint, error) {
+	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get HTTP endpoints: %w", err)
+	}
+
+	if endpointIdx < 0 || endpointIdx >= len(endpoints) {
+		return nil, fmt.Errorf("HTTP endpoint index out of range: %d (max: %d)",
+			endpointIdx, len(endpoints)-1)
+	}
+
+	pair := endpoints[endpointIdx]
+	endpoint := HTTPEndpoint{
+		ServiceName:   pair.AppName,
+		Route:         pair.Route,
+		Method:        pair.Method,
+		TargetService: pair.ServerAddress,
+		Port:          pair.ServerPort,
+	}
+
+	return &endpoint, nil
 }

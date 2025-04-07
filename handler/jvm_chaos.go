@@ -1,0 +1,515 @@
+package handler
+
+import (
+	"fmt"
+	"math/rand"
+	"strconv"
+
+	chaos "github.com/CUHK-SE-Group/chaos-experiment/chaos"
+	controllers "github.com/CUHK-SE-Group/chaos-experiment/controllers"
+	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
+	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	"k8s.io/utils/pointer"
+	cli "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+// JVM Return Value Type
+type JVMReturnType int
+
+const (
+	StringReturn JVMReturnType = 1
+	IntReturn    JVMReturnType = 2
+)
+
+// JVM Memory Type
+type JVMMemoryType int
+
+const (
+	HeapMemory  JVMMemoryType = 1
+	StackMemory JVMMemoryType = 2
+)
+
+// JVMLatencySpec defines the JVM latency chaos injection parameters
+// Updated to use flattened MethodIdx
+type JVMLatencySpec struct {
+	Duration        int `range:"15-15" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	MethodIdx       int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
+	LatencyDuration int `range:"1-5000" description:"Latency in ms"`
+}
+
+func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+
+	methods, err := resourcelookup.GetAllJVMMethods()
+	if err != nil {
+		return "", fmt.Errorf("failed to get JVM methods: %w", err)
+	}
+
+	if s.MethodIdx < 0 || s.MethodIdx >= len(methods) {
+		return "", fmt.Errorf("method index out of range: %d (max: %d)", s.MethodIdx, len(methods)-1)
+	}
+
+	methodPair := methods[s.MethodIdx]
+	appName := methodPair.AppName
+	className := methodPair.ClassName
+	methodName := methodPair.MethodName
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	optss := []chaos.OptJVMChaos{
+		chaos.WithJVMClass(className),
+		chaos.WithJVMMethod(methodName),
+		chaos.WithJVMLatencyDuration(s.LatencyDuration),
+	}
+
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMLatencyAction, duration, optss...)
+}
+
+// JVMReturnSpec defines the JVM return value chaos injection parameters
+// Updated to use flattened MethodIdx
+type JVMReturnSpec struct {
+	Duration       int           `range:"15-15" description:"Time Unit Minute"`
+	Namespace      int           `range:"0-0" dynamic:"true" description:"String"`
+	MethodIdx      int           `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
+	ReturnType     JVMReturnType `range:"1-2" description:"Return Type (1=String, 2=Int)"`
+	ReturnValueOpt int           `range:"0-1" description:"Return value option (0=Default, 1=Random)"`
+}
+
+func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+
+	methods, err := resourcelookup.GetAllJVMMethods()
+	if err != nil {
+		return "", fmt.Errorf("failed to get JVM methods: %w", err)
+	}
+
+	if s.MethodIdx < 0 || s.MethodIdx >= len(methods) {
+		return "", fmt.Errorf("method index out of range: %d (max: %d)", s.MethodIdx, len(methods)-1)
+	}
+
+	methodPair := methods[s.MethodIdx]
+	appName := methodPair.AppName
+	className := methodPair.ClassName
+	methodName := methodPair.MethodName
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	optss := []chaos.OptJVMChaos{
+		chaos.WithJVMClass(className),
+		chaos.WithJVMMethod(methodName),
+	}
+
+	if s.ReturnValueOpt == 0 {
+		// Use default value
+		if s.ReturnType == StringReturn {
+			optss = append(optss, chaos.WithJVMDefaultStringReturn())
+		} else {
+			optss = append(optss, chaos.WithJVMDefaultIntReturn())
+		}
+	} else {
+		// Use random value
+		if s.ReturnType == StringReturn {
+			optss = append(optss, chaos.WithJVMRandomStringReturn(8))
+		} else {
+			optss = append(optss, chaos.WithJVMRandomIntReturn(1, 1000))
+		}
+	}
+
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMReturnAction, duration, optss...)
+}
+
+// JVMExceptionSpec defines the JVM exception injection parameters
+// Updated to use flattened MethodIdx
+type JVMExceptionSpec struct {
+	Duration     int `range:"15-15" description:"Time Unit Minute"`
+	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
+	MethodIdx    int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
+	ExceptionOpt int `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
+}
+
+func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+
+	methods, err := resourcelookup.GetAllJVMMethods()
+	if err != nil {
+		return "", fmt.Errorf("failed to get JVM methods: %w", err)
+	}
+
+	if s.MethodIdx < 0 || s.MethodIdx >= len(methods) {
+		return "", fmt.Errorf("method index out of range: %d (max: %d)", s.MethodIdx, len(methods)-1)
+	}
+
+	methodPair := methods[s.MethodIdx]
+	appName := methodPair.AppName
+	className := methodPair.ClassName
+	methodName := methodPair.MethodName
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	optss := []chaos.OptJVMChaos{
+		chaos.WithJVMClass(className),
+		chaos.WithJVMMethod(methodName),
+	}
+
+	if s.ExceptionOpt == 0 {
+		// Use default exception
+		optss = append(optss, chaos.WithJVMDefaultException())
+	} else {
+		// Use random exception
+		randomExceptions := []string{
+			"java.io.IOException(\"Random failure\")",
+			"java.lang.IllegalArgumentException(\"Invalid argument\")",
+			"java.lang.NullPointerException()",
+			"java.lang.RuntimeException(\"Unexpected error\")",
+			"java.sql.SQLException(\"Database error\")",
+		}
+		// Pick a random exception from the list
+		randomIndex := rand.Intn(len(randomExceptions))
+		optss = append(optss, chaos.WithJVMException(randomExceptions[randomIndex]))
+	}
+
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMExceptionAction, duration, optss...)
+}
+
+// JVMGCSpec defines the JVM garbage collector chaos injection parameters
+type JVMGCSpec struct {
+	Duration  int `range:"15-15" description:"Time Unit Minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"String"`
+	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
+}
+
+func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+
+	appLabels, err := resourcelookup.GetAllAppLabels()
+	if err != nil {
+		return "", fmt.Errorf("failed to get app labels: %w", err)
+	}
+
+	if s.AppIdx < 0 || s.AppIdx >= len(appLabels) {
+		return "", fmt.Errorf("app index out of range: %d (max: %d)", s.AppIdx, len(appLabels)-1)
+	}
+
+	appName := appLabels[s.AppIdx]
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMGCAction, duration)
+}
+
+// JVMCPUStressSpec defines the JVM CPU stress chaos injection parameters
+// Updated to use flattened MethodIdx
+type JVMCPUStressSpec struct {
+	Duration  int `range:"15-15" description:"Time Unit Minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"String"`
+	MethodIdx int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
+	CPUCount  int `range:"1-8" description:"Number of CPU cores to stress"`
+}
+
+func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+
+	methods, err := resourcelookup.GetAllJVMMethods()
+	if err != nil {
+		return "", fmt.Errorf("failed to get JVM methods: %w", err)
+	}
+
+	if s.MethodIdx < 0 || s.MethodIdx >= len(methods) {
+		return "", fmt.Errorf("method index out of range: %d (max: %d)", s.MethodIdx, len(methods)-1)
+	}
+
+	methodPair := methods[s.MethodIdx]
+	appName := methodPair.AppName
+	className := methodPair.ClassName
+	methodName := methodPair.MethodName
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	optss := []chaos.OptJVMChaos{
+		chaos.WithJVMClass(className),
+		chaos.WithJVMMethod(methodName),
+		chaos.WithJVMStressCPUCount(s.CPUCount),
+	}
+
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMStressAction, duration, optss...)
+}
+
+// JVMMemoryStressSpec defines the JVM memory stress chaos injection parameters
+// Updated to use flattened MethodIdx
+type JVMMemoryStressSpec struct {
+	Duration  int           `range:"15-15" description:"Time Unit Minute"`
+	Namespace int           `range:"0-0" dynamic:"true" description:"String"`
+	MethodIdx int           `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
+	MemType   JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
+}
+
+func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+
+	methods, err := resourcelookup.GetAllJVMMethods()
+	if err != nil {
+		return "", fmt.Errorf("failed to get JVM methods: %w", err)
+	}
+
+	if s.MethodIdx < 0 || s.MethodIdx >= len(methods) {
+		return "", fmt.Errorf("method index out of range: %d (max: %d)", s.MethodIdx, len(methods)-1)
+	}
+
+	methodPair := methods[s.MethodIdx]
+	appName := methodPair.AppName
+	className := methodPair.ClassName
+	methodName := methodPair.MethodName
+
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	// Convert memory type
+	memType := "heap"
+	if s.MemType == StackMemory {
+		memType = "stack"
+	}
+
+	optss := []chaos.OptJVMChaos{
+		chaos.WithJVMClass(className),
+		chaos.WithJVMMethod(methodName),
+		chaos.WithJVMStressMemType(memType),
+	}
+
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMStressAction, duration, optss...)
+}
+
+// SQL types for JVMMySQL
+type MySQLType int
+
+const (
+	AllSQL     MySQLType = 0
+	SelectSQL  MySQLType = 1
+	InsertSQL  MySQLType = 2
+	UpdateSQL  MySQLType = 3
+	DeleteSQL  MySQLType = 4
+	ReplaceSQL MySQLType = 5
+)
+
+// MySQL connector versions
+type MySQLConnectorVersion int
+
+const (
+	MySQL5 MySQLConnectorVersion = 5
+	MySQL8 MySQLConnectorVersion = 8
+)
+
+// Define available MySQL tables for selection
+var AvailableMySQLTables = []string{
+	"assurance",
+	"auth_user",
+	"config",
+	"consign_price",
+	"consign_record",
+	"contacts",
+	"delivery",
+	"food_delivery_order",
+	"food_delivery_order_food_list",
+	"food_order",
+	"inside_money",
+	"inside_payment",
+	"money",
+	"notify_info",
+	"office",
+	"orders",
+	"orders_other",
+	"payment",
+	"price_config",
+	"route",
+	"route_distances",
+	"route_stations",
+	"security_config",
+	"station",
+	"station_food_list",
+	"station_food_store",
+	"train_food",
+	"train_food_list",
+	"train_type",
+	"trip",
+	"trip2",
+	"user",
+	"user_roles",
+	"voucher",
+	"wait_list_order",
+}
+
+// JVMMySQLLatencySpec defines the JVM MySQL latency chaos injection parameters
+type JVMMySQLLatencySpec struct {
+	Duration   int `range:"15-15" description:"Time Unit Minute"`
+	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
+	AppIdx     int `range:"0-0" dynamic:"true" description:"App index"`
+	LatencyMs  int `range:"10-5000" description:"Latency in ms"`
+	TableIndex int `range:"0-38" description:"Index of table to target (or -1 for all)"`
+	SQLType    int `range:"0-5" description:"SQL Type (0=All, 1=Select, 2=Insert, 3=Update, 4=Delete, 5=Replace)"`
+}
+
+func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+
+	appLabels, err := resourcelookup.GetAllAppLabels()
+	if err != nil {
+		return "", fmt.Errorf("failed to get app labels: %w", err)
+	}
+
+	if s.AppIdx < 0 || s.AppIdx >= len(appLabels) {
+		return "", fmt.Errorf("app index out of range: %d (max: %d)", s.AppIdx, len(appLabels)-1)
+	}
+
+	appName := appLabels[s.AppIdx]
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	// Convert SQL type to string
+	sqlTypeStr := convertSQLTypeToString(s.SQLType)
+
+	// Determine target table
+	var tableStr string
+	if s.TableIndex < 0 || s.TableIndex >= len(AvailableMySQLTables) {
+		tableStr = "" // Empty means all tables
+	} else {
+		tableStr = AvailableMySQLTables[s.TableIndex]
+	}
+
+	optss := []chaos.OptJVMChaos{
+		chaos.WithJVMMySQLConnector("5"), // Hardcoded to version 5
+		chaos.WithJVMMySQLDatabase("ts"), // Hardcoded to ts database
+		chaos.WithJVMMySQLTable(tableStr),
+		chaos.WithJVMMySQLType(sqlTypeStr),
+		chaos.WithJVMLatencyDuration(s.LatencyMs),
+	}
+
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMMySQLAction, duration, optss...)
+}
+
+// JVMMySQLExceptionSpec defines the JVM MySQL exception chaos injection parameters
+type JVMMySQLExceptionSpec struct {
+	Duration   int `range:"15-15" description:"Time Unit Minute"`
+	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
+	AppIdx     int `range:"0-0" dynamic:"true" description:"App Index"`
+	TableIndex int `range:"0-38" description:"Index of table to target (or -1 for all)"`
+	SQLType    int `range:"0-5" description:"SQL Type (0=All, 1=Select, 2=Insert, 3=Update, 4=Delete, 5=Replace)"`
+}
+
+func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+	conf := Conf{}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+	ns := TargetNamespace
+	if conf.Namespace != "" {
+		ns = conf.Namespace
+	}
+
+	appLabels, err := resourcelookup.GetAllAppLabels()
+	if err != nil {
+		return "", fmt.Errorf("failed to get app labels: %w", err)
+	}
+
+	if s.AppIdx < 0 || s.AppIdx >= len(appLabels) {
+		return "", fmt.Errorf("app index out of range: %d (max: %d)", s.AppIdx, len(appLabels)-1)
+	}
+
+	appName := appLabels[s.AppIdx]
+	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
+
+	// Convert SQL type to string
+	sqlTypeStr := convertSQLTypeToString(s.SQLType)
+
+	// Determine target table
+	var tableStr string
+	if s.TableIndex < 0 || s.TableIndex >= len(AvailableMySQLTables) {
+		tableStr = "" // Empty means all tables
+	} else {
+		tableStr = AvailableMySQLTables[s.TableIndex]
+	}
+
+	// Always use "BOOM" as the exception message
+	exceptionMsg := "BOOM"
+
+	optss := []chaos.OptJVMChaos{
+		chaos.WithJVMMySQLConnector("5"), // Hardcoded to version 5
+		chaos.WithJVMMySQLDatabase("ts"), // Hardcoded to ts database
+		chaos.WithJVMMySQLTable(tableStr),
+		chaos.WithJVMMySQLType(sqlTypeStr),
+		chaos.WithJVMException(exceptionMsg),
+	}
+
+	return controllers.CreateJVMChaos(cli, ns, appName,
+		chaosmeshv1alpha1.JVMMySQLAction, duration, optss...)
+}
+
+// Helper function to convert SQL type from int to string
+func convertSQLTypeToString(sqlType int) string {
+	switch sqlType {
+	case 1:
+		return "select"
+	case 2:
+		return "insert"
+	case 3:
+		return "update"
+	case 4:
+		return "delete"
+	case 5:
+		return "replace"
+	default:
+		return "" // All SQL types
+	}
+}
