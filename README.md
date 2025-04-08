@@ -16,7 +16,7 @@ This will generate a file in `internal/javaclassmethods/javaclassmethods.go` wit
 ```bash
 go run cmd/clickhouseanalyzer/main.go --host=10.10.10.58 --username=default --password=password
 ```
-This will generate a file in `internal/serviceendpoints/serviceendpoints.go` with all service endpoint information.
+This will generate a file in `internal/serviceendpoints/serviceendpoints.go` with all service endpoint information. And a file in `internal/databaseoperations/databaseoperations.go` with all database operation information.
 
 
 # Example
