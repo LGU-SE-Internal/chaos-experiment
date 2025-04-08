@@ -513,6 +513,14 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 			}
 			start = 0
 			end = len(endpoints) - 1
+		case "DatabaseIdx":
+			// For flattened database operations
+			dbOps, err := resourcelookup.GetAllDatabaseOperations()
+			if err != nil {
+				return 0, 0, fmt.Errorf("failed to get database operations: %w", err)
+			}
+			start = 0
+			end = len(dbOps) - 1
 		}
 	}
 
