@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/CUHK-SE-Group/chaos-experiment/client"
+	"github.com/CUHK-SE-Group/chaos-experiment/internal/databaseoperations"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/javaclassmethods"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/networkdependencies"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
@@ -43,6 +44,14 @@ type AppDNSPair struct {
 	Domain  string
 }
 
+// AppDatabasePair represents a flattened app+database+table+operation combination
+type AppDatabasePair struct {
+	AppName       string
+	DBName        string
+	TableName     string
+	OperationType string
+}
+
 // ContainerInfo represents container information with its pod and app
 type ContainerInfo struct {
 	PodName       string
@@ -58,6 +67,7 @@ var (
 	cachedNetworkPairs  []AppNetworkPair
 	cachedDNSEndpoints  []AppDNSPair
 	cachedContainerInfo []ContainerInfo
+	cachedDBOperations  []AppDatabasePair
 )
 
 // GetAllAppLabels returns all application labels sorted alphabetically
@@ -231,6 +241,47 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 	return result, nil
 }
 
+// GetAllDatabaseOperations returns all app+database operations pairs sorted by app name
+func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
+	if cachedDBOperations != nil {
+		return cachedDBOperations, nil
+	}
+
+	// Get all service names that have database operations
+	services := databaseoperations.GetAllDatabaseServices()
+	result := make([]AppDatabasePair, 0)
+
+	// For each service, get its database operations
+	for _, serviceName := range services {
+		operations := databaseoperations.GetOperationsByService(serviceName)
+		for _, op := range operations {
+			result = append(result, AppDatabasePair{
+				AppName:       serviceName,
+				DBName:        op.DBName,
+				TableName:     op.DBTable,
+				OperationType: op.Operation,
+			})
+		}
+	}
+
+	// Sort by app name for consistency
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].AppName != result[j].AppName {
+			return result[i].AppName < result[j].AppName
+		}
+		if result[i].DBName != result[j].DBName {
+			return result[i].DBName < result[j].DBName
+		}
+		if result[i].TableName != result[j].TableName {
+			return result[i].TableName < result[j].TableName
+		}
+		return result[i].OperationType < result[j].OperationType
+	})
+
+	cachedDBOperations = result
+	return result, nil
+}
+
 // GetAllContainers returns all containers with their info sorted by app label
 func GetAllContainers() ([]ContainerInfo, error) {
 	if cachedContainerInfo != nil {
@@ -271,4 +322,5 @@ func InvalidateCache() {
 	cachedNetworkPairs = nil
 	cachedDNSEndpoints = nil
 	cachedContainerInfo = nil
+	cachedDBOperations = nil
 }
