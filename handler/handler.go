@@ -185,39 +185,38 @@ var ChaosHandlers = map[ChaosType]Injection{
 	JVMMySQLException:        &JVMMySQLExceptionSpec{},
 }
 
-// Update InjectionConf to match the updated field names
 type InjectionConf struct {
 	PodKill                  *PodKillSpec                  `range:"0-2"`
 	PodFailure               *PodFailureSpec               `range:"0-2"`
 	ContainerKill            *ContainerKillSpec            `range:"0-2"`
 	MemoryStress             *MemoryStressChaosSpec        `range:"0-4"`
 	CPUStress                *CPUStressChaosSpec           `range:"0-4"`
-	HTTPRequestAbort         *HTTPRequestAbortSpec         `range:"0-3"`
-	HTTPResponseAbort        *HTTPResponseAbortSpec        `range:"0-3"`
-	HTTPRequestDelay         *HTTPRequestDelaySpec         `range:"0-4"`
-	HTTPResponseDelay        *HTTPResponseDelaySpec        `range:"0-4"`
-	HTTPResponseReplaceBody  *HTTPResponseReplaceBodySpec  `range:"0-4"`
-	HTTPResponsePatchBody    *HTTPResponsePatchBodySpec    `range:"0-3"`
-	HTTPRequestReplacePath   *HTTPRequestReplacePathSpec   `range:"0-3"`
-	HTTPRequestReplaceMethod *HTTPRequestReplaceMethodSpec `range:"0-4"`
-	HTTPResponseReplaceCode  *HTTPResponseReplaceCodeSpec  `range:"0-4"`
-	DNSError                 *DNSErrorSpec                 `range:"0-3"`
-	DNSRandom                *DNSRandomSpec                `range:"0-3"`
+	HTTPRequestAbort         *HTTPRequestAbortSpec         `range:"0-2"`
+	HTTPResponseAbort        *HTTPResponseAbortSpec        `range:"0-2"`
+	HTTPRequestDelay         *HTTPRequestDelaySpec         `range:"0-3"`
+	HTTPResponseDelay        *HTTPResponseDelaySpec        `range:"0-3"`
+	HTTPResponseReplaceBody  *HTTPResponseReplaceBodySpec  `range:"0-3"`
+	HTTPResponsePatchBody    *HTTPResponsePatchBodySpec    `range:"0-2"`
+	HTTPRequestReplacePath   *HTTPRequestReplacePathSpec   `range:"0-2"`
+	HTTPRequestReplaceMethod *HTTPRequestReplaceMethodSpec `range:"0-3"`
+	HTTPResponseReplaceCode  *HTTPResponseReplaceCodeSpec  `range:"0-3"`
+	DNSError                 *DNSErrorSpec                 `range:"0-2"`
+	DNSRandom                *DNSRandomSpec                `range:"0-2"`
 	TimeSkew                 *TimeSkewSpec                 `range:"0-3"`
-	NetworkDelay             *NetworkDelaySpec             `range:"0-7"`
-	NetworkLoss              *NetworkLossSpec              `range:"0-6"`
-	NetworkDuplicate         *NetworkDuplicateSpec         `range:"0-6"`
-	NetworkCorrupt           *NetworkCorruptSpec           `range:"0-6"`
-	NetworkBandwidth         *NetworkBandwidthSpec         `range:"0-7"`
-	NetworkPartition         *NetworkPartitionSpec         `range:"0-4"`
-	JVMLatency               *JVMLatencySpec               `range:"0-4"`
-	JVMReturn                *JVMReturnSpec                `range:"0-5"`
-	JVMException             *JVMExceptionSpec             `range:"0-4"`
+	NetworkDelay             *NetworkDelaySpec             `range:"0-6"`
+	NetworkLoss              *NetworkLossSpec              `range:"0-5"`
+	NetworkDuplicate         *NetworkDuplicateSpec         `range:"0-5"`
+	NetworkCorrupt           *NetworkCorruptSpec           `range:"0-5"`
+	NetworkBandwidth         *NetworkBandwidthSpec         `range:"0-6"`
+	NetworkPartition         *NetworkPartitionSpec         `range:"0-3"`
+	JVMLatency               *JVMLatencySpec               `range:"0-3"`
+	JVMReturn                *JVMReturnSpec                `range:"0-4"`
+	JVMException             *JVMExceptionSpec             `range:"0-3"`
 	JVMGarbageCollector      *JVMGCSpec                    `range:"0-2"`
-	JVMCPUStress             *JVMCPUStressSpec             `range:"0-4"`
-	JVMMemoryStress          *JVMMemoryStressSpec          `range:"0-4"`
-	JVMMySQLLatency          *JVMMySQLLatencySpec          `range:"0-5"`
-	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-4"`
+	JVMCPUStress             *JVMCPUStressSpec             `range:"0-3"`
+	JVMMemoryStress          *JVMMemoryStressSpec          `range:"0-3"`
+	JVMMySQLLatency          *JVMMySQLLatencySpec          `range:"0-3"`
+	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-2"`
 }
 
 func (ic *InjectionConf) Create(opts ...Option) (map[string]any, string, error) {
