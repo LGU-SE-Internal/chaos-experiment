@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 
 	chaos "github.com/CUHK-SE-Group/chaos-experiment/chaos"
 	controllers "github.com/CUHK-SE-Group/chaos-experiment/controllers"
@@ -345,53 +346,14 @@ const (
 	MySQL8 MySQLConnectorVersion = 8
 )
 
-// Define available MySQL tables for selection
-var AvailableMySQLTables = []string{
-	"assurance",
-	"auth_user",
-	"config",
-	"consign_price",
-	"consign_record",
-	"contacts",
-	"delivery",
-	"food_delivery_order",
-	"food_delivery_order_food_list",
-	"food_order",
-	"inside_money",
-	"inside_payment",
-	"money",
-	"notify_info",
-	"office",
-	"orders",
-	"orders_other",
-	"payment",
-	"price_config",
-	"route",
-	"route_distances",
-	"route_stations",
-	"security_config",
-	"station",
-	"station_food_list",
-	"station_food_store",
-	"train_food",
-	"train_food_list",
-	"train_type",
-	"trip",
-	"trip2",
-	"user",
-	"user_roles",
-	"voucher",
-	"wait_list_order",
-}
+
 
 // JVMMySQLLatencySpec defines the JVM MySQL latency chaos injection parameters
 type JVMMySQLLatencySpec struct {
-	Duration   int `range:"15-15" description:"Time Unit Minute"`
-	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
-	AppIdx     int `range:"0-0" dynamic:"true" description:"App index"`
-	LatencyMs  int `range:"10-5000" description:"Latency in ms"`
-	TableIndex int `range:"0-38" description:"Index of table to target (or -1 for all)"`
-	SQLType    int `range:"0-5" description:"SQL Type (0=All, 1=Select, 2=Insert, 3=Update, 4=Delete, 5=Replace)"`
+	Duration    int `range:"15-15" description:"Time Unit Minute"`
+	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	DatabaseIdx int `range:"0-0" dynamic:"true" description:"Flattened app+database+table index"`
+	LatencyMs   int `range:"10-5000" description:"Latency in ms"`
 }
 
 func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -404,33 +366,26 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 		ns = conf.Namespace
 	}
 
-	appLabels, err := resourcelookup.GetAllAppLabels()
+	dbOps, err := resourcelookup.GetAllDatabaseOperations()
 	if err != nil {
-		return "", fmt.Errorf("failed to get app labels: %w", err)
+		return "", fmt.Errorf("failed to get database operations: %w", err)
 	}
 
-	if s.AppIdx < 0 || s.AppIdx >= len(appLabels) {
-		return "", fmt.Errorf("app index out of range: %d (max: %d)", s.AppIdx, len(appLabels)-1)
+	if s.DatabaseIdx < 0 || s.DatabaseIdx >= len(dbOps) {
+		return "", fmt.Errorf("database operation index out of range: %d (max: %d)", s.DatabaseIdx, len(dbOps)-1)
 	}
 
-	appName := appLabels[s.AppIdx]
+	dbOp := dbOps[s.DatabaseIdx]
+	appName := dbOp.AppName
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
-	// Convert SQL type to string
-	sqlTypeStr := convertSQLTypeToString(s.SQLType)
-
-	// Determine target table
-	var tableStr string
-	if s.TableIndex < 0 || s.TableIndex >= len(AvailableMySQLTables) {
-		tableStr = "" // Empty means all tables
-	} else {
-		tableStr = AvailableMySQLTables[s.TableIndex]
-	}
+	// Convert the operation type to lowercase for Chaos Mesh
+	sqlTypeStr := strings.ToLower(dbOp.OperationType)
 
 	optss := []chaos.OptJVMChaos{
-		chaos.WithJVMMySQLConnector("5"), // Hardcoded to version 5
-		chaos.WithJVMMySQLDatabase("ts"), // Hardcoded to ts database
-		chaos.WithJVMMySQLTable(tableStr),
+		chaos.WithJVMMySQLConnector("8"), // Hardcoded to version 8
+		chaos.WithJVMMySQLDatabase(dbOp.DBName),
+		chaos.WithJVMMySQLTable(dbOp.TableName),
 		chaos.WithJVMMySQLType(sqlTypeStr),
 		chaos.WithJVMLatencyDuration(s.LatencyMs),
 	}
@@ -441,11 +396,9 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 
 // JVMMySQLExceptionSpec defines the JVM MySQL exception chaos injection parameters
 type JVMMySQLExceptionSpec struct {
-	Duration   int `range:"15-15" description:"Time Unit Minute"`
-	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
-	AppIdx     int `range:"0-0" dynamic:"true" description:"App Index"`
-	TableIndex int `range:"0-38" description:"Index of table to target (or -1 for all)"`
-	SQLType    int `range:"0-5" description:"SQL Type (0=All, 1=Select, 2=Insert, 3=Update, 4=Delete, 5=Replace)"`
+	Duration    int `range:"15-15" description:"Time Unit Minute"`
+	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	DatabaseIdx int `range:"0-0" dynamic:"true" description:"Flattened app+database+table index"`
 }
 
 func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -458,58 +411,33 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, 
 		ns = conf.Namespace
 	}
 
-	appLabels, err := resourcelookup.GetAllAppLabels()
+	dbOps, err := resourcelookup.GetAllDatabaseOperations()
 	if err != nil {
-		return "", fmt.Errorf("failed to get app labels: %w", err)
+		return "", fmt.Errorf("failed to get database operations: %w", err)
 	}
 
-	if s.AppIdx < 0 || s.AppIdx >= len(appLabels) {
-		return "", fmt.Errorf("app index out of range: %d (max: %d)", s.AppIdx, len(appLabels)-1)
+	if s.DatabaseIdx < 0 || s.DatabaseIdx >= len(dbOps) {
+		return "", fmt.Errorf("database operation index out of range: %d (max: %d)", s.DatabaseIdx, len(dbOps)-1)
 	}
 
-	appName := appLabels[s.AppIdx]
+	dbOp := dbOps[s.DatabaseIdx]
+	appName := dbOp.AppName
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
-	// Convert SQL type to string
-	sqlTypeStr := convertSQLTypeToString(s.SQLType)
-
-	// Determine target table
-	var tableStr string
-	if s.TableIndex < 0 || s.TableIndex >= len(AvailableMySQLTables) {
-		tableStr = "" // Empty means all tables
-	} else {
-		tableStr = AvailableMySQLTables[s.TableIndex]
-	}
+	// Convert the operation type to lowercase for Chaos Mesh
+	sqlTypeStr := strings.ToLower(dbOp.OperationType)
 
 	// Always use "BOOM" as the exception message
 	exceptionMsg := "BOOM"
 
 	optss := []chaos.OptJVMChaos{
-		chaos.WithJVMMySQLConnector("5"), // Hardcoded to version 5
-		chaos.WithJVMMySQLDatabase("ts"), // Hardcoded to ts database
-		chaos.WithJVMMySQLTable(tableStr),
+		chaos.WithJVMMySQLConnector("8"), // Hardcoded to version 8
+		chaos.WithJVMMySQLDatabase(dbOp.DBName),
+		chaos.WithJVMMySQLTable(dbOp.TableName),
 		chaos.WithJVMMySQLType(sqlTypeStr),
 		chaos.WithJVMException(exceptionMsg),
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
 		chaosmeshv1alpha1.JVMMySQLAction, duration, optss...)
-}
-
-// Helper function to convert SQL type from int to string
-func convertSQLTypeToString(sqlType int) string {
-	switch sqlType {
-	case 1:
-		return "select"
-	case 2:
-		return "insert"
-	case 3:
-		return "update"
-	case 4:
-		return "delete"
-	case 5:
-		return "replace"
-	default:
-		return "" // All SQL types
-	}
 }
