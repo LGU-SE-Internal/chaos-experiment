@@ -16,18 +16,24 @@ func main() {
 	database := flag.String("database", "default", "ClickHouse database name")
 	username := flag.String("username", "default", "ClickHouse username")
 	password := flag.String("password", "", "ClickHouse password")
-	outputPath := flag.String("output", "", "Path for the generated Go file (default: internal/serviceendpoints/serviceendpoints.go)")
+	outputEndpoints := flag.String("output", "", "Path for the generated endpoints Go file (default: internal/serviceendpoints/serviceendpoints.go)")
+	outputDatabase := flag.String("output-db", "", "Path for the generated database operations Go file (default: internal/databaseoperations/databaseoperations.go)")
 	skipView := flag.Bool("skip-view", false, "Skip creating the materialized view")
 	flag.Parse()
 
-	// Set default output path if not specified
-	if *outputPath == "" {
-		projectRoot, err := os.Getwd()
-		if err != nil {
-			fmt.Printf("Error determining project root: %v\n", err)
-			os.Exit(1)
-		}
-		*outputPath = filepath.Join(projectRoot, "internal", "serviceendpoints", "serviceendpoints.go")
+	// Set default output paths if not specified
+	projectRoot, err := os.Getwd()
+	if err != nil {
+		fmt.Printf("Error determining project root: %v\n", err)
+		os.Exit(1)
+	}
+
+	if *outputEndpoints == "" {
+		*outputEndpoints = filepath.Join(projectRoot, "internal", "serviceendpoints", "serviceendpoints.go")
+	}
+
+	if *outputDatabase == "" {
+		*outputDatabase = filepath.Join(projectRoot, "internal", "databaseoperations", "databaseoperations.go")
 	}
 
 	// Configure ClickHouse connection
@@ -73,15 +79,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Combine results
-	allEndpoints := append(clientEndpoints, dashboardEndpoints...)
-
-	// Generate Go file
-	fmt.Printf("Generating service endpoints file at %s...\n", *outputPath)
-	if err := clickhouseanalyzer.GenerateServiceEndpointsFile(allEndpoints, *outputPath); err != nil {
-		fmt.Printf("Error generating service endpoints file: %v\n", err)
+	// Query MySQL operations
+	fmt.Println("Querying MySQL operations...")
+	dbOperations, err := clickhouseanalyzer.QueryMySQLOperations(db)
+	if err != nil {
+		fmt.Printf("Error querying MySQL operations: %v\n", err)
 		os.Exit(1)
 	}
 
+	// Combine results
+	allEndpoints := append(clientEndpoints, dashboardEndpoints...)
+
+	// Generate service endpoints file
+	fmt.Printf("Generating service endpoints file at %s...\n", *outputEndpoints)
+	if err := clickhouseanalyzer.GenerateServiceEndpointsFile(allEndpoints, *outputEndpoints); err != nil {
+		fmt.Printf("Error generating service endpoints file: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Println("Service endpoints file generated successfully!")
+
+	// Generate database operations file
+	fmt.Printf("Generating database operations file at %s...\n", *outputDatabase)
+	if err := clickhouseanalyzer.GenerateDatabaseOperationsFile(dbOperations, *outputDatabase); err != nil {
+		fmt.Printf("Error generating database operations file: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Database operations file generated successfully!")
 }

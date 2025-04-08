@@ -29,20 +29,31 @@ type ServiceEndpoint struct {
 	ServerPort     string
 }
 
+// DatabaseOperation represents a database operation with its details
+type DatabaseOperation struct {
+	ServiceName string
+	DBName      string
+	DBTable     string
+	Operation   string
+}
+
 // Create materialized view SQL statement
 const createMaterializedViewSQL = `
 CREATE MATERIALIZED VIEW IF NOT EXISTS otel_traces_mv 
 ENGINE = ReplacingMergeTree(version)
 PARTITION BY toYYYYMM(Timestamp)
-PRIMARY KEY (masked_route, ServiceName)
+PRIMARY KEY (masked_route, ServiceName, db_sql_table)
 ORDER BY (
     masked_route,
     ServiceName,
+    db_sql_table,
     SpanKind,
     request_method,
     response_status_code,
     server_address,
-    server_port
+    server_port,
+	db_name,
+    db_operation
 )
 SETTINGS allow_nullable_key = 1
 POPULATE
@@ -214,6 +225,19 @@ WHERE ServiceName = 'ts-ui-dashboard'
 ORDER BY version ASC
 `
 
+// MySQL operations query
+const mysqlOperationsQuery = `
+SELECT 
+    ServiceName,
+    db_name,
+    db_sql_table,
+    db_operation
+FROM otel_traces_mv
+FINAL
+WHERE db_system = 'mysql'
+ORDER BY version ASC
+`
+
 // ConnectToDB establishes a connection to ClickHouse
 func ConnectToDB(config ClickHouseConfig) (*sql.DB, error) {
 	dsn := fmt.Sprintf("clickhouse://%s:%d/%s?username=%s&password=%s",
@@ -325,6 +349,52 @@ func QueryDashboardRoutes(db *sql.DB) ([]ServiceEndpoint, error) {
 		// Add server information based on route
 		mapRouteToService(&endpoint)
 		results = append(results, endpoint)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return results, nil
+}
+
+// QueryMySQLOperations retrieves MySQL database operations from the materialized view
+func QueryMySQLOperations(db *sql.DB) ([]DatabaseOperation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	rows, err := db.QueryContext(ctx, mysqlOperationsQuery)
+	if err != nil {
+		return nil, fmt.Errorf("error querying MySQL operations: %w", err)
+	}
+	defer rows.Close()
+
+	var results []DatabaseOperation
+	for rows.Next() {
+		var operation DatabaseOperation
+		var dbName, dbTable, dbOperation sql.NullString
+
+		if err := rows.Scan(
+			&operation.ServiceName,
+			&dbName,
+			&dbTable,
+			&dbOperation,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		// Handle null values
+		if dbName.Valid {
+			operation.DBName = dbName.String
+		}
+		if dbTable.Valid {
+			operation.DBTable = dbTable.String
+		}
+		if dbOperation.Valid {
+			operation.Operation = dbOperation.String
+		}
+
+		results = append(results, operation)
 	}
 
 	if err := rows.Err(); err != nil {
