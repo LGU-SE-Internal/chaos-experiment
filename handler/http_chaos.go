@@ -14,7 +14,7 @@ import (
 
 // HTTPRequestAbortSpec defines HTTP request abort chaos
 type HTTPRequestAbortSpec struct {
-	Duration    int `range:"15-15" description:"Time Unit Minute"`
+	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
@@ -66,7 +66,7 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // HTTPResponseAbortSpec defines HTTP response abort chaos
 type HTTPResponseAbortSpec struct {
-	Duration    int `range:"15-15" description:"Time Unit Minute"`
+	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
@@ -118,7 +118,7 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, 
 
 // HTTPRequestDelaySpec defines HTTP request delay chaos injection
 type HTTPRequestDelaySpec struct {
-	Duration      int `range:"15-15" description:"Time Unit Minute"`
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx   int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
@@ -171,7 +171,7 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // HTTPResponseDelaySpec defines HTTP response delay chaos injection
 type HTTPResponseDelaySpec struct {
-	Duration      int `range:"15-15" description:"Time Unit Minute"`
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx   int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
@@ -232,7 +232,7 @@ const (
 
 // HTTPResponseReplaceBodySpec defines HTTP response body replacement chaos
 type HTTPResponseReplaceBodySpec struct {
-	Duration    int             `range:"15-15" description:"Time Unit Minute"`
+	Duration    int             `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int             `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx int             `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 	BodyType    ReplaceBodyType `range:"0-1" description:"Body Type (0=Empty, 1=Random)"`
@@ -290,7 +290,7 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (st
 
 // HTTPResponsePatchBodySpec defines HTTP response body patching chaos
 type HTTPResponsePatchBodySpec struct {
-	Duration    int `range:"15-15" description:"Time Unit Minute"`
+	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
@@ -341,7 +341,7 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (stri
 
 // HTTPRequestReplacePathSpec defines HTTP request path replacement chaos
 type HTTPRequestReplacePathSpec struct {
-	Duration    int `range:"15-15" description:"Time Unit Minute"`
+	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
@@ -393,7 +393,7 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 
 // HTTPRequestReplaceMethodSpec defines HTTP request method replacement chaos
 type HTTPRequestReplaceMethodSpec struct {
-	Duration      int        `range:"15-15" description:"Time Unit Minute"`
+	Duration      int        `range:"1-60" description:"Time Unit Minute"`
 	Namespace     int        `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx   int        `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 	ReplaceMethod HTTPMethod `range:"0-6" description:"HTTP Method to replace with"`
@@ -446,7 +446,7 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 
 // HTTPResponseReplaceCodeSpec defines HTTP response status code replacement chaos
 type HTTPResponseReplaceCodeSpec struct {
-	Duration    int            `range:"15-15" description:"Time Unit Minute"`
+	Duration    int            `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int            `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx int            `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 	StatusCode  HTTPStatusCode `range:"0-9" description:"HTTP Status Code to replace with"`

@@ -13,7 +13,7 @@ import (
 
 // DNSErrorSpec defines the DNS error chaos injection parameters
 type DNSErrorSpec struct {
-	Duration    int `range:"15-15" description:"Time Unit Minute"`
+	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
@@ -48,7 +48,7 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 
 // DNSRandomSpec defines the DNS random chaos injection parameters
 type DNSRandomSpec struct {
-	Duration    int `range:"15-15" description:"Time Unit Minute"`
+	Duration    int `range:"1-60" description:"Time Unit Minute"`
 	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }

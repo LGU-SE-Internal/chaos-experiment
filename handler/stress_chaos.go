@@ -11,7 +11,7 @@ import (
 )
 
 type CPUStressChaosSpec struct {
-	Duration  int `range:"15-15" description:"Time Unit Minute"`
+	Duration  int `range:"1-60" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
 	CPULoad   int `range:"1-100" description:"CPU Load Percentage"`
@@ -49,7 +49,7 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 
 // Update MemoryStressChaosSpec to use flattened app index
 type MemoryStressChaosSpec struct {
-	Duration   int `range:"15-15" description:"Time Unit Minute"`
+	Duration   int `range:"1-60" description:"Time Unit Minute"`
 	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
 	AppIdx     int `range:"0-0" dynamic:"true" description:"App Index"`
 	MemorySize int `range:"1-1024" description:"Memory Size Unit MB"`

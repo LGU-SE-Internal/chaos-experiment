@@ -11,7 +11,7 @@ import (
 )
 
 type TimeSkewSpec struct {
-	Duration   int `range:"15-15" description:"Time Unit Minute"`
+	Duration   int `range:"1-60" description:"Time Unit Minute"`
 	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
 	AppIdx     int `range:"0-0" dynamic:"true" description:"App Index"`
 	TimeOffset int `range:"-600-600" description:"Time offset in seconds"`

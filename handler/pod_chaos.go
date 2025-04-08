@@ -12,7 +12,7 @@ import (
 )
 
 type PodFailureSpec struct {
-	Duration  int `range:"15-15" description:"Time Unit Minute"`
+	Duration  int `range:"1-60" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
 }
@@ -45,7 +45,7 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 
 // Update PodKillSpec to use flattened app index
 type PodKillSpec struct {
-	Duration  int `range:"15-15" description:"Time Unit Minute"`
+	Duration  int `range:"1-60" description:"Time Unit Minute"`
 	Namespace int `range:"0-0" dynamic:"true" description:"String"`
 	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
 }
@@ -77,7 +77,7 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 }
 
 type ContainerKillSpec struct {
-	Duration     int `range:"15-15" description:"Time Unit Minute"`
+	Duration     int `range:"1-60" description:"Time Unit Minute"`
 	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
 	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
 }

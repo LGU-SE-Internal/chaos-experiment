@@ -43,7 +43,7 @@ func getNetworkPairByIndex(networkPairIdx int) (*resourcelookup.AppNetworkPair, 
 
 // NetworkPartitionSpec defines network partition chaos parameters
 type NetworkPartitionSpec struct {
-	Duration       int `range:"15-15" description:"Time Unit Minute"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
 	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
@@ -81,7 +81,7 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // NetworkDelaySpec defines network delay chaos parameters
 type NetworkDelaySpec struct {
-	Duration       int `range:"15-15" description:"Time Unit Minute"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
 	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Latency        int `range:"1-2000" description:"Latency in milliseconds"`
@@ -127,7 +127,7 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 
 // NetworkLossSpec defines network packet loss chaos parameters
 type NetworkLossSpec struct {
-	Duration       int `range:"15-15" description:"Time Unit Minute"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
 	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Loss           int `range:"1-100" description:"Packet loss percentage"`
@@ -171,7 +171,7 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 
 // NetworkDuplicateSpec defines network packet duplication chaos parameters
 type NetworkDuplicateSpec struct {
-	Duration       int `range:"15-15" description:"Time Unit Minute"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
 	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Duplicate      int `range:"1-100" description:"Packet duplication percentage"`
@@ -215,7 +215,7 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // NetworkCorruptSpec defines network packet corruption chaos parameters
 type NetworkCorruptSpec struct {
-	Duration       int `range:"15-15" description:"Time Unit Minute"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
 	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Corrupt        int `range:"1-100" description:"Packet corruption percentage"`
@@ -259,7 +259,7 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 
 // NetworkBandwidthSpec defines network bandwidth limit chaos parameters
 type NetworkBandwidthSpec struct {
-	Duration       int `range:"15-15" description:"Time Unit Minute"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
 	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Rate           int `range:"1-1000000" description:"Bandwidth rate in kbps"`
