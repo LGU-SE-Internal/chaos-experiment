@@ -11,11 +11,11 @@ import (
 )
 
 type CPUStressChaosSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
-	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
-	CPULoad   int `range:"1-100" description:"CPU Load Percentage"`
-	CPUWorker int `range:"1-3" description:"CPU Stress Threads"`
+	Duration     int `range:"1-60" description:"Time Unit Minute"`
+	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
+	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
+	CPULoad      int `range:"1-100" description:"CPU Load Percentage"`
+	CPUWorker    int `range:"1-3" description:"CPU Stress Threads"`
 }
 
 func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -28,32 +28,34 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 		ns = conf.Namespace
 	}
 
-	appLabels, err := resourcelookup.GetAllAppLabels()
+	containers, err := resourcelookup.GetAllContainers()
 	if err != nil {
-		return "", fmt.Errorf("failed to get app labels: %w", err)
+		return "", fmt.Errorf("failed to get containers: %w", err)
 	}
 
-	if s.AppIdx < 0 || s.AppIdx >= len(appLabels) {
-		return "", fmt.Errorf("app index out of range: %d (max: %d)", s.AppIdx, len(appLabels)-1)
+	if s.ContainerIdx < 0 || s.ContainerIdx >= len(containers) {
+		return "", fmt.Errorf("container index out of range: %d (max: %d)", s.ContainerIdx, len(containers)-1)
 	}
 
-	appName := appLabels[s.AppIdx]
+	containerInfo := containers[s.ContainerIdx]
+	appName := containerInfo.AppLabel
+	containerName := containerInfo.ContainerName
+
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
 	stressors := controllers.MakeCPUStressors(
 		s.CPULoad,
 		s.CPUWorker,
 	)
-	return controllers.CreateStressChaos(cli, ns, appName, stressors, "cpu-exhaustion", duration)
+	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "cpu-exhaustion", duration, []string{containerName})
 }
 
-// Update MemoryStressChaosSpec to use flattened app index
 type MemoryStressChaosSpec struct {
-	Duration   int `range:"1-60" description:"Time Unit Minute"`
-	Namespace  int `range:"0-0" dynamic:"true" description:"String"`
-	AppIdx     int `range:"0-0" dynamic:"true" description:"App Index"`
-	MemorySize int `range:"1-1024" description:"Memory Size Unit MB"`
-	MemWorker  int `range:"1-4" description:"Memory Stress Threads"`
+	Duration     int `range:"1-60" description:"Time Unit Minute"`
+	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
+	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
+	MemorySize   int `range:"1-1024" description:"Memory Size Unit MB"`
+	MemWorker    int `range:"1-4" description:"Memory Stress Threads"`
 }
 
 func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -66,21 +68,24 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 		ns = conf.Namespace
 	}
 
-	appLabels, err := resourcelookup.GetAllAppLabels()
+	containers, err := resourcelookup.GetAllContainers()
 	if err != nil {
-		return "", fmt.Errorf("failed to get app labels: %w", err)
+		return "", fmt.Errorf("failed to get containers: %w", err)
 	}
 
-	if s.AppIdx < 0 || s.AppIdx >= len(appLabels) {
-		return "", fmt.Errorf("app index out of range: %d (max: %d)", s.AppIdx, len(appLabels)-1)
+	if s.ContainerIdx < 0 || s.ContainerIdx >= len(containers) {
+		return "", fmt.Errorf("container index out of range: %d (max: %d)", s.ContainerIdx, len(containers)-1)
 	}
 
-	appName := appLabels[s.AppIdx]
+	containerInfo := containers[s.ContainerIdx]
+	appName := containerInfo.AppLabel
+	containerName := containerInfo.ContainerName
+
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
 	stressors := controllers.MakeMemoryStressors(
 		strconv.Itoa(s.MemorySize)+"MiB",
 		s.MemWorker,
 	)
-	return controllers.CreateStressChaos(cli, ns, appName, stressors, "memory-exhaustion", duration)
+	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "memory-exhaustion", duration, []string{containerName})
 }

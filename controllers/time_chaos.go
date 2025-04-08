@@ -35,6 +35,29 @@ func CreateTimeChaos(cli client.Client, namespace string, appName string, timeOf
 	return name, nil
 }
 
+// CreateTimeChaosWithContainer creates a time chaos experiment with specified container names
+func CreateTimeChaosWithContainer(cli client.Client, namespace string, appName string, timeOffset string, duration *string, containerNames []string) (string, error) {
+	spec := chaos.GenerateTimeChaosSpecWithContainers(namespace, appName, duration, timeOffset, containerNames)
+	name := strings.ToLower(fmt.Sprintf("%s-%s-time-%s", namespace, appName, rand.String(6)))
+	timeChaos, err := chaos.NewTimeChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithTimeChaosSpec(spec))
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+		return "", err
+	}
+	create, err := timeChaos.ValidateCreate()
+	if err != nil {
+		logrus.Errorf("Failed to validate create chaos: %v", err)
+		return "", err
+	}
+	logrus.Infof("create warning: %v", create)
+	err = cli.Create(context.Background(), timeChaos)
+	if err != nil {
+		logrus.Errorf("Failed to create chaos: %v", err)
+		return "", err
+	}
+	return name, nil
+}
+
 func AddTimeChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace string, appList []string, timeOffset string, injectTime *string, sleepTime *string) *v1alpha1.WorkflowSpec {
 	for _, appName := range appList {
 		spec := chaos.GenerateTimeChaosSpec(namespace, appName, nil, timeOffset)

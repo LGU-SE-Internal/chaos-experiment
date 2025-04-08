@@ -62,3 +62,28 @@ func GenerateStressChaosSpec(namespace string, appName string, duration *string,
 	}
 	return spec
 }
+
+// GenerateStressChaosSpecWithContainers creates a StressChaosSpec with specified container names
+func GenerateStressChaosSpecWithContainers(namespace string, appName string, duration *string, Stressors chaosmeshv1alpha1.Stressors, containerNames []string) *chaosmeshv1alpha1.StressChaosSpec {
+	spec := &chaosmeshv1alpha1.StressChaosSpec{
+		ContainerSelector: chaosmeshv1alpha1.ContainerSelector{
+			PodSelector: chaosmeshv1alpha1.PodSelector{
+				Selector: chaosmeshv1alpha1.PodSelectorSpec{
+					GenericSelectorSpec: chaosmeshv1alpha1.GenericSelectorSpec{
+						Namespaces: []string{namespace},
+						LabelSelectors: map[string]string{
+							"app": appName,
+						},
+					},
+				},
+				Mode: chaosmeshv1alpha1.AllMode,
+			},
+			ContainerNames: containerNames,
+		},
+		Stressors: &Stressors,
+	}
+	if duration != nil && *duration != "" {
+		spec.Duration = duration
+	}
+	return spec
+}
