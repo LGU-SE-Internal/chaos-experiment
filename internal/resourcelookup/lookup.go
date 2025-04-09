@@ -314,6 +314,95 @@ func GetAllContainers() ([]ContainerInfo, error) {
 	return result, nil
 }
 
+// GetContainersByService returns all container names for a specific service
+func GetContainersByService(serviceName string) ([]string, error) {
+	allContainers, err := GetAllContainers()
+	if err != nil {
+		return nil, err
+	}
+
+	containerNames := []string{}
+	for _, container := range allContainers {
+		if container.AppLabel == serviceName {
+			containerNames = append(containerNames, container.ContainerName)
+		}
+	}
+
+	// Sort for consistency
+	sort.Strings(containerNames)
+	return containerNames, nil
+}
+
+// GetPodsByService returns all pod names for a specific service
+func GetPodsByService(serviceName string) ([]string, error) {
+	allContainers, err := GetAllContainers()
+	if err != nil {
+		return nil, err
+	}
+
+	// Use a map to ensure uniqueness
+	podMap := make(map[string]bool)
+	for _, container := range allContainers {
+		if container.AppLabel == serviceName {
+			podMap[container.PodName] = true
+		}
+	}
+
+	// Convert map to slice
+	pods := make([]string, 0, len(podMap))
+	for pod := range podMap {
+		pods = append(pods, pod)
+	}
+
+	// Sort for consistency
+	sort.Strings(pods)
+	return pods, nil
+}
+
+// GetContainersAndPodsByServices returns containers and pods for multiple services
+// This is useful for chaos that affects multiple services
+func GetContainersAndPodsByServices(serviceNames []string) ([]string, []string, error) {
+	allContainers, err := GetAllContainers()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Use maps to ensure uniqueness
+	containerMap := make(map[string]bool)
+	podMap := make(map[string]bool)
+
+	// Create a map of service names for faster lookup
+	serviceMap := make(map[string]bool)
+	for _, service := range serviceNames {
+		serviceMap[service] = true
+	}
+
+	// Filter containers for the specified services
+	for _, container := range allContainers {
+		if serviceMap[container.AppLabel] {
+			containerMap[container.ContainerName] = true
+			podMap[container.PodName] = true
+		}
+	}
+
+	// Convert maps to slices
+	containers := make([]string, 0, len(containerMap))
+	for container := range containerMap {
+		containers = append(containers, container)
+	}
+
+	pods := make([]string, 0, len(podMap))
+	for pod := range podMap {
+		pods = append(pods, pod)
+	}
+
+	// Sort for consistency
+	sort.Strings(containers)
+	sort.Strings(pods)
+
+	return containers, pods, nil
+}
+
 // InvalidateCache clears all cached data
 func InvalidateCache() {
 	cachedAppLabels = nil
