@@ -14,6 +14,8 @@ const (
 	MetricMemory         MetricType = "memory"
 	MetricDisk           MetricType = "disk"
 	MetricNetworkLatency MetricType = "network_latency"
+	MetricHTTPLatency    MetricType = "http_latency"
+	MetricSQLLatency     MetricType = "sql_latency"
 )
 
 // Groundtruth represents the expected impact of a chaos experiment
@@ -331,7 +333,7 @@ func (s *HTTPRequestDelaySpec) GetGroundtruth() (Groundtruth, error) {
 	if err != nil {
 		return Groundtruth{}, err
 	}
-	gt.Metric = append(gt.Metric, string(MetricNetworkLatency))
+	gt.Metric = append(gt.Metric, string(MetricHTTPLatency))
 	return gt, nil
 }
 
@@ -340,7 +342,7 @@ func (s *HTTPResponseDelaySpec) GetGroundtruth() (Groundtruth, error) {
 	if err != nil {
 		return Groundtruth{}, err
 	}
-	gt.Metric = append(gt.Metric, string(MetricNetworkLatency))
+	gt.Metric = append(gt.Metric, string(MetricHTTPLatency))
 	return gt, nil
 }
 
@@ -438,7 +440,7 @@ func (s *JVMMySQLLatencySpec) GetGroundtruth() (Groundtruth, error) {
 	if err != nil {
 		return Groundtruth{}, err
 	}
-	gt.Metric = append(gt.Metric, string(MetricNetworkLatency))
+	gt.Metric = append(gt.Metric, string(MetricSQLLatency))
 	return gt, nil
 }
 
