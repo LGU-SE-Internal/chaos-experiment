@@ -6,7 +6,17 @@ import (
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
 )
 
-// Fix the spelling from Groudtruth to Groundtruth
+// MetricType defines the type of metrics for groundtruth
+type MetricType string
+
+const (
+	MetricCPU            MetricType = "cpu"
+	MetricMemory         MetricType = "memory"
+	MetricDisk           MetricType = "disk"
+	MetricNetworkLatency MetricType = "network_latency"
+)
+
+// Groundtruth represents the expected impact of a chaos experiment
 type Groundtruth struct {
 	Service   []string `json:"service,omitempty"`
 	Pod       []string `json:"pod,omitempty"`
@@ -279,11 +289,21 @@ func (s *ContainerKillSpec) GetGroundtruth() (Groundtruth, error) {
 }
 
 func (s *MemoryStressChaosSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromContainerIdx(s.ContainerIdx)
+	gt, err := GetGroundtruthFromContainerIdx(s.ContainerIdx)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt.Metric = append(gt.Metric, string(MetricMemory))
+	return gt, nil
 }
 
 func (s *CPUStressChaosSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromContainerIdx(s.ContainerIdx)
+	gt, err := GetGroundtruthFromContainerIdx(s.ContainerIdx)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt.Metric = append(gt.Metric, string(MetricCPU))
+	return gt, nil
 }
 
 func (s *TimeSkewSpec) GetGroundtruth() (Groundtruth, error) {
@@ -307,11 +327,21 @@ func (s *HTTPResponseAbortSpec) GetGroundtruth() (Groundtruth, error) {
 }
 
 func (s *HTTPRequestDelaySpec) GetGroundtruth() (Groundtruth, error) {
-	return getHTTPGroundtruth(s.EndpointIdx)
+	gt, err := getHTTPGroundtruth(s.EndpointIdx)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt.Metric = append(gt.Metric, string(MetricNetworkLatency))
+	return gt, nil
 }
 
 func (s *HTTPResponseDelaySpec) GetGroundtruth() (Groundtruth, error) {
-	return getHTTPGroundtruth(s.EndpointIdx)
+	gt, err := getHTTPGroundtruth(s.EndpointIdx)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt.Metric = append(gt.Metric, string(MetricNetworkLatency))
+	return gt, nil
 }
 
 func (s *HTTPResponseReplaceBodySpec) GetGroundtruth() (Groundtruth, error) {
@@ -335,7 +365,12 @@ func (s *HTTPResponseReplaceCodeSpec) GetGroundtruth() (Groundtruth, error) {
 }
 
 func (s *NetworkDelaySpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromNetworkPairIdx(s.NetworkPairIdx)
+	gt, err := GetGroundtruthFromNetworkPairIdx(s.NetworkPairIdx)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt.Metric = append(gt.Metric, string(MetricNetworkLatency))
+	return gt, nil
 }
 
 func (s *NetworkLossSpec) GetGroundtruth() (Groundtruth, error) {
@@ -360,7 +395,12 @@ func (s *NetworkPartitionSpec) GetGroundtruth() (Groundtruth, error) {
 
 // JVM chaos GetGroundtruth implementations
 func (s *JVMLatencySpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromMethodIdx(s.MethodIdx)
+	gt, err := GetGroundtruthFromMethodIdx(s.MethodIdx)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt.Metric = append(gt.Metric, string(MetricNetworkLatency))
+	return gt, nil
 }
 
 func (s *JVMReturnSpec) GetGroundtruth() (Groundtruth, error) {
@@ -376,15 +416,30 @@ func (s *JVMGCSpec) GetGroundtruth() (Groundtruth, error) {
 }
 
 func (s *JVMCPUStressSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromMethodIdx(s.MethodIdx)
+	gt, err := GetGroundtruthFromMethodIdx(s.MethodIdx)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt.Metric = append(gt.Metric, string(MetricCPU))
+	return gt, nil
 }
 
 func (s *JVMMemoryStressSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromMethodIdx(s.MethodIdx)
+	gt, err := GetGroundtruthFromMethodIdx(s.MethodIdx)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt.Metric = append(gt.Metric, string(MetricMemory))
+	return gt, nil
 }
 
 func (s *JVMMySQLLatencySpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromDatabaseIdx(s.DatabaseIdx)
+	gt, err := GetGroundtruthFromDatabaseIdx(s.DatabaseIdx)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt.Metric = append(gt.Metric, string(MetricNetworkLatency))
+	return gt, nil
 }
 
 func (s *JVMMySQLExceptionSpec) GetGroundtruth() (Groundtruth, error) {
