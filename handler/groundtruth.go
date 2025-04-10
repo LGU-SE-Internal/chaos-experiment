@@ -313,11 +313,11 @@ func (s *TimeSkewSpec) GetGroundtruth() (Groundtruth, error) {
 }
 
 func (s *DNSErrorSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromDNSEndpointIdx(s.EndpointIdx)
+	return GetGroundtruthFromDNSEndpointIdx(s.DNSEndpointIdx)
 }
 
 func (s *DNSRandomSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromDNSEndpointIdx(s.EndpointIdx)
+	return GetGroundtruthFromDNSEndpointIdx(s.DNSEndpointIdx)
 }
 
 func (s *HTTPRequestAbortSpec) GetGroundtruth() (Groundtruth, error) {
