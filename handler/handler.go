@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 
 	"github.com/CUHK-SE-Group/chaos-experiment/client"
+	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
 	"github.com/CUHK-SE-Group/chaos-experiment/utils"
 	cli "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -279,48 +281,115 @@ func (ic *InjectionConf) Create(opts ...Option) (map[string]any, string, error) 
 func (ic *InjectionConf) getActiveInjection() (Injection, map[string]any, error) {
 	val := reflect.ValueOf(ic).Elem()
 
+	var idxPtr *int
 	for i := range val.NumField() {
 		field := val.Field(i)
-		if field.IsNil() {
-			continue
+		if !field.IsNil() {
+			idxPtr = &i
+			break
 		}
-
-		instance := field.Interface().(Injection)
-		instanceValue := reflect.ValueOf(instance).Elem()
-		instanceType := instanceValue.Type()
-
-		result := make(map[string]any, instanceValue.NumField())
-		for i := range instanceValue.NumField() {
-			key := utils.ToSnakeCase(instanceType.Field(i).Name)
-			switch i {
-			case 1:
-				result[key] = TargetNamespace
-			case 2:
-				labels, err := client.GetLabels(TargetNamespace, TargetLabelKey)
-				if err != nil {
-					return nil, nil, err
-				}
-
-				index, err := getIntValue(instanceValue.Field(i))
-				if err != nil {
-					return nil, nil, err
-				}
-
-				result[key] = labels[index]
-			default:
-				value, err := getIntValue(instanceValue.Field(i))
-				if err != nil {
-					return nil, nil, err
-				}
-
-				result[key] = value
-			}
-		}
-
-		return instance, result, nil
 	}
 
-	return nil, nil, fmt.Errorf("failed to get the non-empty injection")
+	if idxPtr == nil {
+		return nil, nil, fmt.Errorf("failed to get the non-empty injection")
+	}
+
+	instance := val.Field(*idxPtr).Interface().(Injection)
+	instanceValue := reflect.ValueOf(instance).Elem()
+	instanceType := instanceValue.Type()
+
+	result := make(map[string]any, instanceValue.NumField())
+	for i := range instanceValue.NumField() {
+		key := utils.ToSnakeCase(instanceType.Field(i).Name)
+
+		var value any
+		switch i {
+		case 1:
+			result[key] = TargetNamespace
+		case 2:
+			index, err := getIntValue(instanceValue.Field(i))
+			if err != nil {
+				return nil, nil, err
+			}
+
+			switch instanceType.Field(i).Name {
+			case KeyApp:
+				labels, err := resourcelookup.GetAllAppLabels()
+				if err != nil {
+					return nil, nil, err
+				}
+
+				value = map[string]any{"app_name": labels[index]}
+			case KeyMethod:
+				methods, err := resourcelookup.GetAllJVMMethods()
+				if err != nil {
+					return nil, nil, err
+				}
+
+				value = methods[index]
+			case KeyEndpoint:
+				endpoints, err := resourcelookup.GetAllHTTPEndpoints()
+				if err != nil {
+					return nil, nil, err
+				}
+
+				value = endpoints[index]
+			case KeyNetworkPair:
+				networkpairs, err := resourcelookup.GetAllNetworkPairs()
+				if err != nil {
+					return nil, nil, err
+				}
+
+				value = networkpairs[index]
+			case KeyContainer:
+				containers, err := resourcelookup.GetAllContainers()
+				if err != nil {
+					return nil, nil, err
+				}
+
+				value = containers[index]
+			case KeyDNSEndpoint:
+				endpoints, err := resourcelookup.GetAllDNSEndpoints()
+				if err != nil {
+					return nil, nil, err
+				}
+
+				value = endpoints[index]
+			case KeyDatabase:
+				operations, err := resourcelookup.GetAllDatabaseOperations()
+				if err != nil {
+					return nil, nil, err
+				}
+
+				value = operations[index]
+			}
+
+			jsonData, err := json.Marshal(value)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to marshal injection point: %v", err)
+			}
+
+			var injectionPoint map[string]any
+			if err := json.Unmarshal(jsonData, &injectionPoint); err != nil {
+				return nil, nil, fmt.Errorf("failed to unmarshal injection point: %v", err)
+			}
+
+			result["injection_point"] = injectionPoint
+		default:
+			value, err := getIntValue(instanceValue.Field(i))
+			if err != nil {
+				return nil, nil, err
+			}
+
+			result[key] = value
+
+			if key == "direction" {
+				result[key] = directionMap[int(value)]
+			}
+		}
+	}
+
+	return instance, result, nil
 }
 
 func getIntValue(field reflect.Value) (int64, error) {

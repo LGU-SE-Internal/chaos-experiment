@@ -18,45 +18,45 @@ const (
 
 // AppMethodPair represents a flattened app+method combination
 type AppMethodPair struct {
-	AppName    string
-	ClassName  string
-	MethodName string
+	AppName    string `json:"app_name"`
+	ClassName  string `json:"class_name"`
+	MethodName string `json:"method_name"`
 }
 
 // AppEndpointPair represents a flattened app+endpoint combination
 type AppEndpointPair struct {
-	AppName       string
-	Route         string
-	Method        string
-	ServerAddress string
-	ServerPort    string
+	AppName       string `json:"app_name"`
+	Route         string `json:"route"`
+	Method        string `json:"method"`
+	ServerAddress string `json:"server_address"`
+	ServerPort    string `json:"server_port"`
 }
 
 // AppNetworkPair represents a flattened source+target combination for network chaos
 type AppNetworkPair struct {
-	SourceService string
-	TargetService string
+	SourceService string `json:"source_service"`
+	TargetService string `json:"target_service"`
 }
 
 // AppDNSPair represents a flattened app+domain combination for DNS chaos
 type AppDNSPair struct {
-	AppName string
-	Domain  string
+	AppName string `json:"app_name"`
+	Domain  string `json:"domain"`
 }
 
 // AppDatabasePair represents a flattened app+database+table+operation combination
 type AppDatabasePair struct {
-	AppName       string
-	DBName        string
-	TableName     string
-	OperationType string
+	AppName       string `json:"app_name"`
+	DBName        string `json:"db_name"`
+	TableName     string `json:"table_name"`
+	OperationType string `json:"operation_type"`
 }
 
 // ContainerInfo represents container information with its pod and app
 type ContainerInfo struct {
-	PodName       string
-	AppLabel      string
-	ContainerName string
+	PodName       string `json:"pod_name"`
+	AppLabel      string `json:"app_label"`
+	ContainerName string `json:"container_name"`
 }
 
 // Global cache for lookups

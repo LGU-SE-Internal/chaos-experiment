@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/k0kubun/pp"
@@ -42,58 +45,67 @@ func TestHandler(t *testing.T) {
 }
 
 func TestHandler2(t *testing.T) {
-	chilren := map[string]any{
-		"0": map[string]any{
-			"value": 1,
-		},
-		"1": map[string]any{
-			"value": 0,
-		},
-		"2": map[string]any{
-			"value": 0,
-		},
-		"3": map[string]any{
-			"value": 0,
-		},
-		"4": map[string]any{
-			"value": 1,
-		},
-	}
-
-	mapTest := map[string]any{
-		"children": map[string]any{
-			"27": map[string]any{
-				"children": chilren,
-			},
-		},
-		"value": 27,
-	}
-
-	pp.Println(mapTest)
-
-	node, err := MapToNode(mapTest)
+	pwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 
-	pp.Println(node)
-
-	conf, err := NodeToStruct[InjectionConf](node)
+	filename := filepath.Join(pwd, "handler_test.json")
+	testsMaps, err := readJSONFile(filename, "TestHandler2")
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 
-	pp.Println(conf)
+	for _, tt := range testsMaps {
+		node, err := MapToNode(tt)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
 
-	config, name, err := conf.Create()
+		conf, err := NodeToStruct[InjectionConf](node)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		_, result, err := conf.getActiveInjection()
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		pp.Println(result)
+	}
+}
+
+func readJSONFile(filename, key string) ([]map[string]any, error) {
+	data, err := os.ReadFile(filename)
 	if err != nil {
-		t.Error(err.Error())
-		return
+		return nil, err
 	}
 
-	pp.Println(config, name)
+	var dataMap map[string]any
+	if err := json.Unmarshal(data, &dataMap); err != nil {
+		return nil, err
+	}
+
+	if value, ok := dataMap[key]; ok {
+		if items, ok := value.([]any); ok {
+			var result []map[string]any
+			for _, item := range items {
+				if m, ok := item.(map[string]any); ok {
+					result = append(result, m)
+				}
+			}
+
+			return result, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to read the value of key %s", key)
 }
 
 func genValue(m map[string]any) (map[string]any, error) {

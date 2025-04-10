@@ -466,14 +466,14 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 		case "Namespace":
 			start = 0
 			end = 0
-		case "AppName", "AppIdx":
+		case "AppName", KeyApp:
 			values, err := client.GetLabels(TargetNamespace, TargetLabelKey)
 			if err != nil {
 				return 0, 0, fmt.Errorf("failed to get labels: %w", err)
 			}
 			start = 0
 			end = len(values) - 1
-		case "MethodIdx":
+		case KeyMethod:
 			// For flattened JVM methods
 			methods, err := resourcelookup.GetAllJVMMethods()
 			if err != nil {
@@ -481,7 +481,7 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 			}
 			start = 0
 			end = len(methods) - 1
-		case "EndpointIdx":
+		case KeyEndpoint:
 			// For flattened HTTP endpoints
 			endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 			if err != nil {
@@ -489,7 +489,7 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 			}
 			start = 0
 			end = len(endpoints) - 1
-		case "NetworkPairIdx":
+		case KeyNetworkPair:
 			// For flattened network pairs
 			pairs, err := resourcelookup.GetAllNetworkPairs()
 			if err != nil {
@@ -505,7 +505,7 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 			}
 			start = 0
 			end = len(containers) - 1
-		case "DNSEndpointIdx":
+		case KeyDNSEndpoint:
 			// For flattened DNS endpoints
 			endpoints, err := resourcelookup.GetAllDNSEndpoints()
 			if err != nil {
@@ -513,7 +513,7 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 			}
 			start = 0
 			end = len(endpoints) - 1
-		case "DatabaseIdx":
+		case KeyDatabase:
 			// For flattened database operations
 			dbOps, err := resourcelookup.GetAllDatabaseOperations()
 			if err != nil {
