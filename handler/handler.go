@@ -16,12 +16,6 @@ type ChaosType int
 const TargetNamespace = "ts" // todo: make it dynamic (e.g. from config)
 const TargetLabelKey = "app"
 
-const (
-	Pod       string = "Pod"
-	Container string = "Container"
-	Operation string = "Operation"
-	Code      string = "Code"
-)
 
 const (
 	// PodChaos
@@ -105,40 +99,6 @@ var ChaosTypeMap = map[ChaosType]string{
 	JVMMySQLException:        "JVMMySQLException",
 }
 
-// FaultLevelMap maps ChaosType to its fault level
-var FaultLevelMap = map[ChaosType]string{
-	PodKill:                  Pod,
-	PodFailure:               Pod,
-	ContainerKill:            Container,
-	MemoryStress:             Container,
-	CPUStress:                Container,
-	HTTPRequestAbort:         Operation,
-	HTTPResponseAbort:        Operation,
-	HTTPRequestDelay:         Operation,
-	HTTPResponseDelay:        Operation,
-	HTTPResponseReplaceBody:  Operation,
-	HTTPResponsePatchBody:    Operation,
-	HTTPRequestReplacePath:   Operation,
-	HTTPRequestReplaceMethod: Operation,
-	HTTPResponseReplaceCode:  Operation,
-	DNSError:                 Pod,
-	DNSRandom:                Pod,
-	TimeSkew:                 Container,
-	NetworkDelay:             Pod,
-	NetworkLoss:              Pod,
-	NetworkDuplicate:         Pod,
-	NetworkCorrupt:           Pod,
-	NetworkBandwidth:         Pod,
-	NetworkPartition:         Pod,
-	JVMLatency:               Code,
-	JVMReturn:                Code,
-	JVMException:             Code,
-	JVMGarbageCollector:      Code,
-	JVMCPUStress:             Code,
-	JVMMemoryStress:          Code,
-	JVMMySQLLatency:          Operation,
-	JVMMySQLException:        Operation,
-}
 
 // GetChaosTypeName 根据 ChaosType 获取名称
 func GetChaosTypeName(c ChaosType) string {
@@ -161,6 +121,9 @@ func WithNs(ns string) Option {
 
 type Injection interface {
 	Create(cli cli.Client, opt ...Option) (string, error)
+}
+type GroundtruthProvider interface {
+	GetGroundtruth() (Groundtruth, error)
 }
 
 var SpecMap = map[ChaosType]any{
@@ -399,4 +362,18 @@ func getIntValue(field reflect.Value) (int64, error) {
 	default:
 		return 0, fmt.Errorf("unsupported field type: %v", field.Kind())
 	}
+}
+
+func (ic *InjectionConf) GetGroundtruth() (Groundtruth, error) {
+	instance, _, err := ic.getActiveInjection()
+	if err != nil {
+		return Groundtruth{}, err
+	}
+
+	// Check if the injection supports GetGroundtruth
+	if provider, ok := instance.(GroundtruthProvider); ok {
+		return provider.GetGroundtruth()
+	}
+
+	return Groundtruth{}, fmt.Errorf("injection does not support groundtruth calculation")
 }

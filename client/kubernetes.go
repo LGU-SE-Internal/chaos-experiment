@@ -121,6 +121,27 @@ func GetContainersWithAppLabel(namespace string) ([]map[string]string, error) {
 	return result, nil
 }
 
+func GetPodsByLabel(namespace, labelKey, labelValue string) ([]string, error) {
+	cli := NewK8sClient()
+
+
+	pods := &corev1.PodList{}
+	err := cli.List(context.Background(), pods, 
+		client.InNamespace(namespace),
+		client.MatchingLabels{labelKey: labelValue})
+	if err != nil {
+		return nil, err
+	}
+
+	podNames := make([]string, 0, len(pods.Items))
+	for _, pod := range pods.Items {
+		podNames = append(podNames, pod.Name)
+	}
+
+	return podNames, nil
+}
+
+
 // TODO: 添加需要的类型
 func GetCRDMapping() map[schema.GroupVersionResource]client.Object {
 	return map[schema.GroupVersionResource]client.Object{
