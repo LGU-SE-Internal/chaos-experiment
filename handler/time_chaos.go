@@ -17,7 +17,7 @@ type TimeSkewSpec struct {
 	TimeOffset   int `range:"-600-600" description:"Time offset in seconds"`
 }
 
-func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *TimeSkewSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -44,5 +44,5 @@ func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	// Format the TimeOffset with "s" unit
 	timeOffset := fmt.Sprintf("%ds", s.TimeOffset)
 
-	return controllers.CreateTimeChaosWithContainer(cli, ns, appName, timeOffset, duration, []string{containerName})
+	return controllers.CreateTimeChaosWithContainer(cli, ns, appName, timeOffset, duration, labels, []string{containerName})
 }

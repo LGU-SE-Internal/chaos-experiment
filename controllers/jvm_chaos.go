@@ -13,10 +13,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateJVMChaos(cli client.Client, namespace string, appName string, action v1alpha1.JVMChaosAction, duration *string, opts ...chaos.OptJVMChaos) (string, error) {
+func CreateJVMChaos(cli client.Client, namespace string, appName string, action v1alpha1.JVMChaosAction, duration *string, labels map[string]string, opts ...chaos.OptJVMChaos) (string, error) {
 	spec := chaos.GenerateJVMChaosSpec(namespace, appName, duration, append([]chaos.OptJVMChaos{chaos.WithJVMAction(action)}, opts...)...)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6)))
-	jvmChaos, err := chaos.NewJvmChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithJVMChaosSpec(spec))
+	jvmChaos, err := chaos.NewJvmChaos(
+		chaos.WithName(name),
+		chaos.WithNamespace(namespace),
+		chaos.WithJVMChaosSpec(spec),
+		chaos.WithLabels(labels),
+	)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
 		return "", err

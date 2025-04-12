@@ -17,7 +17,7 @@ type PodFailureSpec struct {
 	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
 }
 
-func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *PodFailureSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -40,7 +40,7 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodFailureAction
 
-	return controllers.CreatePodChaos(cli, ns, appName, action, duration)
+	return controllers.CreatePodChaos(cli, ns, appName, action, duration, labels)
 }
 
 // Update PodKillSpec to use flattened app index
@@ -50,7 +50,7 @@ type PodKillSpec struct {
 	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
 }
 
-func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *PodKillSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -73,7 +73,7 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodKillAction
 
-	return controllers.CreatePodChaos(cli, ns, appName, action, duration)
+	return controllers.CreatePodChaos(cli, ns, appName, action, duration, labels)
 }
 
 type ContainerKillSpec struct {
@@ -82,7 +82,7 @@ type ContainerKillSpec struct {
 	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
 }
 
-func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *ContainerKillSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -109,5 +109,5 @@ func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, erro
 	action := chaosmeshv1alpha1.ContainerKillAction
 
 	// Use the updated CreatePodChaosWithContainer function
-	return controllers.CreatePodChaosWithContainer(cli, ns, appName, action, duration, []string{containerName})
+	return controllers.CreatePodChaosWithContainer(cli, ns, appName, action, duration, labels, []string{containerName})
 }

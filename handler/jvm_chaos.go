@@ -39,7 +39,7 @@ type JVMLatencySpec struct {
 	LatencyDuration int `range:"1-5000" description:"Latency in ms"`
 }
 
-func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *JVMLatencySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -72,7 +72,7 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMLatencyAction, duration, optss...)
+		chaosmeshv1alpha1.JVMLatencyAction, duration, labels, optss...)
 }
 
 // JVMReturnSpec defines the JVM return value chaos injection parameters
@@ -85,7 +85,7 @@ type JVMReturnSpec struct {
 	ReturnValueOpt int           `range:"0-1" description:"Return value option (0=Default, 1=Random)"`
 }
 
-func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *JVMReturnSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -133,7 +133,7 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMReturnAction, duration, optss...)
+		chaosmeshv1alpha1.JVMReturnAction, duration, labels, optss...)
 }
 
 // JVMExceptionSpec defines the JVM exception injection parameters
@@ -145,7 +145,7 @@ type JVMExceptionSpec struct {
 	ExceptionOpt int `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
 }
 
-func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *JVMExceptionSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -194,7 +194,7 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMExceptionAction, duration, optss...)
+		chaosmeshv1alpha1.JVMExceptionAction, duration, labels, optss...)
 }
 
 // JVMGCSpec defines the JVM garbage collector chaos injection parameters
@@ -204,7 +204,7 @@ type JVMGCSpec struct {
 	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
 }
 
-func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *JVMGCSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -227,7 +227,7 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMGCAction, duration)
+		chaosmeshv1alpha1.JVMGCAction, duration, labels)
 }
 
 // JVMCPUStressSpec defines the JVM CPU stress chaos injection parameters
@@ -239,7 +239,7 @@ type JVMCPUStressSpec struct {
 	CPUCount  int `range:"1-8" description:"Number of CPU cores to stress"`
 }
 
-func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *JVMCPUStressSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -272,7 +272,7 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMStressAction, duration, optss...)
+		chaosmeshv1alpha1.JVMStressAction, duration, labels, optss...)
 }
 
 // JVMMemoryStressSpec defines the JVM memory stress chaos injection parameters
@@ -284,7 +284,7 @@ type JVMMemoryStressSpec struct {
 	MemType   JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
 }
 
-func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *JVMMemoryStressSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -323,7 +323,7 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, er
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMStressAction, duration, optss...)
+		chaosmeshv1alpha1.JVMStressAction, duration, labels, optss...)
 }
 
 // SQL types for JVMMySQL
@@ -354,7 +354,7 @@ type JVMMySQLLatencySpec struct {
 	LatencyMs   int `range:"10-5000" description:"Latency in ms"`
 }
 
-func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *JVMMySQLLatencySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -389,7 +389,7 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMMySQLAction, duration, optss...)
+		chaosmeshv1alpha1.JVMMySQLAction, duration, labels, optss...)
 }
 
 // JVMMySQLExceptionSpec defines the JVM MySQL exception chaos injection parameters
@@ -399,7 +399,7 @@ type JVMMySQLExceptionSpec struct {
 	DatabaseIdx int `range:"0-0" dynamic:"true" description:"Flattened app+database+table index"`
 }
 
-func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -437,5 +437,5 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, 
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMMySQLAction, duration, optss...)
+		chaosmeshv1alpha1.JVMMySQLAction, duration, labels, optss...)
 }

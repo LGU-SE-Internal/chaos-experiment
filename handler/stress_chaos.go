@@ -18,7 +18,7 @@ type CPUStressChaosSpec struct {
 	CPUWorker    int `range:"1-3" description:"CPU Stress Threads"`
 }
 
-func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *CPUStressChaosSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -47,7 +47,7 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 		s.CPULoad,
 		s.CPUWorker,
 	)
-	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "cpu-exhaustion", duration, []string{containerName})
+	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "cpu-exhaustion", duration, labels, []string{containerName})
 }
 
 type MemoryStressChaosSpec struct {
@@ -58,7 +58,7 @@ type MemoryStressChaosSpec struct {
 	MemWorker    int `range:"1-4" description:"Memory Stress Threads"`
 }
 
-func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *MemoryStressChaosSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -87,5 +87,5 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 		strconv.Itoa(s.MemorySize)+"MiB",
 		s.MemWorker,
 	)
-	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "memory-exhaustion", duration, []string{containerName})
+	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "memory-exhaustion", duration, labels, []string{containerName})
 }

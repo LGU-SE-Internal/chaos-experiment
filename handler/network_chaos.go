@@ -49,7 +49,7 @@ type NetworkPartitionSpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *NetworkPartitionSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -76,7 +76,7 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.PartitionAction, duration, optss...)
+		chaosmeshv1alpha1.PartitionAction, duration, labels, optss...)
 }
 
 // NetworkDelaySpec defines network delay chaos parameters
@@ -90,7 +90,7 @@ type NetworkDelaySpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *NetworkDelaySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -122,7 +122,7 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.DelayAction, duration, optss...)
+		chaosmeshv1alpha1.DelayAction, duration, labels, optss...)
 }
 
 // NetworkLossSpec defines network packet loss chaos parameters
@@ -135,7 +135,7 @@ type NetworkLossSpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *NetworkLossSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -166,7 +166,7 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.LossAction, duration, optss...)
+		chaosmeshv1alpha1.LossAction, duration, labels, optss...)
 }
 
 // NetworkDuplicateSpec defines network packet duplication chaos parameters
@@ -179,7 +179,7 @@ type NetworkDuplicateSpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *NetworkDuplicateSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -210,7 +210,7 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.DuplicateAction, duration, optss...)
+		chaosmeshv1alpha1.DuplicateAction, duration, labels, optss...)
 }
 
 // NetworkCorruptSpec defines network packet corruption chaos parameters
@@ -223,7 +223,7 @@ type NetworkCorruptSpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *NetworkCorruptSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -254,7 +254,7 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.CorruptAction, duration, optss...)
+		chaosmeshv1alpha1.CorruptAction, duration, labels, optss...)
 }
 
 // NetworkBandwidthSpec defines network bandwidth limit chaos parameters
@@ -268,7 +268,7 @@ type NetworkBandwidthSpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *NetworkBandwidthSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -300,5 +300,5 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.BandwidthAction, duration, optss...)
+		chaosmeshv1alpha1.BandwidthAction, duration, labels, optss...)
 }

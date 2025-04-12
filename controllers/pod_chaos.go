@@ -14,10 +14,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreatePodChaos(cli client.Client, namespace string, appName string, action v1alpha1.PodChaosAction, duration *string) (string, error) {
+func CreatePodChaos(cli client.Client, namespace string, appName string, action v1alpha1.PodChaosAction, duration *string, labels map[string]string) (string, error) {
 	spec := chaos.GeneratePodChaosSpec(namespace, appName, duration, action)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6)))
-	podChaos, err := chaos.NewPodChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithPodChaosSpec(spec))
+	podChaos, err := chaos.NewPodChaos(
+		chaos.WithName(name),
+		chaos.WithNamespace(namespace),
+		chaos.WithPodChaosSpec(spec),
+		chaos.WithLabels(labels),
+	)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
 		return "", err
@@ -37,10 +42,15 @@ func CreatePodChaos(cli client.Client, namespace string, appName string, action 
 }
 
 // CreatePodChaosWithContainer creates a pod chaos experiment with specified container names
-func CreatePodChaosWithContainer(cli client.Client, namespace string, appName string, action v1alpha1.PodChaosAction, duration *string, containerNames []string) (string, error) {
+func CreatePodChaosWithContainer(cli client.Client, namespace string, appName string, action v1alpha1.PodChaosAction, duration *string, labels map[string]string, containerNames []string) (string, error) {
 	spec := chaos.GeneratePodChaosSpecWithContainers(namespace, appName, duration, action, containerNames)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, action, rand.String(6)))
-	podChaos, err := chaos.NewPodChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithPodChaosSpec(spec))
+	podChaos, err := chaos.NewPodChaos(
+		chaos.WithName(name),
+		chaos.WithNamespace(namespace),
+		chaos.WithPodChaosSpec(spec),
+		chaos.WithLabels(labels),
+	)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
 		return "", err

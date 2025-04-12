@@ -37,11 +37,13 @@ func WithNamespace(namespace string) OptChaos {
 		opt.Namespace = namespace
 	}
 }
+
 func WithLabels(labels map[string]string) OptChaos {
 	return func(opt *ConfigChaos) {
 		opt.Labels = labels
 	}
 }
+
 func WithAnnotations(annotations map[string]string) OptChaos {
 	return func(opt *ConfigChaos) {
 		opt.Annotations = annotations

@@ -71,13 +71,19 @@ func TestHandler2(t *testing.T) {
 			return
 		}
 
-		_, result, err := conf.getActiveInjection()
+		config, name, err := conf.Create(map[string]string{
+			"benchmark":    "clickhouse",
+			"pre_duration": "1",
+			"task_id":      "1",
+			"trace_id":     "2",
+			"group_id":     "3",
+		})
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 
-		pp.Println(result)
+		pp.Println(config, name)
 	}
 }
 

@@ -15,10 +15,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateHTTPChaos(cli client.Client, namespace string, appName string, stressType string, duration *string, opts ...chaos.OptHTTPChaos) (string, error) {
+func CreateHTTPChaos(cli client.Client, namespace string, appName string, stressType string, duration *string, labels map[string]string, opts ...chaos.OptHTTPChaos) (string, error) {
 	spec := chaos.GenerateHttpChaosSpec(namespace, appName, duration, opts...)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6)))
-	httpChaos, err := chaos.NewHttpChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithHttpChaosSpec(spec))
+	httpChaos, err := chaos.NewHttpChaos(
+		chaos.WithName(name),
+		chaos.WithNamespace(namespace),
+		chaos.WithHttpChaosSpec(spec),
+		chaos.WithLabels(labels),
+	)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
 		return "", err

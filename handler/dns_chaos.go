@@ -18,7 +18,7 @@ type DNSErrorSpec struct {
 	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
 
-func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *DNSErrorSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -43,7 +43,7 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.ErrorAction
 
-	return controllers.CreateDnsChaos(cli, ns, serviceName, action, []string{endpointPair.Domain}, duration)
+	return controllers.CreateDnsChaos(cli, ns, serviceName, action, []string{endpointPair.Domain}, duration, labels)
 }
 
 // DNSRandomSpec defines the DNS random chaos injection parameters
@@ -53,7 +53,7 @@ type DNSRandomSpec struct {
 	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
 
-func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *DNSRandomSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -78,5 +78,5 @@ func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.RandomAction
 
-	return controllers.CreateDnsChaos(cli, ns, serviceName, action, []string{endpointPair.Domain}, duration)
+	return controllers.CreateDnsChaos(cli, ns, serviceName, action, []string{endpointPair.Domain}, duration, labels)
 }

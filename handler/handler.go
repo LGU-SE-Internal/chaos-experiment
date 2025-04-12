@@ -16,7 +16,6 @@ type ChaosType int
 const TargetNamespace = "ts" // todo: make it dynamic (e.g. from config)
 const TargetLabelKey = "app"
 
-
 const (
 	// PodChaos
 	PodKill ChaosType = iota
@@ -99,7 +98,6 @@ var ChaosTypeMap = map[ChaosType]string{
 	JVMMySQLException:        "JVMMySQLException",
 }
 
-
 // GetChaosTypeName 根据 ChaosType 获取名称
 func GetChaosTypeName(c ChaosType) string {
 	if name, ok := ChaosTypeMap[c]; ok {
@@ -120,7 +118,7 @@ func WithNs(ns string) Option {
 }
 
 type Injection interface {
-	Create(cli cli.Client, opt ...Option) (string, error)
+	Create(cli cli.Client, labels map[string]string, opt ...Option) (string, error)
 }
 type GroundtruthProvider interface {
 	GetGroundtruth() (Groundtruth, error)
@@ -226,14 +224,14 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-2"`
 }
 
-func (ic *InjectionConf) Create(opts ...Option) (map[string]any, string, error) {
+func (ic *InjectionConf) Create(labels map[string]string, opts ...Option) (map[string]any, string, error) {
 	cli := client.NewK8sClient()
 	instance, config, err := ic.getActiveInjection()
 	if err != nil {
 		return nil, "", err
 	}
 
-	name, err := instance.Create(cli, opts...)
+	name, err := instance.Create(cli, labels, opts...)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
 	}

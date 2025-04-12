@@ -37,10 +37,15 @@ func CreateStressChaos(cli client.Client, namespace string, appName string, stre
 }
 
 // CreateStressChaosWithContainer creates a stress chaos experiment with specified container names
-func CreateStressChaosWithContainer(cli client.Client, namespace string, appName string, stressors v1alpha1.Stressors, stressType string, duration *string, containerNames []string) (string, error) {
+func CreateStressChaosWithContainer(cli client.Client, namespace string, appName string, stressors v1alpha1.Stressors, stressType string, duration *string, labels map[string]string, containerNames []string) (string, error) {
 	spec := chaos.GenerateStressChaosSpecWithContainers(namespace, appName, duration, stressors, containerNames)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6)))
-	stressChaos, err := chaos.NewStressChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithStressChaosSpec(spec))
+	stressChaos, err := chaos.NewStressChaos(
+		chaos.WithName(name),
+		chaos.WithNamespace(namespace),
+		chaos.WithStressChaosSpec(spec),
+		chaos.WithLabels(labels),
+	)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
 		return "", err

@@ -19,7 +19,7 @@ type HTTPRequestAbortSpec struct {
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
-func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *HTTPRequestAbortSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -61,7 +61,7 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, e
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-abort", duration, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-abort", duration, labels, optss...)
 }
 
 // HTTPResponseAbortSpec defines HTTP response abort chaos
@@ -71,7 +71,7 @@ type HTTPResponseAbortSpec struct {
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
-func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *HTTPResponseAbortSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -113,7 +113,7 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, 
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-abort", duration, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-abort", duration, labels, optss...)
 }
 
 // HTTPRequestDelaySpec defines HTTP request delay chaos injection
@@ -124,7 +124,7 @@ type HTTPRequestDelaySpec struct {
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
 }
 
-func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *HTTPRequestDelaySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -166,7 +166,7 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, e
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-delay", duration, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-delay", duration, labels, optss...)
 }
 
 // HTTPResponseDelaySpec defines HTTP response delay chaos injection
@@ -177,7 +177,7 @@ type HTTPResponseDelaySpec struct {
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
 }
 
-func (s *HTTPResponseDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *HTTPResponseDelaySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -219,7 +219,7 @@ func (s *HTTPResponseDelaySpec) Create(cli cli.Client, opts ...Option) (string, 
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-delay", duration, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-delay", duration, labels, optss...)
 }
 
 // ReplaceBodyType for HTTP response body replacement
@@ -238,7 +238,7 @@ type HTTPResponseReplaceBodySpec struct {
 	BodyType    ReplaceBodyType `range:"0-1" description:"Body Type (0=Empty, 1=Random)"`
 }
 
-func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -285,7 +285,7 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (st
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-replace-body", duration, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-replace-body", duration, labels, optss...)
 }
 
 // HTTPResponsePatchBodySpec defines HTTP response body patching chaos
@@ -295,7 +295,7 @@ type HTTPResponsePatchBodySpec struct {
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
-func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -336,7 +336,7 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (stri
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-patch-body", duration, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-patch-body", duration, labels, optss...)
 }
 
 // HTTPRequestReplacePathSpec defines HTTP request path replacement chaos
@@ -346,7 +346,7 @@ type HTTPRequestReplacePathSpec struct {
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
-func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -388,7 +388,7 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-replace-path", duration, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-replace-path", duration, labels, optss...)
 }
 
 // HTTPRequestReplaceMethodSpec defines HTTP request method replacement chaos
@@ -399,7 +399,7 @@ type HTTPRequestReplaceMethodSpec struct {
 	ReplaceMethod HTTPMethod `range:"0-6" description:"HTTP Method to replace with"`
 }
 
-func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -441,7 +441,7 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-replace-method", duration, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-replace-method", duration, labels, optss...)
 }
 
 // HTTPResponseReplaceCodeSpec defines HTTP response status code replacement chaos
@@ -452,7 +452,7 @@ type HTTPResponseReplaceCodeSpec struct {
 	StatusCode  HTTPStatusCode `range:"0-9" description:"HTTP Status Code to replace with"`
 }
 
-func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (string, error) {
+func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -494,5 +494,5 @@ func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (st
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-replace-code", duration, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-replace-code", duration, labels, optss...)
 }
