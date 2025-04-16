@@ -18,7 +18,7 @@ type DNSErrorSpec struct {
 	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
 
-func (s *DNSErrorSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -26,6 +26,11 @@ func (s *DNSErrorSpec) Create(cli cli.Client, labels map[string]string, opts ...
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllDNSEndpoints()
@@ -53,7 +58,7 @@ type DNSRandomSpec struct {
 	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
 
-func (s *DNSRandomSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -61,6 +66,11 @@ func (s *DNSRandomSpec) Create(cli cli.Client, labels map[string]string, opts ..
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllDNSEndpoints()

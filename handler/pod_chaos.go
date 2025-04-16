@@ -17,7 +17,7 @@ type PodFailureSpec struct {
 	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
 }
 
-func (s *PodFailureSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -25,6 +25,11 @@ func (s *PodFailureSpec) Create(cli cli.Client, labels map[string]string, opts .
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	appLabels, err := resourcelookup.GetAllAppLabels()
@@ -50,7 +55,7 @@ type PodKillSpec struct {
 	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
 }
 
-func (s *PodKillSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -58,6 +63,11 @@ func (s *PodKillSpec) Create(cli cli.Client, labels map[string]string, opts ...O
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	appLabels, err := resourcelookup.GetAllAppLabels()
@@ -82,7 +92,7 @@ type ContainerKillSpec struct {
 	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
 }
 
-func (s *ContainerKillSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -90,6 +100,11 @@ func (s *ContainerKillSpec) Create(cli cli.Client, labels map[string]string, opt
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	containers, err := resourcelookup.GetAllContainers()

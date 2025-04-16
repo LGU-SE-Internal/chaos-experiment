@@ -107,9 +107,16 @@ func GetChaosTypeName(c ChaosType) string {
 }
 
 type Conf struct {
+	Labels    map[string]string
 	Namespace string
 }
 type Option func(*Conf)
+
+func WithLabels(labels map[string]string) Option {
+	return func(c *Conf) {
+		c.Labels = labels
+	}
+}
 
 func WithNs(ns string) Option {
 	return func(c *Conf) {
@@ -118,7 +125,7 @@ func WithNs(ns string) Option {
 }
 
 type Injection interface {
-	Create(cli cli.Client, labels map[string]string, opt ...Option) (string, error)
+	Create(cli cli.Client, opt ...Option) (string, error)
 }
 type GroundtruthProvider interface {
 	GetGroundtruth() (Groundtruth, error)
@@ -231,7 +238,7 @@ func (ic *InjectionConf) Create(labels map[string]string, opts ...Option) (map[s
 		return nil, "", err
 	}
 
-	name, err := instance.Create(cli, labels, opts...)
+	name, err := instance.Create(cli, opts...)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
 	}

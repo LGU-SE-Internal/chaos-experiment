@@ -39,7 +39,7 @@ type JVMLatencySpec struct {
 	LatencyDuration int `range:"1-5000" description:"Latency in ms"`
 }
 
-func (s *JVMLatencySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -47,6 +47,11 @@ func (s *JVMLatencySpec) Create(cli cli.Client, labels map[string]string, opts .
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	methods, err := resourcelookup.GetAllJVMMethods()
@@ -85,7 +90,7 @@ type JVMReturnSpec struct {
 	ReturnValueOpt int           `range:"0-1" description:"Return value option (0=Default, 1=Random)"`
 }
 
-func (s *JVMReturnSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -93,6 +98,11 @@ func (s *JVMReturnSpec) Create(cli cli.Client, labels map[string]string, opts ..
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	methods, err := resourcelookup.GetAllJVMMethods()
@@ -145,7 +155,7 @@ type JVMExceptionSpec struct {
 	ExceptionOpt int `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
 }
 
-func (s *JVMExceptionSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -153,6 +163,11 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, labels map[string]string, opts
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	methods, err := resourcelookup.GetAllJVMMethods()
@@ -204,7 +219,7 @@ type JVMGCSpec struct {
 	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
 }
 
-func (s *JVMGCSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -212,6 +227,11 @@ func (s *JVMGCSpec) Create(cli cli.Client, labels map[string]string, opts ...Opt
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	appLabels, err := resourcelookup.GetAllAppLabels()
@@ -239,7 +259,7 @@ type JVMCPUStressSpec struct {
 	CPUCount  int `range:"1-8" description:"Number of CPU cores to stress"`
 }
 
-func (s *JVMCPUStressSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -247,6 +267,11 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, labels map[string]string, opts
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	methods, err := resourcelookup.GetAllJVMMethods()
@@ -284,7 +309,7 @@ type JVMMemoryStressSpec struct {
 	MemType   JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
 }
 
-func (s *JVMMemoryStressSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -292,6 +317,11 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client, labels map[string]string, o
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	methods, err := resourcelookup.GetAllJVMMethods()
@@ -354,7 +384,7 @@ type JVMMySQLLatencySpec struct {
 	LatencyMs   int `range:"10-5000" description:"Latency in ms"`
 }
 
-func (s *JVMMySQLLatencySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -362,6 +392,11 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, labels map[string]string, o
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	dbOps, err := resourcelookup.GetAllDatabaseOperations()
@@ -399,7 +434,7 @@ type JVMMySQLExceptionSpec struct {
 	DatabaseIdx int `range:"0-0" dynamic:"true" description:"Flattened app+database+table index"`
 }
 
-func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -407,6 +442,11 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, labels map[string]string,
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	dbOps, err := resourcelookup.GetAllDatabaseOperations()

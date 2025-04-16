@@ -17,7 +17,7 @@ type TimeSkewSpec struct {
 	TimeOffset   int `range:"-600-600" description:"Time offset in seconds"`
 }
 
-func (s *TimeSkewSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -25,6 +25,11 @@ func (s *TimeSkewSpec) Create(cli cli.Client, labels map[string]string, opts ...
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	containers, err := resourcelookup.GetAllContainers()

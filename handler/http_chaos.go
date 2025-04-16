@@ -19,7 +19,7 @@ type HTTPRequestAbortSpec struct {
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
-func (s *HTTPRequestAbortSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -27,6 +27,11 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client, labels map[string]string, 
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -71,7 +76,7 @@ type HTTPResponseAbortSpec struct {
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
-func (s *HTTPResponseAbortSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -79,6 +84,11 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client, labels map[string]string,
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -124,7 +134,7 @@ type HTTPRequestDelaySpec struct {
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
 }
 
-func (s *HTTPRequestDelaySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -132,6 +142,11 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client, labels map[string]string, 
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -177,7 +192,7 @@ type HTTPResponseDelaySpec struct {
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
 }
 
-func (s *HTTPResponseDelaySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *HTTPResponseDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -185,6 +200,11 @@ func (s *HTTPResponseDelaySpec) Create(cli cli.Client, labels map[string]string,
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -238,7 +258,7 @@ type HTTPResponseReplaceBodySpec struct {
 	BodyType    ReplaceBodyType `range:"0-1" description:"Body Type (0=Empty, 1=Random)"`
 }
 
-func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -246,6 +266,11 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, labels map[string]s
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -295,7 +320,7 @@ type HTTPResponsePatchBodySpec struct {
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
-func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -303,6 +328,11 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, labels map[string]str
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -346,7 +376,7 @@ type HTTPRequestReplacePathSpec struct {
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
-func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -354,6 +384,11 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, labels map[string]st
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -399,7 +434,7 @@ type HTTPRequestReplaceMethodSpec struct {
 	ReplaceMethod HTTPMethod `range:"0-6" description:"HTTP Method to replace with"`
 }
 
-func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -407,6 +442,11 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, labels map[string]
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -452,7 +492,7 @@ type HTTPResponseReplaceCodeSpec struct {
 	StatusCode  HTTPStatusCode `range:"0-9" description:"HTTP Status Code to replace with"`
 }
 
-func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -460,6 +500,11 @@ func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, labels map[string]s
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()

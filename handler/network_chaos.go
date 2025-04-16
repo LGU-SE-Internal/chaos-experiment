@@ -49,7 +49,7 @@ type NetworkPartitionSpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkPartitionSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -57,6 +57,11 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, labels map[string]string, 
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -90,7 +95,7 @@ type NetworkDelaySpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkDelaySpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -98,6 +103,11 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, labels map[string]string, opts
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -135,7 +145,7 @@ type NetworkLossSpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkLossSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -143,6 +153,11 @@ func (s *NetworkLossSpec) Create(cli cli.Client, labels map[string]string, opts 
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -179,7 +194,7 @@ type NetworkDuplicateSpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkDuplicateSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -187,6 +202,11 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, labels map[string]string, 
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -223,7 +243,7 @@ type NetworkCorruptSpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkCorruptSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -231,6 +251,11 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, labels map[string]string, op
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -268,7 +293,7 @@ type NetworkBandwidthSpec struct {
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
-func (s *NetworkBandwidthSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -276,6 +301,11 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, labels map[string]string, 
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)

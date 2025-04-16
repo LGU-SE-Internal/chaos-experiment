@@ -18,7 +18,7 @@ type CPUStressChaosSpec struct {
 	CPUWorker    int `range:"1-3" description:"CPU Stress Threads"`
 }
 
-func (s *CPUStressChaosSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -26,6 +26,11 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, labels map[string]string, op
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	containers, err := resourcelookup.GetAllContainers()
@@ -58,7 +63,7 @@ type MemoryStressChaosSpec struct {
 	MemWorker    int `range:"1-4" description:"Memory Stress Threads"`
 }
 
-func (s *MemoryStressChaosSpec) Create(cli cli.Client, labels map[string]string, opts ...Option) (string, error) {
+func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	conf := Conf{}
 	for _, opt := range opts {
 		opt(&conf)
@@ -66,6 +71,11 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, labels map[string]string,
 	ns := TargetNamespace
 	if conf.Namespace != "" {
 		ns = conf.Namespace
+	}
+
+	labels := make(map[string]string)
+	if conf.Labels != nil {
+		labels = conf.Labels
 	}
 
 	containers, err := resourcelookup.GetAllContainers()
