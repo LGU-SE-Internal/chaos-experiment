@@ -231,14 +231,14 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-2"`
 }
 
-func (ic *InjectionConf) Create(labels map[string]string, opts ...Option) (map[string]any, string, error) {
+func (ic *InjectionConf) Create(labels map[string]string) (map[string]any, string, error) {
 	cli := client.NewK8sClient()
 	instance, config, err := ic.getActiveInjection()
 	if err != nil {
 		return nil, "", err
 	}
 
-	name, err := instance.Create(cli, opts...)
+	name, err := instance.Create(cli, WithLabels(labels))
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
 	}
