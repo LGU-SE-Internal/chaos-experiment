@@ -10,6 +10,36 @@ import (
 	"github.com/k0kubun/pp/v3"
 )
 
+func TestNodeToMap(t *testing.T) {
+	m := map[string]any{
+		"children": map[string]any{
+			"1": map[string]any{
+				"children": map[string]any{
+					"0": map[string]any{
+						"name":  "duration",
+						"value": 1,
+					},
+					"1": map[string]any{
+						"value": 0,
+					},
+					"2": map[string]any{
+						"value": 42,
+					},
+				},
+			},
+		},
+		"value": 1,
+	}
+
+	n, err := MapToNode(m)
+	if err != nil {
+		t.Error(err)
+	}
+
+	newMap := NodeToMap(n, true)
+	pp.Println(newMap)
+}
+
 func TestModel(t *testing.T) {
 	root := &Node{
 		Name:  "root",
@@ -49,7 +79,7 @@ func TestModel(t *testing.T) {
 		},
 	}
 
-	m := NodeToMap(root)
+	m := NodeToMap(root, false)
 	fmt.Printf("transformed:\n%#v\n\n", m)
 
 	convertedNode, err := MapToNode(m)
@@ -93,7 +123,7 @@ func TestGenerateRandomAction(t *testing.T) {
 		t.Error(err)
 	}
 
-	m := NodeToMap(podNode)
+	m := NodeToMap(podNode, false)
 	fmt.Printf("transformed:\n%#v\n\n", m)
 
 	mappedNode, err := MapToNode(m)
@@ -102,58 +132,4 @@ func TestGenerateRandomAction(t *testing.T) {
 	}
 
 	fmt.Println("Correct?", reflect.DeepEqual(podNode, mappedNode))
-}
-
-func TestHumanizeMap(t *testing.T) {
-	m := map[string]any{
-		"children": map[string]any{
-			"0": map[string]any{
-				"value": 1,
-			},
-			"1": map[string]any{
-				"value": 0,
-			},
-			"2": map[string]any{
-				"value": 42,
-			},
-			"3": map[string]any{
-				"value": 10,
-			},
-			"4": map[string]any{
-				"value": 5,
-			},
-			"5": map[string]any{
-				"value": 3,
-			},
-		},
-	}
-
-	newMap, err := HumanizeMap(25, m)
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-
-	pp.Println(newMap)
-}
-
-func TestUnhumanizeMap(t *testing.T) {
-	m := map[string]any{
-		"Duration":  1,
-		"Namespace": "ts",
-		"AppName":   "ts-ui-dashboard",
-		"Spec": map[string]any{
-			"LatencyMs":  10,
-			"SQLType":    3,
-			"TableIndex": 5,
-		},
-	}
-
-	newMap, err := UnhumanizeMap(25, m)
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-
-	pp.Println(newMap)
 }

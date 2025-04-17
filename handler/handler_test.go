@@ -23,7 +23,7 @@ func TestHandler(t *testing.T) {
 		return
 	}
 
-	mapStru := NodeToMap(node)
+	mapStru := NodeToMap(node, false)
 	if mapStru == nil {
 		t.Errorf("Expected non-nil map, got nil")
 		return
