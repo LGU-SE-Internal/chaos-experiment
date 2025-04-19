@@ -231,22 +231,22 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-2"`
 }
 
-func (ic *InjectionConf) Create(labels map[string]string) (map[string]any, string, error) {
+func (ic *InjectionConf) Create(labels map[string]string) (string, error) {
 	cli := client.NewK8sClient()
-	instance, config, err := ic.getActiveInjection()
+	instance, _, err := ic.GetActiveInjection()
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
 	name, err := instance.Create(cli, WithLabels(labels))
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
+		return "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
 	}
 
-	return config, name, nil
+	return name, nil
 }
 
-func (ic *InjectionConf) getActiveInjection() (Injection, map[string]any, error) {
+func (ic *InjectionConf) GetActiveInjection() (Injection, map[string]any, error) {
 	val := reflect.ValueOf(ic).Elem()
 
 	var idxPtr *int
@@ -360,17 +360,8 @@ func (ic *InjectionConf) getActiveInjection() (Injection, map[string]any, error)
 	return instance, result, nil
 }
 
-func getIntValue(field reflect.Value) (int64, error) {
-	switch field.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return field.Int(), nil
-	default:
-		return 0, fmt.Errorf("unsupported field type: %v", field.Kind())
-	}
-}
-
 func (ic *InjectionConf) GetGroundtruth() (Groundtruth, error) {
-	instance, _, err := ic.getActiveInjection()
+	instance, _, err := ic.GetActiveInjection()
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -381,4 +372,13 @@ func (ic *InjectionConf) GetGroundtruth() (Groundtruth, error) {
 	}
 
 	return Groundtruth{}, fmt.Errorf("injection does not support groundtruth calculation")
+}
+
+func getIntValue(field reflect.Value) (int64, error) {
+	switch field.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return field.Int(), nil
+	default:
+		return 0, fmt.Errorf("unsupported field type: %v", field.Kind())
+	}
 }
