@@ -14,7 +14,7 @@ import (
 // DNSErrorSpec defines the DNS error chaos injection parameters
 type DNSErrorSpec struct {
 	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	Namespace      int `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
 
@@ -23,7 +23,8 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -54,7 +55,7 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 // DNSRandomSpec defines the DNS random chaos injection parameters
 type DNSRandomSpec struct {
 	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	Namespace      int `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
 
@@ -63,7 +64,8 @@ func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}

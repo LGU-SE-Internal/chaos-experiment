@@ -54,7 +54,7 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -100,7 +100,7 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -150,7 +150,7 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -199,7 +199,7 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -248,7 +248,7 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -298,7 +298,7 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}

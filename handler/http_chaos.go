@@ -15,7 +15,7 @@ import (
 // HTTPRequestAbortSpec defines HTTP request abort chaos
 type HTTPRequestAbortSpec struct {
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
-	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	Namespace   int `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
@@ -24,7 +24,8 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, e
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -72,7 +73,7 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, e
 // HTTPResponseAbortSpec defines HTTP response abort chaos
 type HTTPResponseAbortSpec struct {
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
-	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	Namespace   int `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
@@ -81,7 +82,8 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, 
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -129,7 +131,7 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, 
 // HTTPRequestDelaySpec defines HTTP request delay chaos injection
 type HTTPRequestDelaySpec struct {
 	Duration      int `range:"1-60" description:"Time Unit Minute"`
-	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	EndpointIdx   int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
 }
@@ -139,7 +141,8 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, e
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -187,7 +190,7 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, e
 // HTTPResponseDelaySpec defines HTTP response delay chaos injection
 type HTTPResponseDelaySpec struct {
 	Duration      int `range:"1-60" description:"Time Unit Minute"`
-	Namespace     int `range:"0-0" dynamic:"true" description:"String"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	EndpointIdx   int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 	DelayDuration int `range:"10-5000" description:"Delay in milliseconds"`
 }
@@ -197,7 +200,8 @@ func (s *HTTPResponseDelaySpec) Create(cli cli.Client, opts ...Option) (string, 
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -253,7 +257,7 @@ const (
 // HTTPResponseReplaceBodySpec defines HTTP response body replacement chaos
 type HTTPResponseReplaceBodySpec struct {
 	Duration    int             `range:"1-60" description:"Time Unit Minute"`
-	Namespace   int             `range:"0-0" dynamic:"true" description:"String"`
+	Namespace   int             `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	EndpointIdx int             `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 	BodyType    ReplaceBodyType `range:"0-1" description:"Body Type (0=Empty, 1=Random)"`
 }
@@ -263,7 +267,8 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (st
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -316,7 +321,7 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (st
 // HTTPResponsePatchBodySpec defines HTTP response body patching chaos
 type HTTPResponsePatchBodySpec struct {
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
-	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	Namespace   int `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
@@ -325,7 +330,8 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (stri
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -372,7 +378,7 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (stri
 // HTTPRequestReplacePathSpec defines HTTP request path replacement chaos
 type HTTPRequestReplacePathSpec struct {
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
-	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	Namespace   int `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	EndpointIdx int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 }
 
@@ -381,7 +387,8 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -429,7 +436,7 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 // HTTPRequestReplaceMethodSpec defines HTTP request method replacement chaos
 type HTTPRequestReplaceMethodSpec struct {
 	Duration      int        `range:"1-60" description:"Time Unit Minute"`
-	Namespace     int        `range:"0-0" dynamic:"true" description:"String"`
+	Namespace     int        `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	EndpointIdx   int        `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 	ReplaceMethod HTTPMethod `range:"0-6" description:"HTTP Method to replace with"`
 }
@@ -439,7 +446,8 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -487,7 +495,7 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 // HTTPResponseReplaceCodeSpec defines HTTP response status code replacement chaos
 type HTTPResponseReplaceCodeSpec struct {
 	Duration    int            `range:"1-60" description:"Time Unit Minute"`
-	Namespace   int            `range:"0-0" dynamic:"true" description:"String"`
+	Namespace   int            `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
 	EndpointIdx int            `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
 	StatusCode  HTTPStatusCode `range:"0-9" description:"HTTP Status Code to replace with"`
 }
@@ -497,7 +505,8 @@ func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (st
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}

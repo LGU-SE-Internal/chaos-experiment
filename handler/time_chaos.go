@@ -22,7 +22,7 @@ func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}

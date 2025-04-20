@@ -23,7 +23,7 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -68,7 +68,7 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}

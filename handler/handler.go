@@ -13,8 +13,20 @@ import (
 
 type ChaosType int
 
-const TargetNamespace = "ts" // todo: make it dynamic (e.g. from config)
+const NamespacePrefix = "ts" // Base prefix for target namespaces (ts1, ts2, ts3, etc.)
+var TargetNamespaceCount = 3 // Number of target namespaces (dynamic)
 const TargetLabelKey = "app"
+
+// GetTargetNamespace generates a namespace name from an index (1-based)
+func GetTargetNamespace(index int) string {
+	// Ensure index is in valid range (1 to TargetNamespaceCount)
+	if index < 1 {
+		index = 1
+	} else if index > TargetNamespaceCount {
+		index = TargetNamespaceCount
+	}
+	return fmt.Sprintf("%s%d", NamespacePrefix, index)
+}
 
 const (
 	// PodChaos
@@ -273,7 +285,7 @@ func (ic *InjectionConf) GetActiveInjection() (Injection, map[string]any, error)
 		var value any
 		switch i {
 		case 1:
-			result[key] = TargetNamespace
+			result[key] = NamespacePrefix
 		case 2:
 			index, err := getIntValue(instanceValue.Field(i))
 			if err != nil {

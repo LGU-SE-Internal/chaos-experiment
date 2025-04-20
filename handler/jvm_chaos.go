@@ -44,7 +44,7 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -95,7 +95,7 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -160,7 +160,7 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -224,7 +224,7 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -264,7 +264,7 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -314,7 +314,7 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, er
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -389,7 +389,7 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -439,7 +439,7 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, 
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := TargetNamespace
+	ns := GetTargetNamespace(s.Namespace)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}

@@ -288,10 +288,11 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 	if dyn == "true" {
 		switch field.Name {
 		case "Namespace":
-			start = 0
-			end = 0
+			// Dynamic range for namespace from 1 to TargetNamespaceCount
+			start = 1
+			end = TargetNamespaceCount
 		case "AppName", KeyApp:
-			values, err := client.GetLabels(TargetNamespace, TargetLabelKey)
+			values, err := client.GetLabels(fmt.Sprintf("%s%d", NamespacePrefix, 1), TargetLabelKey) // Using first namespace as default
 			if err != nil {
 				return 0, 0, fmt.Errorf("failed to get labels: %w", err)
 			}

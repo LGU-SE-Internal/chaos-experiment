@@ -1,12 +1,9 @@
 package handler
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/CUHK-SE-Group/chaos-experiment/chaos"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
 )
 
 // HTTP Method enum
