@@ -22,14 +22,20 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	appLabels, err := resourcelookup.GetAllAppLabels()
@@ -45,7 +51,7 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodFailureAction
 
-	return controllers.CreatePodChaos(cli, ns, appName, action, duration, labels)
+	return controllers.CreatePodChaos(cli, ns, appName, action, duration, annotations, labels)
 }
 
 // Update PodKillSpec to use flattened app index
@@ -60,14 +66,20 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	appLabels, err := resourcelookup.GetAllAppLabels()
@@ -83,7 +95,7 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodKillAction
 
-	return controllers.CreatePodChaos(cli, ns, appName, action, duration, labels)
+	return controllers.CreatePodChaos(cli, ns, appName, action, duration, annotations, labels)
 }
 
 type ContainerKillSpec struct {
@@ -97,14 +109,20 @@ func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, erro
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	containers, err := resourcelookup.GetAllContainers()
@@ -124,5 +142,5 @@ func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, erro
 	action := chaosmeshv1alpha1.ContainerKillAction
 
 	// Use the updated CreatePodChaosWithContainer function
-	return controllers.CreatePodChaosWithContainer(cli, ns, appName, action, duration, labels, []string{containerName})
+	return controllers.CreatePodChaosWithContainer(cli, ns, appName, action, duration, annotations, labels, []string{containerName})
 }

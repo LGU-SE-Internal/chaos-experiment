@@ -79,7 +79,7 @@ func TestHandler2(t *testing.T) {
 
 		pp.Println(config)
 
-		_, name, err := conf.Create(map[string]string{
+		_, name, err := conf.Create(map[string]string{}, map[string]string{
 			"benchmark":    "clickhouse",
 			"pre_duration": "1",
 			"task_id":      "1",
@@ -92,6 +92,8 @@ func TestHandler2(t *testing.T) {
 		}
 
 		pp.Println(name)
+
+		pp.Println(conf.GetGroundtruth())
 	}
 }
 

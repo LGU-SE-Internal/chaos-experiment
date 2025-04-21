@@ -44,14 +44,20 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	methods, err := resourcelookup.GetAllJVMMethods()
@@ -77,7 +83,7 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMLatencyAction, duration, labels, optss...)
+		chaosmeshv1alpha1.JVMLatencyAction, duration, annotations, labels, optss...)
 }
 
 // JVMReturnSpec defines the JVM return value chaos injection parameters
@@ -95,14 +101,20 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	methods, err := resourcelookup.GetAllJVMMethods()
@@ -143,7 +155,7 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMReturnAction, duration, labels, optss...)
+		chaosmeshv1alpha1.JVMReturnAction, duration, annotations, labels, optss...)
 }
 
 // JVMExceptionSpec defines the JVM exception injection parameters
@@ -160,14 +172,20 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	methods, err := resourcelookup.GetAllJVMMethods()
@@ -209,7 +227,7 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMExceptionAction, duration, labels, optss...)
+		chaosmeshv1alpha1.JVMExceptionAction, duration, annotations, labels, optss...)
 }
 
 // JVMGCSpec defines the JVM garbage collector chaos injection parameters
@@ -224,14 +242,20 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	appLabels, err := resourcelookup.GetAllAppLabels()
@@ -247,7 +271,7 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMGCAction, duration, labels)
+		chaosmeshv1alpha1.JVMGCAction, duration, annotations, labels)
 }
 
 // JVMCPUStressSpec defines the JVM CPU stress chaos injection parameters
@@ -264,14 +288,20 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	methods, err := resourcelookup.GetAllJVMMethods()
@@ -297,7 +327,7 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMStressAction, duration, labels, optss...)
+		chaosmeshv1alpha1.JVMStressAction, duration, annotations, labels, optss...)
 }
 
 // JVMMemoryStressSpec defines the JVM memory stress chaos injection parameters
@@ -314,14 +344,20 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, er
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	methods, err := resourcelookup.GetAllJVMMethods()
@@ -353,7 +389,7 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, er
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMStressAction, duration, labels, optss...)
+		chaosmeshv1alpha1.JVMStressAction, duration, annotations, labels, optss...)
 }
 
 // SQL types for JVMMySQL
@@ -389,14 +425,20 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	dbOps, err := resourcelookup.GetAllDatabaseOperations()
@@ -424,7 +466,7 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMMySQLAction, duration, labels, optss...)
+		chaosmeshv1alpha1.JVMMySQLAction, duration, annotations, labels, optss...)
 }
 
 // JVMMySQLExceptionSpec defines the JVM MySQL exception chaos injection parameters
@@ -439,14 +481,20 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, 
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	dbOps, err := resourcelookup.GetAllDatabaseOperations()
@@ -477,5 +525,5 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, 
 	}
 
 	return controllers.CreateJVMChaos(cli, ns, appName,
-		chaosmeshv1alpha1.JVMMySQLAction, duration, labels, optss...)
+		chaosmeshv1alpha1.JVMMySQLAction, duration, annotations, labels, optss...)
 }

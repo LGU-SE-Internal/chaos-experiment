@@ -25,14 +25,19 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, e
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -67,7 +72,7 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, e
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-abort", duration, labels, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-abort", duration, annotations, labels, optss...)
 }
 
 // HTTPResponseAbortSpec defines HTTP response abort chaos
@@ -83,14 +88,19 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, 
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -125,7 +135,7 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, 
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-abort", duration, labels, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-abort", duration, annotations, labels, optss...)
 }
 
 // HTTPRequestDelaySpec defines HTTP request delay chaos injection
@@ -142,14 +152,19 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, e
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -184,7 +199,7 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, e
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-delay", duration, labels, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-delay", duration, annotations, labels, optss...)
 }
 
 // HTTPResponseDelaySpec defines HTTP response delay chaos injection
@@ -201,14 +216,19 @@ func (s *HTTPResponseDelaySpec) Create(cli cli.Client, opts ...Option) (string, 
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -243,7 +263,7 @@ func (s *HTTPResponseDelaySpec) Create(cli cli.Client, opts ...Option) (string, 
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-delay", duration, labels, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-delay", duration, annotations, labels, optss...)
 }
 
 // ReplaceBodyType for HTTP response body replacement
@@ -268,14 +288,19 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (st
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -315,7 +340,7 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (st
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-replace-body", duration, labels, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-replace-body", duration, annotations, labels, optss...)
 }
 
 // HTTPResponsePatchBodySpec defines HTTP response body patching chaos
@@ -331,14 +356,19 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (stri
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -372,7 +402,7 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (stri
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-patch-body", duration, labels, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-patch-body", duration, annotations, labels, optss...)
 }
 
 // HTTPRequestReplacePathSpec defines HTTP request path replacement chaos
@@ -388,14 +418,19 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -430,7 +465,7 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-replace-path", duration, labels, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-replace-path", duration, annotations, labels, optss...)
 }
 
 // HTTPRequestReplaceMethodSpec defines HTTP request method replacement chaos
@@ -447,14 +482,19 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -489,7 +529,7 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-replace-method", duration, labels, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "request-replace-method", duration, annotations, labels, optss...)
 }
 
 // HTTPResponseReplaceCodeSpec defines HTTP response status code replacement chaos
@@ -506,14 +546,19 @@ func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (st
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -548,5 +593,5 @@ func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (st
 	// Add common HTTP options (port, path and method)
 	optss = AddCommonHTTPOptions(endpoint, optss)
 
-	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-replace-code", duration, labels, optss...)
+	return controllers.CreateHTTPChaos(cli, ns, serviceName, "response-replace-code", duration, annotations, labels, optss...)
 }

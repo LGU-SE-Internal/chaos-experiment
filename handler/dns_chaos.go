@@ -24,14 +24,19 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllDNSEndpoints()
@@ -49,7 +54,7 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.ErrorAction
 
-	return controllers.CreateDnsChaos(cli, ns, serviceName, action, []string{endpointPair.Domain}, duration, labels)
+	return controllers.CreateDnsChaos(cli, ns, serviceName, action, []string{endpointPair.Domain}, duration, annotations, labels)
 }
 
 // DNSRandomSpec defines the DNS random chaos injection parameters
@@ -65,14 +70,19 @@ func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		opt(&conf)
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	endpoints, err := resourcelookup.GetAllDNSEndpoints()
@@ -90,5 +100,5 @@ func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.RandomAction
 
-	return controllers.CreateDnsChaos(cli, ns, serviceName, action, []string{endpointPair.Domain}, duration, labels)
+	return controllers.CreateDnsChaos(cli, ns, serviceName, action, []string{endpointPair.Domain}, duration, annotations, labels)
 }

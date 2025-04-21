@@ -22,14 +22,20 @@ func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	containers, err := resourcelookup.GetAllContainers()
@@ -49,5 +55,5 @@ func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	// Format the TimeOffset with "s" unit
 	timeOffset := fmt.Sprintf("%ds", s.TimeOffset)
 
-	return controllers.CreateTimeChaosWithContainer(cli, ns, appName, timeOffset, duration, labels, []string{containerName})
+	return controllers.CreateTimeChaosWithContainer(cli, ns, appName, timeOffset, duration, annotations, labels, []string{containerName})
 }

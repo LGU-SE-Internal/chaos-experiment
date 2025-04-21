@@ -23,14 +23,20 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	containers, err := resourcelookup.GetAllContainers()
@@ -52,7 +58,7 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 		s.CPULoad,
 		s.CPUWorker,
 	)
-	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "cpu-exhaustion", duration, labels, []string{containerName})
+	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "cpu-exhaustion", duration, annotations, labels, []string{containerName})
 }
 
 type MemoryStressChaosSpec struct {
@@ -68,14 +74,20 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	containers, err := resourcelookup.GetAllContainers()
@@ -97,5 +109,5 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 		strconv.Itoa(s.MemorySize)+"MiB",
 		s.MemWorker,
 	)
-	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "memory-exhaustion", duration, labels, []string{containerName})
+	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "memory-exhaustion", duration, annotations, labels, []string{containerName})
 }

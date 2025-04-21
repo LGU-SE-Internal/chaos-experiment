@@ -119,10 +119,17 @@ func GetChaosTypeName(c ChaosType) string {
 }
 
 type Conf struct {
-	Labels    map[string]string
-	Namespace string
+	Annoations map[string]string
+	Labels     map[string]string
+	Namespace  string
 }
 type Option func(*Conf)
+
+func WithAnnotations(annotations map[string]string) Option {
+	return func(c *Conf) {
+		c.Annoations = annotations
+	}
+}
 
 func WithLabels(labels map[string]string) Option {
 	return func(c *Conf) {
@@ -243,14 +250,14 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-2"`
 }
 
-func (ic *InjectionConf) Create(labels map[string]string) (map[string]any, string, error) {
+func (ic *InjectionConf) Create(annotations map[string]string, labels map[string]string) (map[string]any, string, error) {
 	cli := client.NewK8sClient()
 	instance, config, err := ic.GetActiveInjection()
 	if err != nil {
 		return nil, "", err
 	}
 
-	name, err := instance.Create(cli, WithLabels(labels))
+	name, err := instance.Create(cli, WithAnnotations(annotations), WithLabels(labels))
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
 	}
@@ -285,7 +292,12 @@ func (ic *InjectionConf) GetActiveInjection() (Injection, map[string]any, error)
 		var value any
 		switch i {
 		case 1:
-			result[key] = NamespacePrefix
+			index, err := getIntValue(instanceValue.Field(i))
+			if err != nil {
+				return nil, nil, err
+			}
+
+			result[key] = GetTargetNamespace(int(index))
 		case 2:
 			index, err := getIntValue(instanceValue.Field(i))
 			if err != nil {

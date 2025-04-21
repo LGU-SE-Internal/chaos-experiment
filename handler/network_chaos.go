@@ -54,14 +54,20 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -81,7 +87,7 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.PartitionAction, duration, labels, optss...)
+		chaosmeshv1alpha1.PartitionAction, duration, annotations, labels, optss...)
 }
 
 // NetworkDelaySpec defines network delay chaos parameters
@@ -100,14 +106,20 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -132,7 +144,7 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.DelayAction, duration, labels, optss...)
+		chaosmeshv1alpha1.DelayAction, duration, annotations, labels, optss...)
 }
 
 // NetworkLossSpec defines network packet loss chaos parameters
@@ -150,14 +162,20 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -181,7 +199,7 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.LossAction, duration, labels, optss...)
+		chaosmeshv1alpha1.LossAction, duration, annotations, labels, optss...)
 }
 
 // NetworkDuplicateSpec defines network packet duplication chaos parameters
@@ -199,14 +217,20 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -230,7 +254,7 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.DuplicateAction, duration, labels, optss...)
+		chaosmeshv1alpha1.DuplicateAction, duration, annotations, labels, optss...)
 }
 
 // NetworkCorruptSpec defines network packet corruption chaos parameters
@@ -248,14 +272,20 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -279,7 +309,7 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.CorruptAction, duration, labels, optss...)
+		chaosmeshv1alpha1.CorruptAction, duration, annotations, labels, optss...)
 }
 
 // NetworkBandwidthSpec defines network bandwidth limit chaos parameters
@@ -298,14 +328,20 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 	for _, opt := range opts {
 		opt(&conf)
 	}
-	ns := GetTargetNamespace(s.Namespace)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
+
+	annotations := make(map[string]string)
+	if conf.Annoations != nil {
+		annotations = conf.Annoations
 	}
 
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
+	}
+
+	ns := GetTargetNamespace(s.Namespace)
+	if conf.Namespace != "" {
+		ns = conf.Namespace
 	}
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
@@ -330,5 +366,5 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	return controllers.CreateNetworkChaos(cli, ns, sourceName,
-		chaosmeshv1alpha1.BandwidthAction, duration, labels, optss...)
+		chaosmeshv1alpha1.BandwidthAction, duration, annotations, labels, optss...)
 }

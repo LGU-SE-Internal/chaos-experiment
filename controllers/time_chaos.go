@@ -36,14 +36,15 @@ func CreateTimeChaos(cli client.Client, namespace string, appName string, timeOf
 }
 
 // CreateTimeChaosWithContainer creates a time chaos experiment with specified container names
-func CreateTimeChaosWithContainer(cli client.Client, namespace string, appName string, timeOffset string, duration *string, labels map[string]string, containerNames []string) (string, error) {
+func CreateTimeChaosWithContainer(cli client.Client, namespace string, appName string, timeOffset string, duration *string, annotations map[string]string, labels map[string]string, containerNames []string) (string, error) {
 	spec := chaos.GenerateTimeChaosSpecWithContainers(namespace, appName, duration, timeOffset, containerNames)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-time-%s", namespace, appName, rand.String(6)))
 	timeChaos, err := chaos.NewTimeChaos(
+		chaos.WithAnnotations(annotations),
+		chaos.WithLabels(labels),
 		chaos.WithName(name),
 		chaos.WithNamespace(namespace),
 		chaos.WithTimeChaosSpec(spec),
-		chaos.WithLabels(labels),
 	)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
