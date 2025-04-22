@@ -12,6 +12,8 @@ import (
 )
 
 func TestHandler(t *testing.T) {
+	InitTargetConfig("ts", "app", 3)
+
 	node, err := StructToNode[InjectionConf]()
 	if err != nil {
 		t.Errorf("StructToNode failed: %v", err)
@@ -45,6 +47,8 @@ func TestHandler(t *testing.T) {
 }
 
 func TestHandler2(t *testing.T) {
+	InitTargetConfig("ts", "app", 3)
+
 	pwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err.Error())

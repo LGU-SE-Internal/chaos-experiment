@@ -13,9 +13,17 @@ import (
 
 type ChaosType int
 
-const NamespacePrefix = "ts" // Base prefix for target namespaces (ts1, ts2, ts3, etc.)
-var TargetNamespaceCount = 3 // Number of target namespaces (dynamic)
-const TargetLabelKey = "app"
+var (
+	NamespacePrefix      string
+	TargetLabelKey       string
+	TargetNamespaceCount int
+)
+
+func InitTargetConfig(namespacePrefix, targetLabelKey string, targetNamespaceCount int) {
+	NamespacePrefix = namespacePrefix
+	TargetLabelKey = targetLabelKey
+	TargetNamespaceCount = targetNamespaceCount
+}
 
 // GetTargetNamespace generates a namespace name from an index (1-based)
 func GetTargetNamespace(index int) string {
