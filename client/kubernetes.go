@@ -145,7 +145,6 @@ func GetCRDMapping() map[schema.GroupVersionResource]client.Object {
 	return map[schema.GroupVersionResource]client.Object{
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "dnschaos"}:     &v1alpha1.DNSChaos{},
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "httpchaos"}:    &v1alpha1.HTTPChaos{},
-		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "iochaos"}:      &v1alpha1.IOChaos{},
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "jvmchaos"}:     &v1alpha1.JVMChaos{},
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "networkchaos"}: &v1alpha1.NetworkChaos{},
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "podchaos"}:     &v1alpha1.PodChaos{},

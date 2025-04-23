@@ -300,12 +300,7 @@ func (ic *InjectionConf) GetActiveInjection() (Injection, map[string]any, error)
 		var value any
 		switch i {
 		case 1:
-			index, err := getIntValue(instanceValue.Field(i))
-			if err != nil {
-				return nil, nil, err
-			}
-
-			result[key] = GetTargetNamespace(int(index))
+			result[key] = NamespacePrefix
 		case 2:
 			index, err := getIntValue(instanceValue.Field(i))
 			if err != nil {
