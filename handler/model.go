@@ -8,7 +8,6 @@ import (
 
 	"github.com/CUHK-SE-Group/chaos-experiment/client"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
-	"github.com/k0kubun/pp/v3"
 )
 
 /*
@@ -285,8 +284,6 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 		return 0, 0, fmt.Errorf("field %s: %w", field.Name, err)
 	}
 
-	pp.Println(start, end)
-
 	dyn := field.Tag.Get("dynamic")
 	if dyn == "true" {
 		switch field.Name {
@@ -294,7 +291,6 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 			// Dynamic range for namespace from 1 to TargetNamespaceCount
 			start = 1
 			end = TargetNamespaceCount
-			pp.Println(end, TargetNamespaceCount)
 		case "AppName", KeyApp:
 			values, err := client.GetLabels(fmt.Sprintf("%s%d", NamespacePrefix, 1), TargetLabelKey) // Using first namespace as default
 			if err != nil {
@@ -352,8 +348,6 @@ func getValueRange(field reflect.StructField) (int, int, error) {
 			end = len(dbOps) - 1
 		}
 	}
-
-	pp.Println(start, end)
 
 	return start, end, err
 }
