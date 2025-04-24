@@ -258,19 +258,23 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-2"`
 }
 
-func (ic *InjectionConf) Create(annotations map[string]string, labels map[string]string) (map[string]any, string, error) {
+func (ic *InjectionConf) Create(namespace string, annotations map[string]string, labels map[string]string) (string, error) {
 	cli := client.NewK8sClient()
-	instance, config, err := ic.GetActiveInjection()
+	instance, _, err := ic.GetActiveInjection()
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
-	name, err := instance.Create(cli, WithAnnotations(annotations), WithLabels(labels))
+	name, err := instance.Create(cli,
+		WithAnnotations(annotations),
+		WithLabels(labels),
+		WithNs(namespace),
+	)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
+		return "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
 	}
 
-	return config, name, nil
+	return name, nil
 }
 
 func (ic *InjectionConf) GetActiveInjection() (Injection, map[string]any, error) {
