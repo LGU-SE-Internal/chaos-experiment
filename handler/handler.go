@@ -67,25 +67,6 @@ func InitTargetConfig(namespaceTargetMap map[string]int, targetLabelKey string) 
 	return nil
 }
 
-func parseNamespaceInfo(m map[string]any) (*NamespaceInfo, error) {
-	message := "missing or invalid key %s in info map"
-
-	namespace, ok := m[MapNamespace].(string)
-	if !ok || namespace == "" {
-		return nil, fmt.Errorf(message, MapNamespace)
-	}
-
-	count, ok := m[MapCount].(int)
-	if !ok || namespace == "" {
-		return nil, fmt.Errorf(message, MapCount)
-	}
-
-	return &NamespaceInfo{
-		Namespace: namespace,
-		Count:     count,
-	}, nil
-}
-
 // GetTargetNamespace generates a namespace name from an index (1-based)
 func GetTargetNamespace(namespaceIndex, targetIndex int) string {
 	prefix := NamespacePrefixs[namespaceIndex]
@@ -337,18 +318,18 @@ func (ic *InjectionConf) Create(ctx context.Context, namespaceTargetIndex int, a
 
 	setIntValue(activeField, KeyNamespaceTarget, namespaceTargetIndex)
 
-	// instance := activeField.Interface().(Injection)
-	// name, err := instance.Create(
-	// 	client.NewK8sClient(),
-	// 	WithAnnotations(annotations),
-	// 	WithContext(ctx),
-	// 	WithLabels(labels),
-	// )
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
-	// }
+	instance := activeField.Interface().(Injection)
+	name, err := instance.Create(
+		client.NewK8sClient(),
+		WithAnnotations(annotations),
+		WithContext(ctx),
+		WithLabels(labels),
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
+	}
 
-	return "", nil
+	return name, nil
 }
 
 func (ic *InjectionConf) getActiveField() (reflect.Value, error) {
