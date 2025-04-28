@@ -37,7 +37,7 @@ func CreateStressChaos(cli client.Client, namespace string, appName string, stre
 }
 
 // CreateStressChaosWithContainer creates a stress chaos experiment with specified container names
-func CreateStressChaosWithContainer(cli client.Client, namespace string, appName string, stressors v1alpha1.Stressors, stressType string, duration *string, annotations map[string]string, labels map[string]string, containerNames []string) (string, error) {
+func CreateStressChaosWithContainer(cli client.Client, ctx context.Context, namespace string, appName string, stressors v1alpha1.Stressors, stressType string, duration *string, annotations map[string]string, labels map[string]string, containerNames []string) (string, error) {
 	spec := chaos.GenerateStressChaosSpecWithContainers(namespace, appName, duration, stressors, containerNames)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, stressType, rand.String(6)))
 	stressChaos, err := chaos.NewStressChaos(
@@ -57,7 +57,7 @@ func CreateStressChaosWithContainer(cli client.Client, namespace string, appName
 		return "", err
 	}
 	logrus.Infof("create warning: %v", create)
-	err = cli.Create(context.Background(), stressChaos)
+	err = cli.Create(ctx, stressChaos)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
 		return "", err
@@ -73,6 +73,7 @@ func MakeCPUStressors(load int, worker int) v1alpha1.Stressors {
 		},
 	}
 }
+
 func MakeMemoryStressors(memorySize string, worker int) v1alpha1.Stressors {
 	return v1alpha1.Stressors{
 		MemoryStressor: &v1alpha1.MemoryStressor{
@@ -105,6 +106,7 @@ func AddStressChaosWorkflowNodes(workflowSpec *v1alpha1.WorkflowSpec, namespace 
 	}
 	return workflowSpec
 }
+
 func ScheduleStressChaos(cli client.Client, namespace string, appList []string, stressors v1alpha1.Stressors, stressType string) {
 	workflowName := strings.ToLower(fmt.Sprintf("%s-%s-%s", namespace, stressType, rand.String(6)))
 	workflowSpec := v1alpha1.WorkflowSpec{

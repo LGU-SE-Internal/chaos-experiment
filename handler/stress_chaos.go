@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -11,11 +12,12 @@ import (
 )
 
 type CPUStressChaosSpec struct {
-	Duration     int `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
-	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
-	CPULoad      int `range:"1-100" description:"CPU Load Percentage"`
-	CPUWorker    int `range:"1-3" description:"CPU Stress Threads"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	ContainerIdx    int `range:"0-0" dynamic:"true" description:"Container Index"`
+	CPULoad         int `range:"1-100" description:"CPU Load Percentage"`
+	CPUWorker       int `range:"1-3" description:"CPU Stress Threads"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -29,17 +31,22 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
 
-	containers, err := resourcelookup.GetAllContainers()
+	containers, err := resourcelookup.GetAllContainers(ns)
 	if err != nil {
 		return "", fmt.Errorf("failed to get containers: %w", err)
 	}
@@ -58,15 +65,16 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 		s.CPULoad,
 		s.CPUWorker,
 	)
-	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "cpu-exhaustion", duration, annotations, labels, []string{containerName})
+	return controllers.CreateStressChaosWithContainer(cli, ctx, ns, appName, stressors, "cpu-exhaustion", duration, annotations, labels, []string{containerName})
 }
 
 type MemoryStressChaosSpec struct {
-	Duration     int `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
-	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
-	MemorySize   int `range:"1-1024" description:"Memory Size Unit MB"`
-	MemWorker    int `range:"1-4" description:"Memory Stress Threads"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	ContainerIdx    int `range:"0-0" dynamic:"true" description:"Container Index"`
+	MemorySize      int `range:"1-1024" description:"Memory Size Unit MB"`
+	MemWorker       int `range:"1-4" description:"Memory Stress Threads"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -80,17 +88,22 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
 
-	containers, err := resourcelookup.GetAllContainers()
+	containers, err := resourcelookup.GetAllContainers(ns)
 	if err != nil {
 		return "", fmt.Errorf("failed to get containers: %w", err)
 	}
@@ -109,5 +122,5 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 		strconv.Itoa(s.MemorySize)+"MiB",
 		s.MemWorker,
 	)
-	return controllers.CreateStressChaosWithContainer(cli, ns, appName, stressors, "memory-exhaustion", duration, annotations, labels, []string{containerName})
+	return controllers.CreateStressChaosWithContainer(cli, ctx, ns, appName, stressors, "memory-exhaustion", duration, annotations, labels, []string{containerName})
 }

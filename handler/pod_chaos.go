@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -12,9 +13,10 @@ import (
 )
 
 type PodFailureSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
-	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	AppIdx          int `range:"0-0" dynamic:"true" description:"App Index"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -28,17 +30,22 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
 
-	appLabels, err := resourcelookup.GetAllAppLabels()
+	appLabels, err := resourcelookup.GetAllAppLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to get app labels: %w", err)
 	}
@@ -51,14 +58,15 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodFailureAction
 
-	return controllers.CreatePodChaos(cli, ns, appName, action, duration, annotations, labels)
+	return controllers.CreatePodChaos(cli, ctx, ns, appName, action, duration, annotations, labels)
 }
 
 // Update PodKillSpec to use flattened app index
 type PodKillSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
-	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	AppIdx          int `range:"0-0" dynamic:"true" description:"App Index"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -72,17 +80,22 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
 
-	appLabels, err := resourcelookup.GetAllAppLabels()
+	appLabels, err := resourcelookup.GetAllAppLabels(ns, TargetLabelKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to get app labels: %w", err)
 	}
@@ -95,13 +108,14 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.PodKillAction
 
-	return controllers.CreatePodChaos(cli, ns, appName, action, duration, annotations, labels)
+	return controllers.CreatePodChaos(cli, ctx, ns, appName, action, duration, annotations, labels)
 }
 
 type ContainerKillSpec struct {
-	Duration     int `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
-	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	ContainerIdx    int `range:"0-0" dynamic:"true" description:"Container Index"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -115,17 +129,22 @@ func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, erro
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
 
-	containers, err := resourcelookup.GetAllContainers()
+	containers, err := resourcelookup.GetAllContainers(ns)
 	if err != nil {
 		return "", fmt.Errorf("failed to get containers: %w", err)
 	}
@@ -142,5 +161,5 @@ func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, erro
 	action := chaosmeshv1alpha1.ContainerKillAction
 
 	// Use the updated CreatePodChaosWithContainer function
-	return controllers.CreatePodChaosWithContainer(cli, ns, appName, action, duration, annotations, labels, []string{containerName})
+	return controllers.CreatePodChaosWithContainer(cli, ctx, ns, appName, action, duration, annotations, labels, []string{containerName})
 }

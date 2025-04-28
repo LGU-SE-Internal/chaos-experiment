@@ -61,16 +61,30 @@ func NewK8sClient() client.Client {
 		}
 		k8sClientInstance = k8sClient
 	})
+
 	return k8sClientInstance
 }
 
+func ListNamespaces() ([]string, error) {
+	var namespaceList corev1.NamespaceList
+	if err := NewK8sClient().List(context.TODO(), &namespaceList); err != nil {
+		return nil, fmt.Errorf("failed to list namespaces: %v", err)
+	}
+
+	namespaces := make([]string, 0, len(namespaceList.Items))
+	for _, item := range namespaceList.Items {
+		namespaces = append(namespaces, item.Name)
+	}
+
+	return namespaces, nil
+}
+
 func GetLabels(namespace string, key string) ([]string, error) {
-	cli := NewK8sClient()
 	labelValues := []string{}
 
 	// List all pods in the specified namespace
 	podList := &corev1.PodList{}
-	err := cli.List(context.Background(), podList, &client.ListOptions{
+	err := NewK8sClient().List(context.Background(), podList, &client.ListOptions{
 		Namespace: namespace,
 	})
 	if err != nil {
@@ -92,15 +106,13 @@ func GetLabels(namespace string, key string) ([]string, error) {
 // GetContainersWithAppLabel retrieves all containers along with their pod names and app labels
 // in the specified namespace
 func GetContainersWithAppLabel(namespace string) ([]map[string]string, error) {
-	cli := NewK8sClient()
 	result := []map[string]string{}
 
 	// List all pods in the specified namespace
 	podList := &corev1.PodList{}
-	err := cli.List(context.Background(), podList, &client.ListOptions{
+	if err := NewK8sClient().List(context.Background(), podList, &client.ListOptions{
 		Namespace: namespace,
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, fmt.Errorf("failed to list pods in namespace %s: %v", namespace, err)
 	}
 
@@ -122,10 +134,8 @@ func GetContainersWithAppLabel(namespace string) ([]map[string]string, error) {
 }
 
 func GetPodsByLabel(namespace, labelKey, labelValue string) ([]string, error) {
-	cli := NewK8sClient()
-
 	pods := &corev1.PodList{}
-	err := cli.List(context.Background(), pods,
+	err := NewK8sClient().List(context.Background(), pods,
 		client.InNamespace(namespace),
 		client.MatchingLabels{labelKey: labelValue})
 	if err != nil {

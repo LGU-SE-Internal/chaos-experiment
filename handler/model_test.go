@@ -112,7 +112,7 @@ func fillRandom(n *Node) error {
 	return nil
 }
 func TestGenerateRandomAction(t *testing.T) {
-	podNode, err := StructToNode[InjectionConf]()
+	podNode, err := StructToNode[InjectionConf]("ts")
 	if err != nil {
 		t.Error(err)
 	}

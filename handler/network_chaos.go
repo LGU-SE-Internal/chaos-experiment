@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 
 	chaos "github.com/CUHK-SE-Group/chaos-experiment/chaos"
@@ -43,10 +44,11 @@ func getNetworkPairByIndex(networkPairIdx int) (*resourcelookup.AppNetworkPair, 
 
 // NetworkPartitionSpec defines network partition chaos parameters
 type NetworkPartitionSpec struct {
-	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -60,12 +62,17 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -86,19 +93,20 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 		chaos.WithNetworkTargetAndDirection(ns, targetName, direction),
 	}
 
-	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+	return controllers.CreateNetworkChaos(cli, ctx, ns, sourceName,
 		chaosmeshv1alpha1.PartitionAction, duration, annotations, labels, optss...)
 }
 
 // NetworkDelaySpec defines network delay chaos parameters
 type NetworkDelaySpec struct {
-	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Latency        int `range:"1-2000" description:"Latency in milliseconds"`
-	Correlation    int `range:"0-100" description:"Correlation percentage"`
-	Jitter         int `range:"0-1000" description:"Jitter in milliseconds"`
-	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Latency         int `range:"1-2000" description:"Latency in milliseconds"`
+	Correlation     int `range:"0-100" description:"Correlation percentage"`
+	Jitter          int `range:"0-1000" description:"Jitter in milliseconds"`
+	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -112,12 +120,17 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -143,18 +156,19 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 		chaos.WithNetworkDelay(latency, correlation, jitter),
 	}
 
-	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+	return controllers.CreateNetworkChaos(cli, ctx, ns, sourceName,
 		chaosmeshv1alpha1.DelayAction, duration, annotations, labels, optss...)
 }
 
 // NetworkLossSpec defines network packet loss chaos parameters
 type NetworkLossSpec struct {
-	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Loss           int `range:"1-100" description:"Packet loss percentage"`
-	Correlation    int `range:"0-100" description:"Correlation percentage"`
-	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Loss            int `range:"1-100" description:"Packet loss percentage"`
+	Correlation     int `range:"0-100" description:"Correlation percentage"`
+	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -168,12 +182,17 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -198,18 +217,19 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 		chaos.WithNetworkLoss(loss, correlation),
 	}
 
-	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+	return controllers.CreateNetworkChaos(cli, ctx, ns, sourceName,
 		chaosmeshv1alpha1.LossAction, duration, annotations, labels, optss...)
 }
 
 // NetworkDuplicateSpec defines network packet duplication chaos parameters
 type NetworkDuplicateSpec struct {
-	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Duplicate      int `range:"1-100" description:"Packet duplication percentage"`
-	Correlation    int `range:"0-100" description:"Correlation percentage"`
-	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Duplicate       int `range:"1-100" description:"Packet duplication percentage"`
+	Correlation     int `range:"0-100" description:"Correlation percentage"`
+	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -223,12 +243,17 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -253,18 +278,19 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 		chaos.WithNetworkDuplicate(duplicate, correlation),
 	}
 
-	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+	return controllers.CreateNetworkChaos(cli, ctx, ns, sourceName,
 		chaosmeshv1alpha1.DuplicateAction, duration, annotations, labels, optss...)
 }
 
 // NetworkCorruptSpec defines network packet corruption chaos parameters
 type NetworkCorruptSpec struct {
-	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Corrupt        int `range:"1-100" description:"Packet corruption percentage"`
-	Correlation    int `range:"0-100" description:"Correlation percentage"`
-	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Corrupt         int `range:"1-100" description:"Packet corruption percentage"`
+	Correlation     int `range:"0-100" description:"Correlation percentage"`
+	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -278,12 +304,17 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -308,19 +339,20 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 		chaos.WithNetworkCorrupt(corrupt, correlation),
 	}
 
-	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+	return controllers.CreateNetworkChaos(cli, ctx, ns, sourceName,
 		chaosmeshv1alpha1.CorruptAction, duration, annotations, labels, optss...)
 }
 
 // NetworkBandwidthSpec defines network bandwidth limit chaos parameters
 type NetworkBandwidthSpec struct {
-	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Rate           int `range:"1-1000000" description:"Bandwidth rate in kbps"`
-	Limit          int `range:"1-10000" description:"Number of bytes that can be queued"`
-	Buffer         int `range:"1-10000" description:"Maximum amount of bytes available instantaneously"`
-	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Rate            int `range:"1-1000000" description:"Bandwidth rate in kbps"`
+	Limit           int `range:"1-10000" description:"Number of bytes that can be queued"`
+	Buffer          int `range:"1-10000" description:"Maximum amount of bytes available instantaneously"`
+	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -334,12 +366,17 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -365,6 +402,6 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 		chaos.WithNetworkBandwidth(rate, limit, buffer),
 	}
 
-	return controllers.CreateNetworkChaos(cli, ns, sourceName,
+	return controllers.CreateNetworkChaos(cli, ctx, ns, sourceName,
 		chaosmeshv1alpha1.BandwidthAction, duration, annotations, labels, optss...)
 }

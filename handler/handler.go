@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 
 	"github.com/CUHK-SE-Group/chaos-experiment/client"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
@@ -13,27 +15,89 @@ import (
 
 type ChaosType int
 
+type NamespaceInfo struct {
+	Namespace string
+	Count     int
+}
+
 var (
-	NamespacePrefix      string
-	TargetLabelKey       string
-	TargetNamespaceCount int
+	NamespacePrefixs   []string
+	NamespaceTargetMap map[string]int
+	TargetLabelKey     string
 )
 
-func InitTargetConfig(namespacePrefix, targetLabelKey string, targetNamespaceCount int) {
-	NamespacePrefix = namespacePrefix
+func InitTargetConfig(namespaceTargetMap map[string]int, targetLabelKey string) error {
+	namespaceTargetMap = namespaceTargetMap
+	targetLabelKey = targetLabelKey
+
+	allNamespaces, err := client.ListNamespaces()
+	if err != nil {
+		return err
+	}
+
+	allNamespaceMap := make(map[string]struct{}, len(allNamespaces))
+	for _, ns := range allNamespaces {
+		allNamespaceMap[ns] = struct{}{}
+	}
+
 	TargetLabelKey = targetLabelKey
-	TargetNamespaceCount = targetNamespaceCount
+	namespacePrefixs := make([]string, 0, len(namespaceTargetMap))
+	for ns, count := range namespaceTargetMap {
+		for i := DefaultStartIndex; i <= count; i++ {
+			namespace := fmt.Sprintf("%s%d", ns, i)
+			_, exists := allNamespaceMap[namespace]
+			if !exists {
+				return fmt.Errorf("namespace %s does not exist in the cluster", namespace)
+			}
+		}
+
+		namespacePrefixs = append(namespacePrefixs, ns)
+	}
+
+	NamespacePrefixs = namespacePrefixs
+	sort.Strings(namespacePrefixs)
+
+	resourcelookup.InitCaches()
+	for _, ns := range namespacePrefixs {
+		if err := resourcelookup.PreloadCaches(ns, targetLabelKey); err != nil {
+			return fmt.Errorf("failed to preload caches of namespace: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func parseNamespaceInfo(m map[string]any) (*NamespaceInfo, error) {
+	message := "missing or invalid key %s in info map"
+
+	namespace, ok := m[MapNamespace].(string)
+	if !ok || namespace == "" {
+		return nil, fmt.Errorf(message, MapNamespace)
+	}
+
+	count, ok := m[MapCount].(int)
+	if !ok || namespace == "" {
+		return nil, fmt.Errorf(message, MapCount)
+	}
+
+	return &NamespaceInfo{
+		Namespace: namespace,
+		Count:     count,
+	}, nil
 }
 
 // GetTargetNamespace generates a namespace name from an index (1-based)
-func GetTargetNamespace(index int) string {
-	// Ensure index is in valid range (1 to TargetNamespaceCount)
-	if index < 1 {
-		index = 1
-	} else if index > TargetNamespaceCount {
-		index = TargetNamespaceCount
+func GetTargetNamespace(namespaceIndex, targetIndex int) string {
+	prefix := NamespacePrefixs[namespaceIndex]
+	targetCount := NamespaceTargetMap[prefix]
+
+	if targetIndex < DefaultStartIndex {
+		targetIndex = DefaultStartIndex
+	} else if targetIndex > targetCount {
+		targetIndex = targetCount
 	}
-	return fmt.Sprintf("%s%d", NamespacePrefix, index)
+
+	return fmt.Sprintf("%s%d", prefix, targetIndex)
 }
 
 const (
@@ -128,6 +192,7 @@ func GetChaosTypeName(c ChaosType) string {
 
 type Conf struct {
 	Annoations map[string]string
+	Context    context.Context
 	Labels     map[string]string
 	Namespace  string
 }
@@ -136,6 +201,12 @@ type Option func(*Conf)
 func WithAnnotations(annotations map[string]string) Option {
 	return func(c *Conf) {
 		c.Annoations = annotations
+	}
+}
+
+func WithContext(ctx context.Context) Option {
+	return func(c *Conf) {
+		c.Context = ctx
 	}
 }
 
@@ -258,106 +329,143 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-2"`
 }
 
-func (ic *InjectionConf) Create(namespace string, annotations map[string]string, labels map[string]string) (string, error) {
-	cli := client.NewK8sClient()
-	instance, _, err := ic.GetActiveInjection()
+func (ic *InjectionConf) Create(ctx context.Context, namespaceTargetIndex int, annotations map[string]string, labels map[string]string) (string, error) {
+	activeField, err := ic.getActiveField()
 	if err != nil {
 		return "", err
 	}
 
-	name, err := instance.Create(cli,
-		WithAnnotations(annotations),
-		WithLabels(labels),
-		WithNs(namespace),
-	)
-	if err != nil {
-		return "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
-	}
+	setIntValue(activeField, KeyNamespaceTarget, namespaceTargetIndex)
 
-	return name, nil
+	// instance := activeField.Interface().(Injection)
+	// name, err := instance.Create(
+	// 	client.NewK8sClient(),
+	// 	WithAnnotations(annotations),
+	// 	WithContext(ctx),
+	// 	WithLabels(labels),
+	// )
+	// if err != nil {
+	// 	return "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
+	// }
+
+	return "", nil
 }
 
-func (ic *InjectionConf) GetActiveInjection() (Injection, map[string]any, error) {
+func (ic *InjectionConf) getActiveField() (reflect.Value, error) {
 	val := reflect.ValueOf(ic).Elem()
 
-	var idxPtr *int
+	var activeField reflect.Value
 	for i := range val.NumField() {
 		field := val.Field(i)
 		if !field.IsNil() {
-			idxPtr = &i
+			activeField = field
 			break
 		}
 	}
 
-	if idxPtr == nil {
-		return nil, nil, fmt.Errorf("failed to get the non-empty injection")
+	if !activeField.IsValid() {
+		return reflect.Value{}, fmt.Errorf("failed to get the non-empty injection")
 	}
 
-	instance := val.Field(*idxPtr).Interface().(Injection)
+	return activeField, nil
+}
+
+func (ic *InjectionConf) getActiveInjection() (Injection, error) {
+	activeField, err := ic.getActiveField()
+	if err != nil {
+		return nil, err
+	}
+
+	return activeField.Interface().(Injection), nil
+}
+
+func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
+	instance, err := ic.getActiveInjection()
+	if err != nil {
+		return nil, err
+	}
+
 	instanceValue := reflect.ValueOf(instance).Elem()
 	instanceType := instanceValue.Type()
 
 	result := make(map[string]any, instanceValue.NumField())
+
+	var prefix string
+	for i := range instanceValue.NumField() {
+		if instanceType.Field(i).Name == KeyNamespace {
+			index, err := getIntValue(instanceValue.Field(i))
+			if err != nil {
+				return nil, err
+			}
+
+			if index >= 0 && int(index) < len(NamespacePrefixs) {
+				prefix = NamespacePrefixs[index]
+				result["1"] = prefix
+				break
+			}
+		}
+	}
+
 	for i := range instanceValue.NumField() {
 		key := utils.ToSnakeCase(instanceType.Field(i).Name)
 
+		index, err := getIntValue(instanceValue.Field(i))
+		if err != nil {
+			return nil, err
+		}
+
 		var value any
 		switch i {
-		case 1:
-			result[key] = NamespacePrefix
 		case 2:
-			index, err := getIntValue(instanceValue.Field(i))
-			if err != nil {
-				return nil, nil, err
-			}
-
 			switch instanceType.Field(i).Name {
 			case KeyApp:
-				labels, err := resourcelookup.GetAllAppLabels()
+				namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
+				labels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
 				if err != nil {
-					return nil, nil, err
+					return nil, err
 				}
 
 				value = map[string]any{"app_name": labels[index]}
 			case KeyMethod:
 				methods, err := resourcelookup.GetAllJVMMethods()
 				if err != nil {
-					return nil, nil, err
+					return nil, err
 				}
 
 				value = methods[index]
 			case KeyEndpoint:
 				endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 				if err != nil {
-					return nil, nil, err
+					return nil, err
 				}
 
 				value = endpoints[index]
 			case KeyNetworkPair:
 				networkpairs, err := resourcelookup.GetAllNetworkPairs()
 				if err != nil {
-					return nil, nil, err
+					return nil, err
 				}
 
 				value = networkpairs[index]
 			case KeyContainer:
-				containers, err := resourcelookup.GetAllContainers()
+				namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
+				containers, err := resourcelookup.GetAllContainers(namespace)
 				if err != nil {
-					return nil, nil, err
+					return nil, err
 				}
 
 				value = containers[index]
 			case KeyDNSEndpoint:
 				endpoints, err := resourcelookup.GetAllDNSEndpoints()
 				if err != nil {
-					return nil, nil, err
+					return nil, err
 				}
 
 				value = endpoints[index]
 			case KeyDatabase:
 				operations, err := resourcelookup.GetAllDatabaseOperations()
 				if err != nil {
-					return nil, nil, err
+					return nil, err
 				}
 
 				value = operations[index]
@@ -365,34 +473,36 @@ func (ic *InjectionConf) GetActiveInjection() (Injection, map[string]any, error)
 
 			jsonData, err := json.Marshal(value)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to marshal injection point: %v", err)
+				return nil, fmt.Errorf("failed to marshal injection point: %v", err)
 			}
 
 			var injectionPoint map[string]any
 			if err := json.Unmarshal(jsonData, &injectionPoint); err != nil {
-				return nil, nil, fmt.Errorf("failed to unmarshal injection point: %v", err)
+				return nil, fmt.Errorf("failed to unmarshal injection point: %v", err)
 			}
 
 			result["injection_point"] = injectionPoint
 		default:
 			value, err := getIntValue(instanceValue.Field(i))
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
 
-			result[key] = value
+			if instanceType.Field(i).Name != KeyNamespace || instanceType.Field(i).Name != KeyNamespaceTarget {
+				result[key] = value
 
-			if key == "direction" {
-				result[key] = directionMap[int(value)]
+				if key == "direction" {
+					result[key] = directionMap[int(value)]
+				}
 			}
 		}
 	}
 
-	return instance, result, nil
+	return result, nil
 }
 
 func (ic *InjectionConf) GetGroundtruth() (Groundtruth, error) {
-	instance, _, err := ic.GetActiveInjection()
+	instance, err := ic.getActiveInjection()
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -412,4 +522,14 @@ func getIntValue(field reflect.Value) (int64, error) {
 	default:
 		return 0, fmt.Errorf("unsupported field type: %v", field.Kind())
 	}
+}
+
+func setIntValue(activeField reflect.Value, name string, value int) error {
+	activeFieldElem := activeField.Elem()
+	childFieldVal := activeFieldElem.FieldByName(name)
+	if err := setValue(childFieldVal, value); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -11,10 +12,11 @@ import (
 )
 
 type TimeSkewSpec struct {
-	Duration     int `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
-	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
-	TimeOffset   int `range:"-600-600" description:"Time offset in seconds"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true"`
+	ContainerIdx    int `range:"0-0" dynamic:"true" description:"Container Index"`
+	TimeOffset      int `range:"-600-600" description:"Time offset in seconds"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -28,17 +30,22 @@ func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
 
-	containers, err := resourcelookup.GetAllContainers()
+	containers, err := resourcelookup.GetAllContainers(ns)
 	if err != nil {
 		return "", fmt.Errorf("failed to get containers: %w", err)
 	}
@@ -55,5 +62,5 @@ func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	// Format the TimeOffset with "s" unit
 	timeOffset := fmt.Sprintf("%ds", s.TimeOffset)
 
-	return controllers.CreateTimeChaosWithContainer(cli, ns, appName, timeOffset, duration, annotations, labels, []string{containerName})
+	return controllers.CreateTimeChaosWithContainer(cli, ctx, ns, appName, timeOffset, duration, annotations, labels, []string{containerName})
 }

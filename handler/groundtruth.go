@@ -29,8 +29,8 @@ type Groundtruth struct {
 }
 
 // GetGroundtruthFromContainerIdx returns a Groundtruth object for a given container index
-func GetGroundtruthFromContainerIdx(containerIdx int) (Groundtruth, error) {
-	containers, err := resourcelookup.GetAllContainers()
+func GetGroundtruthFromContainerIdx(namespace string, containerIdx int) (Groundtruth, error) {
+	containers, err := resourcelookup.GetAllContainers(namespace)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers: %w", err)
 	}
@@ -52,8 +52,8 @@ func GetGroundtruthFromContainerIdx(containerIdx int) (Groundtruth, error) {
 }
 
 // GetGroundtruthFromAppIdx returns a Groundtruth object for a given app index
-func GetGroundtruthFromAppIdx(appIdx int) (Groundtruth, error) {
-	appLabels, err := resourcelookup.GetAllAppLabels()
+func GetGroundtruthFromAppIdx(namespace string, appIdx int) (Groundtruth, error) {
+	appLabels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get app labels: %w", err)
 	}
@@ -65,12 +65,12 @@ func GetGroundtruthFromAppIdx(appIdx int) (Groundtruth, error) {
 	appName := appLabels[appIdx]
 
 	// Get containers and pods for the service
-	containers, err := resourcelookup.GetContainersByService(appName)
+	containers, err := resourcelookup.GetContainersByService(namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers: %w", err)
 	}
 
-	pods, err := resourcelookup.GetPodsByService(appName)
+	pods, err := resourcelookup.GetPodsByService(namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get pods: %w", err)
 	}
@@ -86,7 +86,7 @@ func GetGroundtruthFromAppIdx(appIdx int) (Groundtruth, error) {
 }
 
 // GetGroundtruthFromDNSEndpointIdx returns a Groundtruth object for a given DNS endpoint index
-func GetGroundtruthFromDNSEndpointIdx(endpointIdx int) (Groundtruth, error) {
+func GetGroundtruthFromDNSEndpointIdx(namespace string, endpointIdx int) (Groundtruth, error) {
 	endpoints, err := resourcelookup.GetAllDNSEndpoints()
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get DNS endpoints: %w", err)
@@ -102,7 +102,7 @@ func GetGroundtruthFromDNSEndpointIdx(endpointIdx int) (Groundtruth, error) {
 	targetDomain := endpointPair.Domain
 
 	// Get containers and pods for both services
-	containers, pods, err := resourcelookup.GetContainersAndPodsByServices([]string{sourceService, targetDomain})
+	containers, pods, err := resourcelookup.GetContainersAndPodsByServices(namespace, []string{sourceService, targetDomain})
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers and pods: %w", err)
 	}
@@ -119,7 +119,7 @@ func GetGroundtruthFromDNSEndpointIdx(endpointIdx int) (Groundtruth, error) {
 }
 
 // getHTTPGroundtruth is a helper function that gets groundtruth information for HTTP chaos
-func getHTTPGroundtruth(endpointIdx int) (Groundtruth, error) {
+func getHTTPGroundtruth(namespace string, endpointIdx int) (Groundtruth, error) {
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get HTTP endpoints: %w", err)
@@ -135,7 +135,7 @@ func getHTTPGroundtruth(endpointIdx int) (Groundtruth, error) {
 	targetService := endpointPair.ServerAddress
 
 	// Get containers and pods for both services
-	containers, pods, err := resourcelookup.GetContainersAndPodsByServices([]string{sourceService, targetService})
+	containers, pods, err := resourcelookup.GetContainersAndPodsByServices(namespace, []string{sourceService, targetService})
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers and pods: %w", err)
 	}
@@ -152,7 +152,7 @@ func getHTTPGroundtruth(endpointIdx int) (Groundtruth, error) {
 }
 
 // GetGroundtruthFromNetworkPairIdx returns a Groundtruth object for a given network pair index
-func GetGroundtruthFromNetworkPairIdx(networkPairIdx int) (Groundtruth, error) {
+func GetGroundtruthFromNetworkPairIdx(namespace string, networkPairIdx int) (Groundtruth, error) {
 	networkPairs, err := resourcelookup.GetAllNetworkPairs()
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get network pairs: %w", err)
@@ -168,7 +168,7 @@ func GetGroundtruthFromNetworkPairIdx(networkPairIdx int) (Groundtruth, error) {
 	targetService := pair.TargetService
 
 	// Get containers and pods for both services
-	containers, pods, err := resourcelookup.GetContainersAndPodsByServices([]string{sourceService, targetService})
+	containers, pods, err := resourcelookup.GetContainersAndPodsByServices(namespace, []string{sourceService, targetService})
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers and pods: %w", err)
 	}
@@ -185,7 +185,7 @@ func GetGroundtruthFromNetworkPairIdx(networkPairIdx int) (Groundtruth, error) {
 }
 
 // GetGroundtruthFromMethodIdx returns a Groundtruth object for a given JVM method index
-func GetGroundtruthFromMethodIdx(methodIdx int) (Groundtruth, error) {
+func GetGroundtruthFromMethodIdx(namespace string, methodIdx int) (Groundtruth, error) {
 	methods, err := resourcelookup.GetAllJVMMethods()
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get JVM methods: %w", err)
@@ -204,12 +204,12 @@ func GetGroundtruthFromMethodIdx(methodIdx int) (Groundtruth, error) {
 	functionName := fmt.Sprintf("%s.%s", className, methodPair.MethodName)
 
 	// Get containers and pods for the service
-	containers, err := resourcelookup.GetContainersByService(appName)
+	containers, err := resourcelookup.GetContainersByService(namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers: %w", err)
 	}
 
-	pods, err := resourcelookup.GetPodsByService(appName)
+	pods, err := resourcelookup.GetPodsByService(namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get pods: %w", err)
 	}
@@ -226,7 +226,7 @@ func GetGroundtruthFromMethodIdx(methodIdx int) (Groundtruth, error) {
 }
 
 // GetGroundtruthFromDatabaseIdx returns a Groundtruth object for a given database operation index
-func GetGroundtruthFromDatabaseIdx(dbOpIdx int) (Groundtruth, error) {
+func GetGroundtruthFromDatabaseIdx(namespace string, dbOpIdx int) (Groundtruth, error) {
 	dbOps, err := resourcelookup.GetAllDatabaseOperations()
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get database operations: %w", err)
@@ -240,24 +240,24 @@ func GetGroundtruthFromDatabaseIdx(dbOpIdx int) (Groundtruth, error) {
 	appName := dbOp.AppName
 
 	// Get containers and pods for the service
-	containers, err := resourcelookup.GetContainersByService(appName)
+	containers, err := resourcelookup.GetContainersByService(namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers: %w", err)
 	}
 
-	pods, err := resourcelookup.GetPodsByService(appName)
+	pods, err := resourcelookup.GetPodsByService(namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get pods: %w", err)
 	}
 
 	// Try to get MySQL service information
-	mysqlPods, err := resourcelookup.GetPodsByService("mysql")
+	mysqlPods, err := resourcelookup.GetPodsByService(namespace, "mysql")
 	if err != nil {
 		// If error, just continue without MySQL pods
 		mysqlPods = []string{}
 	}
 
-	mysqlContainers, err := resourcelookup.GetContainersByService("mysql")
+	mysqlContainers, err := resourcelookup.GetContainersByService(namespace, "mysql")
 	if err != nil {
 		// If error, just continue without MySQL containers
 		mysqlContainers = []string{}
@@ -279,171 +279,211 @@ func GetGroundtruthFromDatabaseIdx(dbOpIdx int) (Groundtruth, error) {
 }
 
 func (s *PodFailureSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromAppIdx(s.AppIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromAppIdx(namespace, s.AppIdx)
 }
 
 func (s *PodKillSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromAppIdx(s.AppIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromAppIdx(namespace, s.AppIdx)
 }
 
 func (s *ContainerKillSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromContainerIdx(s.ContainerIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromContainerIdx(namespace, s.ContainerIdx)
 }
 
 func (s *MemoryStressChaosSpec) GetGroundtruth() (Groundtruth, error) {
-	gt, err := GetGroundtruthFromContainerIdx(s.ContainerIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	gt, err := GetGroundtruthFromContainerIdx(namespace, s.ContainerIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
+
 	gt.Metric = append(gt.Metric, string(MetricMemory))
 	return gt, nil
 }
 
 func (s *CPUStressChaosSpec) GetGroundtruth() (Groundtruth, error) {
-	gt, err := GetGroundtruthFromContainerIdx(s.ContainerIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	gt, err := GetGroundtruthFromContainerIdx(namespace, s.ContainerIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
+
 	gt.Metric = append(gt.Metric, string(MetricCPU))
 	return gt, nil
 }
 
 func (s *TimeSkewSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromContainerIdx(s.ContainerIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromContainerIdx(namespace, s.ContainerIdx)
 }
 
 func (s *DNSErrorSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromDNSEndpointIdx(s.DNSEndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromDNSEndpointIdx(namespace, s.DNSEndpointIdx)
 }
 
 func (s *DNSRandomSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromDNSEndpointIdx(s.DNSEndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromDNSEndpointIdx(namespace, s.DNSEndpointIdx)
 }
 
 func (s *HTTPRequestAbortSpec) GetGroundtruth() (Groundtruth, error) {
-	return getHTTPGroundtruth(s.EndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return getHTTPGroundtruth(namespace, s.EndpointIdx)
 }
 
 func (s *HTTPResponseAbortSpec) GetGroundtruth() (Groundtruth, error) {
-	return getHTTPGroundtruth(s.EndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return getHTTPGroundtruth(namespace, s.EndpointIdx)
 }
 
 func (s *HTTPRequestDelaySpec) GetGroundtruth() (Groundtruth, error) {
-	gt, err := getHTTPGroundtruth(s.EndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	gt, err := getHTTPGroundtruth(namespace, s.EndpointIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
+
 	gt.Metric = append(gt.Metric, string(MetricHTTPLatency))
 	return gt, nil
 }
 
 func (s *HTTPResponseDelaySpec) GetGroundtruth() (Groundtruth, error) {
-	gt, err := getHTTPGroundtruth(s.EndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	gt, err := getHTTPGroundtruth(namespace, s.EndpointIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
+
 	gt.Metric = append(gt.Metric, string(MetricHTTPLatency))
 	return gt, nil
 }
 
 func (s *HTTPResponseReplaceBodySpec) GetGroundtruth() (Groundtruth, error) {
-	return getHTTPGroundtruth(s.EndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return getHTTPGroundtruth(namespace, s.EndpointIdx)
 }
 
 func (s *HTTPResponsePatchBodySpec) GetGroundtruth() (Groundtruth, error) {
-	return getHTTPGroundtruth(s.EndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return getHTTPGroundtruth(namespace, s.EndpointIdx)
 }
 
 func (s *HTTPRequestReplacePathSpec) GetGroundtruth() (Groundtruth, error) {
-	return getHTTPGroundtruth(s.EndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return getHTTPGroundtruth(namespace, s.EndpointIdx)
 }
 
 func (s *HTTPRequestReplaceMethodSpec) GetGroundtruth() (Groundtruth, error) {
-	return getHTTPGroundtruth(s.EndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return getHTTPGroundtruth(namespace, s.EndpointIdx)
 }
 
 func (s *HTTPResponseReplaceCodeSpec) GetGroundtruth() (Groundtruth, error) {
-	return getHTTPGroundtruth(s.EndpointIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return getHTTPGroundtruth(namespace, s.EndpointIdx)
 }
 
 func (s *NetworkDelaySpec) GetGroundtruth() (Groundtruth, error) {
-	gt, err := GetGroundtruthFromNetworkPairIdx(s.NetworkPairIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	gt, err := GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
+
 	gt.Metric = append(gt.Metric, string(MetricNetworkLatency))
 	return gt, nil
 }
 
 func (s *NetworkLossSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromNetworkPairIdx(s.NetworkPairIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
 }
 
 func (s *NetworkDuplicateSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromNetworkPairIdx(s.NetworkPairIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
 }
 
 func (s *NetworkCorruptSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromNetworkPairIdx(s.NetworkPairIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
 }
 
 func (s *NetworkBandwidthSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromNetworkPairIdx(s.NetworkPairIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
 }
 
 func (s *NetworkPartitionSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromNetworkPairIdx(s.NetworkPairIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
 }
 
 // JVM chaos GetGroundtruth implementations
 func (s *JVMLatencySpec) GetGroundtruth() (Groundtruth, error) {
-	gt, err := GetGroundtruthFromMethodIdx(s.MethodIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	gt, err := GetGroundtruthFromMethodIdx(namespace, s.MethodIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
+
 	gt.Metric = append(gt.Metric, string(MetricNetworkLatency))
 	return gt, nil
 }
 
 func (s *JVMReturnSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromMethodIdx(s.MethodIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromMethodIdx(namespace, s.MethodIdx)
 }
 
 func (s *JVMExceptionSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromMethodIdx(s.MethodIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromMethodIdx(namespace, s.MethodIdx)
 }
 
 func (s *JVMGCSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromAppIdx(s.AppIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromAppIdx(namespace, s.AppIdx)
 }
 
 func (s *JVMCPUStressSpec) GetGroundtruth() (Groundtruth, error) {
-	gt, err := GetGroundtruthFromMethodIdx(s.MethodIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	gt, err := GetGroundtruthFromMethodIdx(namespace, s.MethodIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
+
 	gt.Metric = append(gt.Metric, string(MetricCPU))
 	return gt, nil
 }
 
 func (s *JVMMemoryStressSpec) GetGroundtruth() (Groundtruth, error) {
-	gt, err := GetGroundtruthFromMethodIdx(s.MethodIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	gt, err := GetGroundtruthFromMethodIdx(namespace, s.MethodIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
+
 	gt.Metric = append(gt.Metric, string(MetricMemory))
 	return gt, nil
 }
 
 func (s *JVMMySQLLatencySpec) GetGroundtruth() (Groundtruth, error) {
-	gt, err := GetGroundtruthFromDatabaseIdx(s.DatabaseIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	gt, err := GetGroundtruthFromDatabaseIdx(namespace, s.DatabaseIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
+
 	gt.Metric = append(gt.Metric, string(MetricSQLLatency))
 	return gt, nil
 }
 
 func (s *JVMMySQLExceptionSpec) GetGroundtruth() (Groundtruth, error) {
-	return GetGroundtruthFromDatabaseIdx(s.DatabaseIdx)
+	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
+	return GetGroundtruthFromDatabaseIdx(namespace, s.DatabaseIdx)
 }

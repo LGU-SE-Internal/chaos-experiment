@@ -1,53 +1,52 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/k0kubun/pp"
 )
 
+// 测试获取配置
 func TestHandler(t *testing.T) {
-	InitTargetConfig("ts", "app", 3)
+	if err := InitTargetConfig(map[string]int{"ts": 5}, "app"); err != nil {
+		t.Error(err.Error())
+		return
+	}
 
-	node, err := StructToNode[InjectionConf]()
+	node, err := StructToNode[InjectionConf]("ts")
 	if err != nil {
 		t.Errorf("StructToNode failed: %v", err)
 		return
 	}
+
 	// Test the node structure
 	if node == nil {
 		t.Errorf("Expected non-nil node, got nil")
 		return
 	}
 
-	mapStru := NodeToMap(node, false)
+	mapStru := NodeToMap(node, true)
 	if mapStru == nil {
 		t.Errorf("Expected non-nil map, got nil")
 		return
 	}
 	pp.Println(mapStru)
-
-	gend, err := genValue(mapStru)
-	if err != nil {
-		t.Errorf("genValue failed: %v", err)
-		return
-	}
-	newNode, err := MapToNode(gend)
-	if err != nil {
-		t.Errorf("MapToNode failed: %v", err)
-		return
-	}
-	pp.Println(newNode)
-
 }
 
+// 测试创建
 func TestHandler2(t *testing.T) {
-	InitTargetConfig("ts", "app", 3)
+	targetCount := 5
+	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
+		t.Error(err.Error())
+		return
+	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -62,7 +61,9 @@ func TestHandler2(t *testing.T) {
 		return
 	}
 
-	for _, tt := range testsMaps {
+	for index, tt := range testsMaps {
+		pp.Println(tt)
+
 		node, err := MapToNode(tt)
 		if err != nil {
 			t.Error(err.Error())
@@ -75,15 +76,15 @@ func TestHandler2(t *testing.T) {
 			return
 		}
 
-		_, config, err := conf.GetActiveInjection()
+		displayConfig, err := conf.GetDisplayConfig()
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 
-		pp.Println(config)
+		pp.Println(displayConfig)
 
-		name, err := conf.Create("ts1", map[string]string{}, map[string]string{
+		name, err := conf.Create(context.Background(), index%targetCount+1, map[string]string{}, map[string]string{
 			"benchmark":    "clickhouse",
 			"pre_duration": "1",
 			"task_id":      "1",
@@ -97,7 +98,25 @@ func TestHandler2(t *testing.T) {
 
 		pp.Println(name)
 
-		pp.Println(conf.GetGroundtruth())
+		childNode := node.Children[strconv.Itoa(node.Value)]
+		childNode.Children[strconv.Itoa(len(childNode.Children))] = &Node{
+			Value: index%targetCount + 1,
+		}
+		pp.Println(NodeToMap(node, true))
+
+		newConf, err := NodeToStruct[InjectionConf](node)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		groudtruth, err := newConf.GetGroundtruth()
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		pp.Println(groudtruth)
 	}
 }
 
@@ -141,10 +160,11 @@ func genValue(m map[string]any) (map[string]any, error) {
 	}
 
 	if value, exist := m["children"]; exist && value != nil {
-		subMap, ok := value.(map[int]interface{})
+		subMap, ok := value.(map[int]any)
 		if !ok {
 			return nil, fmt.Errorf("value is not a map[string]interface{}")
 		}
+
 		for i := rangeI[0]; i <= rangeI[1]; i++ {
 			if va, ok := subMap[i].(map[string]interface{}); ok {
 				gened, err := genValue(va)
@@ -157,7 +177,7 @@ func genValue(m map[string]any) (map[string]any, error) {
 		}
 		m["children"] = subMap
 	}
-	m["value"] = rand.Intn(rangeI[1]-rangeI[0]+1) + rangeI[0]
 
+	m["value"] = rand.Intn(rangeI[1]-rangeI[0]+1) + rangeI[0]
 	return m, nil
 }

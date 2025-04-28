@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -13,9 +14,10 @@ import (
 
 // DNSErrorSpec defines the DNS error chaos injection parameters
 type DNSErrorSpec struct {
-	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
-	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	DNSEndpointIdx  int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -29,12 +31,17 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -54,14 +61,15 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.ErrorAction
 
-	return controllers.CreateDnsChaos(cli, ns, serviceName, action, []string{endpointPair.Domain}, duration, annotations, labels)
+	return controllers.CreateDnsChaos(cli, ctx, ns, serviceName, action, []string{endpointPair.Domain}, duration, annotations, labels)
 }
 
 // DNSRandomSpec defines the DNS random chaos injection parameters
 type DNSRandomSpec struct {
-	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"Namespace Index (1-based)"`
-	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
+	Duration        int `range:"1-60" description:"Time Unit Minute"`
+	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	DNSEndpointIdx  int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
+	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -75,12 +83,17 @@ func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		annotations = conf.Annoations
 	}
 
+	ctx := context.Background()
+	if conf.Context != nil {
+		ctx = conf.Context
+	}
+
 	labels := make(map[string]string)
 	if conf.Labels != nil {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace)
+	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -100,5 +113,5 @@ func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
 	action := chaosmeshv1alpha1.RandomAction
 
-	return controllers.CreateDnsChaos(cli, ns, serviceName, action, []string{endpointPair.Domain}, duration, annotations, labels)
+	return controllers.CreateDnsChaos(cli, ctx, ns, serviceName, action, []string{endpointPair.Domain}, duration, annotations, labels)
 }

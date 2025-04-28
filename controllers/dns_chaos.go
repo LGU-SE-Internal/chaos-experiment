@@ -15,7 +15,7 @@ import (
 )
 
 // CreateDnsChaos creates a DNS chaos experiment with the specified parameters
-func CreateDnsChaos(cli client.Client, namespace string, appName string, action v1alpha1.DNSChaosAction, patterns []string, duration *string, annotations map[string]string, labels map[string]string) (string, error) {
+func CreateDnsChaos(cli client.Client, ctx context.Context, namespace string, appName string, action v1alpha1.DNSChaosAction, patterns []string, duration *string, annotations map[string]string, labels map[string]string) (string, error) {
 	spec := chaos.GenerateDnsChaosSpec(namespace, appName, duration, action, patterns)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-dns-%s", namespace, appName, rand.String(6)))
 	dnsChaos, err := chaos.NewDnsChaos(
@@ -35,7 +35,7 @@ func CreateDnsChaos(cli client.Client, namespace string, appName string, action 
 		return "", err
 	}
 	logrus.Infof("Create warning: %v", create)
-	err = cli.Create(context.Background(), dnsChaos)
+	err = cli.Create(ctx, dnsChaos)
 	if err != nil {
 		logrus.Errorf("Failed to create DNS chaos: %v", err)
 		return "", err

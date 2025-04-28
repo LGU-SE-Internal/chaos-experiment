@@ -1,19 +1,15 @@
 package resourcelookup
 
 import (
+	"fmt"
 	"sort"
+	"sync"
 
 	"github.com/CUHK-SE-Group/chaos-experiment/client"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/databaseoperations"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/javaclassmethods"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/networkdependencies"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
-)
-
-// Constants
-const (
-	DefaultNamespace = "ts"
-	DefaultLabelKey  = "app"
 )
 
 // AppMethodPair represents a flattened app+method combination
@@ -61,29 +57,29 @@ type ContainerInfo struct {
 
 // Global cache for lookups
 var (
-	cachedAppLabels     []string
+	cachedAppLabels     map[string][]string
 	cachedAppMethods    []AppMethodPair
 	cachedAppEndpoints  []AppEndpointPair
 	cachedNetworkPairs  []AppNetworkPair
 	cachedDNSEndpoints  []AppDNSPair
-	cachedContainerInfo []ContainerInfo
+	cachedContainerInfo map[string][]ContainerInfo
 	cachedDBOperations  []AppDatabasePair
 )
 
 // GetAllAppLabels returns all application labels sorted alphabetically
-func GetAllAppLabels() ([]string, error) {
-	if cachedAppLabels != nil {
-		return cachedAppLabels, nil
+func GetAllAppLabels(namespace string, key string) ([]string, error) {
+	if labels, exists := cachedAppLabels[namespace]; exists {
+		return labels, nil
 	}
 
-	labels, err := client.GetLabels(DefaultNamespace, DefaultLabelKey)
+	labels, err := client.GetLabels(namespace, key)
 	if err != nil {
 		return nil, err
 	}
 
 	// Sort alphabetically
 	sort.Strings(labels)
-	cachedAppLabels = labels
+	cachedAppLabels[namespace] = labels
 	return labels, nil
 }
 
@@ -283,12 +279,12 @@ func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
 }
 
 // GetAllContainers returns all containers with their info sorted by app label
-func GetAllContainers() ([]ContainerInfo, error) {
-	if cachedContainerInfo != nil {
-		return cachedContainerInfo, nil
+func GetAllContainers(namespace string) ([]ContainerInfo, error) {
+	if result, exists := cachedContainerInfo[namespace]; exists {
+		return result, nil
 	}
 
-	containers, err := client.GetContainersWithAppLabel(DefaultNamespace)
+	containers, err := client.GetContainersWithAppLabel(namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -310,13 +306,13 @@ func GetAllContainers() ([]ContainerInfo, error) {
 		return result[i].ContainerName < result[j].ContainerName
 	})
 
-	cachedContainerInfo = result
+	cachedContainerInfo[namespace] = result
 	return result, nil
 }
 
 // GetContainersByService returns all container names for a specific service
-func GetContainersByService(serviceName string) ([]string, error) {
-	allContainers, err := GetAllContainers()
+func GetContainersByService(namespace string, serviceName string) ([]string, error) {
+	allContainers, err := GetAllContainers(namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -334,8 +330,8 @@ func GetContainersByService(serviceName string) ([]string, error) {
 }
 
 // GetPodsByService returns all pod names for a specific service
-func GetPodsByService(serviceName string) ([]string, error) {
-	allContainers, err := GetAllContainers()
+func GetPodsByService(namespace string, serviceName string) ([]string, error) {
+	allContainers, err := GetAllContainers(namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -361,8 +357,8 @@ func GetPodsByService(serviceName string) ([]string, error) {
 
 // GetContainersAndPodsByServices returns containers and pods for multiple services
 // This is useful for chaos that affects multiple services
-func GetContainersAndPodsByServices(serviceNames []string) ([]string, []string, error) {
-	allContainers, err := GetAllContainers()
+func GetContainersAndPodsByServices(namespace string, serviceNames []string) ([]string, []string, error) {
+	allContainers, err := GetAllContainers(namespace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -401,6 +397,100 @@ func GetContainersAndPodsByServices(serviceNames []string) ([]string, []string, 
 	sort.Strings(pods)
 
 	return containers, pods, nil
+}
+
+func InitCaches() {
+	cachedAppLabels = make(map[string][]string)
+	cachedContainerInfo = make(map[string][]ContainerInfo)
+}
+
+// PreloadCaches preloads resource caches to reduce first-access latency
+func PreloadCaches(namespace string, labelKey string) error {
+	// Create error channel to collect all errors
+	errChan := make(chan error, 7)
+
+	var wg sync.WaitGroup
+	wg.Add(7)
+
+	// Preload app labels
+	go func() {
+		defer wg.Done()
+		_, err := GetAllAppLabels(namespace, labelKey)
+		if err != nil {
+			errChan <- fmt.Errorf("failed to preload app labels cache: %v", err)
+		}
+	}()
+
+	// Preload JVM methods
+	go func() {
+		defer wg.Done()
+		_, err := GetAllJVMMethods()
+		if err != nil {
+			errChan <- fmt.Errorf("failed to preload JVM methods cache: %v", err)
+		}
+	}()
+
+	// Preload HTTP endpoints
+	go func() {
+		defer wg.Done()
+		_, err := GetAllHTTPEndpoints()
+		if err != nil {
+			errChan <- fmt.Errorf("failed to preload HTTP endpoints cache: %v", err)
+		}
+	}()
+
+	// Preload network pairs
+	go func() {
+		defer wg.Done()
+		_, err := GetAllNetworkPairs()
+		if err != nil {
+			errChan <- fmt.Errorf("failed to preload network pairs cache: %v", err)
+		}
+	}()
+
+	// Preload DNS endpoints
+	go func() {
+		defer wg.Done()
+		_, err := GetAllDNSEndpoints()
+		if err != nil {
+			errChan <- fmt.Errorf("failed to preload DNS endpoints cache: %v", err)
+		}
+	}()
+
+	// Preload database operations
+	go func() {
+		defer wg.Done()
+		_, err := GetAllDatabaseOperations()
+		if err != nil {
+			errChan <- fmt.Errorf("failed to preload database operations cache: %v", err)
+		}
+	}()
+
+	// Preload container info
+	go func() {
+		defer wg.Done()
+		_, err := GetAllContainers(namespace)
+		if err != nil {
+			errChan <- fmt.Errorf("failed to preload container info cache: %v", err)
+		}
+	}()
+
+	// Wait for all initialization to complete
+	wg.Wait()
+	close(errChan)
+
+	// Collect all errors
+	var errs []error
+	for err := range errChan {
+		errs = append(errs, err)
+	}
+
+	// If there are errors, return the first one
+	if len(errs) > 0 {
+		return fmt.Errorf("cache preloading encountered errors: %v", errs[0])
+	}
+
+	return nil
 }
 
 // InvalidateCache clears all cached data

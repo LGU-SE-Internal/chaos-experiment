@@ -8,7 +8,7 @@
                             "value": 1
                         },
                         "1": {
-                            "value": 1
+                            "value": 0
                         },
                         "2": {
                             "value": 42
@@ -17,126 +17,6 @@
                 }
             },
             "value": 1
-        },
-        {
-            "children": {
-                "27": {
-                    "children": {
-                        "0": {
-                            "value": 1
-                        },
-                        "1": {
-                            "value": 1
-                        },
-                        "2": {
-                            "value": 0
-                        },
-                        "3": {
-                            "value": 1
-                        }
-                    }
-                }
-            },
-            "value": 27
-        },
-        {
-            "children": {
-                "5": {
-                    "children": {
-                        "0": {
-                            "value": 1
-                        },
-                        "1": {
-                            "value": 1
-                        },
-                        "2": {
-                            "value": 0
-                        }
-                    }
-                }
-            },
-            "value": 5
-        },
-        {
-            "children": {
-                "18": {
-                    "children": {
-                        "0": {
-                            "value": 1
-                        },
-                        "1": {
-                            "value": 1
-                        },
-                        "2": {
-                            "value": 0
-                        },
-                        "3": {
-                            "value": 1
-                        },
-                        "4": {
-                            "value": 1
-                        },
-                        "5": {
-                            "value": 1
-                        }
-                    }
-                }
-            },
-            "value": 18
-        },
-        {
-            "children": {
-                "2": {
-                    "children": {
-                        "0": {
-                            "value": 1
-                        },
-                        "1": {
-                            "value": 1
-                        },
-                        "2": {
-                            "value": 0
-                        }
-                    }
-                }
-            },
-            "value": 2
-        },
-        {
-            "children": {
-                "14": {
-                    "children": {
-                        "0": {
-                            "value": 1
-                        },
-                        "1": {
-                            "value": 1
-                        },
-                        "2": {
-                            "value": 0
-                        }
-                    }
-                }
-            },
-            "value": 14
-        },
-        {
-            "children": {
-                "30": {
-                    "children": {
-                        "0": {
-                            "value": 1
-                        },
-                        "1": {
-                            "value": 1
-                        },
-                        "2": {
-                            "value": 0
-                        }
-                    }
-                }
-            },
-            "value": 30
         }
     ]
 }

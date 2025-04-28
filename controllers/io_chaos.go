@@ -15,7 +15,7 @@ import (
 )
 
 // CreateIOChaos creates an IO chaos experiment
-func CreateIOChaos(cli client.Client, namespace string, appName string, volumePath string, chaosType string, duration *string, opts ...chaos.OptIOChaos) string {
+func CreateIOChaos(cli client.Client, ctx context.Context, namespace string, appName string, volumePath string, chaosType string, duration *string, opts ...chaos.OptIOChaos) string {
 	spec := chaos.GenerateIOChaosSpec(namespace, appName, duration, volumePath, opts...)
 	name := strings.ToLower(fmt.Sprintf("%s-%s-%s-%s", namespace, appName, chaosType, rand.String(6)))
 	ioChaos, err := chaos.NewIOChaos(chaos.WithName(name), chaos.WithNamespace(namespace), chaos.WithIOChaosSpec(spec))
@@ -29,7 +29,7 @@ func CreateIOChaos(cli client.Client, namespace string, appName string, volumePa
 		return ""
 	}
 	logrus.Infof("create warning: %v", create)
-	err = cli.Create(context.Background(), ioChaos)
+	err = cli.Create(ctx, ioChaos)
 	if err != nil {
 		logrus.Errorf("Failed to create chaos: %v", err)
 		return ""
@@ -38,30 +38,30 @@ func CreateIOChaos(cli client.Client, namespace string, appName string, volumePa
 }
 
 // CreateIODelayExperiment creates an IO delay experiment
-func CreateIODelayExperiment(cli client.Client, namespace string, appName string, volumePath string, path string, delay string, duration *string) string {
+func CreateIODelayExperiment(cli client.Client, ctx context.Context, namespace string, appName string, volumePath string, path string, delay string, duration *string) string {
 	opts := []chaos.OptIOChaos{
 		chaos.WithIODelayAction(delay),
 		chaos.WithIOPath(path),
 	}
-	return CreateIOChaos(cli, namespace, appName, volumePath, "io-delay", duration, opts...)
+	return CreateIOChaos(cli, ctx, namespace, appName, volumePath, "io-delay", duration, opts...)
 }
 
 // CreateIOErrorExperiment creates an IO error experiment
-func CreateIOErrorExperiment(cli client.Client, namespace string, appName string, volumePath string, path string, errno uint32, duration *string) string {
+func CreateIOErrorExperiment(cli client.Client, ctx context.Context, namespace string, appName string, volumePath string, path string, errno uint32, duration *string) string {
 	opts := []chaos.OptIOChaos{
 		chaos.WithIOErrorAction(errno),
 		chaos.WithIOPath(path),
 	}
-	return CreateIOChaos(cli, namespace, appName, volumePath, "io-error", duration, opts...)
+	return CreateIOChaos(cli, ctx, namespace, appName, volumePath, "io-error", duration, opts...)
 }
 
 // CreateIOMistakeExperiment creates an IO mistake experiment
-func CreateIOMistakeExperiment(cli client.Client, namespace string, appName string, volumePath string, path string, filling v1alpha1.FillingType, maxOccurrences int64, maxLength int64, duration *string) string {
+func CreateIOMistakeExperiment(cli client.Client, ctx context.Context, namespace string, appName string, volumePath string, path string, filling v1alpha1.FillingType, maxOccurrences int64, maxLength int64, duration *string) string {
 	opts := []chaos.OptIOChaos{
 		chaos.WithIOMistakeAction(filling, maxOccurrences, maxLength),
 		chaos.WithIOPath(path),
 	}
-	return CreateIOChaos(cli, namespace, appName, volumePath, "io-mistake", duration, opts...)
+	return CreateIOChaos(cli, ctx, namespace, appName, volumePath, "io-mistake", duration, opts...)
 }
 
 // AddIOChaosWorkflowNodes adds IO chaos nodes to a workflow
