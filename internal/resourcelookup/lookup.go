@@ -531,7 +531,8 @@ func PreloadCaches(namespace string, labelKey string) error {
 
 // InvalidateCache clears all cached data
 func InvalidateCache() {
-	cachedAppLabels = nil
+	cachedAppLabels = make(map[string][]string)
+
 	cachedAppMethods = nil
 	cachedAppEndpoints = nil
 	cachedNetworkPairs = nil
