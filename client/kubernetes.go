@@ -79,12 +79,12 @@ func ListNamespaces() ([]string, error) {
 	return namespaces, nil
 }
 
-func GetLabels(namespace string, key string) ([]string, error) {
+func GetLabels(ctx context.Context, namespace string, key string) ([]string, error) {
 	labelValues := []string{}
 
 	// List all pods in the specified namespace
 	podList := &corev1.PodList{}
-	err := NewK8sClient().List(context.Background(), podList, &client.ListOptions{
+	err := NewK8sClient().List(ctx, podList, &client.ListOptions{
 		Namespace: namespace,
 	})
 	if err != nil {
@@ -105,12 +105,12 @@ func GetLabels(namespace string, key string) ([]string, error) {
 
 // GetContainersWithAppLabel retrieves all containers along with their pod names and app labels
 // in the specified namespace
-func GetContainersWithAppLabel(namespace string) ([]map[string]string, error) {
+func GetContainersWithAppLabel(ctx context.Context, namespace string) ([]map[string]string, error) {
 	result := []map[string]string{}
 
 	// List all pods in the specified namespace
 	podList := &corev1.PodList{}
-	if err := NewK8sClient().List(context.Background(), podList, &client.ListOptions{
+	if err := NewK8sClient().List(ctx, podList, &client.ListOptions{
 		Namespace: namespace,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to list pods in namespace %s: %v", namespace, err)

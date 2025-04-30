@@ -27,8 +27,8 @@ var (
 )
 
 func InitTargetConfig(namespaceTargetMap map[string]int, targetLabelKey string) error {
-	namespaceTargetMap = namespaceTargetMap
-	targetLabelKey = targetLabelKey
+	NamespaceTargetMap = namespaceTargetMap
+	TargetLabelKey = targetLabelKey
 
 	allNamespaces, err := client.ListNamespaces()
 	if err != nil {
@@ -54,12 +54,13 @@ func InitTargetConfig(namespaceTargetMap map[string]int, targetLabelKey string) 
 		namespacePrefixs = append(namespacePrefixs, ns)
 	}
 
-	NamespacePrefixs = namespacePrefixs
 	sort.Strings(namespacePrefixs)
+	NamespacePrefixs = namespacePrefixs
 
 	resourcelookup.InitCaches()
 	for _, ns := range namespacePrefixs {
-		if err := resourcelookup.PreloadCaches(ns, targetLabelKey); err != nil {
+		namespace := fmt.Sprintf("%s%d", ns, DefaultStartIndex)
+		if err := resourcelookup.PreloadCaches(namespace, targetLabelKey); err != nil {
 			return fmt.Errorf("failed to preload caches of namespace: %v", err)
 		}
 	}

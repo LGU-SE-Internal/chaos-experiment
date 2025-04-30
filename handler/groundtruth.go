@@ -28,29 +28,6 @@ type Groundtruth struct {
 	Span      []string `json:"span,omitempty"`
 }
 
-// GetGroundtruthFromContainerIdx returns a Groundtruth object for a given container index
-func GetGroundtruthFromContainerIdx(namespace string, containerIdx int) (Groundtruth, error) {
-	containers, err := resourcelookup.GetAllContainers(namespace)
-	if err != nil {
-		return Groundtruth{}, fmt.Errorf("failed to get containers: %w", err)
-	}
-
-	if containerIdx < 0 || containerIdx >= len(containers) {
-		return Groundtruth{}, fmt.Errorf("container index out of range: %d (max: %d)", containerIdx, len(containers)-1)
-	}
-
-	containerInfo := containers[containerIdx]
-
-	// Create and populate the groundtruth
-	gt := Groundtruth{
-		Service:   []string{containerInfo.AppLabel},
-		Pod:       []string{containerInfo.PodName},
-		Container: []string{containerInfo.ContainerName},
-	}
-
-	return gt, nil
-}
-
 // GetGroundtruthFromAppIdx returns a Groundtruth object for a given app index
 func GetGroundtruthFromAppIdx(namespace string, appIdx int) (Groundtruth, error) {
 	appLabels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
@@ -80,6 +57,29 @@ func GetGroundtruthFromAppIdx(namespace string, appIdx int) (Groundtruth, error)
 		Service:   []string{appName},
 		Pod:       pods,
 		Container: containers,
+	}
+
+	return gt, nil
+}
+
+// GetGroundtruthFromContainerIdx returns a Groundtruth object for a given container index
+func GetGroundtruthFromContainerIdx(namespace string, containerIdx int) (Groundtruth, error) {
+	containers, err := resourcelookup.GetAllContainers(namespace)
+	if err != nil {
+		return Groundtruth{}, fmt.Errorf("failed to get containers: %w", err)
+	}
+
+	if containerIdx < 0 || containerIdx >= len(containers) {
+		return Groundtruth{}, fmt.Errorf("container index out of range: %d (max: %d)", containerIdx, len(containers)-1)
+	}
+
+	containerInfo := containers[containerIdx]
+
+	// Create and populate the groundtruth
+	gt := Groundtruth{
+		Service:   []string{containerInfo.AppLabel},
+		Pod:       []string{containerInfo.PodName},
+		Container: []string{containerInfo.ContainerName},
 	}
 
 	return gt, nil

@@ -12,7 +12,7 @@ import (
 )
 
 func TestGetLabel(t *testing.T) {
-	labels, err := GetLabels("ts", "app")
+	labels, err := GetLabels(context.Background(), "ts0", "app")
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,7 +50,7 @@ func TestCRDClient1(t *testing.T) {
 }
 
 func TestGetContainersWithAppLabel(t *testing.T) {
-	containerInfos, err := GetContainersWithAppLabel("ts")
+	containerInfos, err := GetContainersWithAppLabel(context.Background(), "ts0")
 	if err != nil {
 		t.Error(err)
 	}

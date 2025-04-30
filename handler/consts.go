@@ -1,7 +1,7 @@
 package handler
 
 const (
-	DefaultStartIndex = 1
+	DefaultStartIndex = 0
 )
 
 const (

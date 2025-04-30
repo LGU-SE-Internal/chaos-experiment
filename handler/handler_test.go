@@ -61,7 +61,7 @@ func TestHandler2(t *testing.T) {
 		return
 	}
 
-	for index, tt := range testsMaps {
+	for _, tt := range testsMaps {
 		pp.Println(tt)
 
 		node, err := MapToNode(tt)
@@ -84,7 +84,7 @@ func TestHandler2(t *testing.T) {
 
 		pp.Println(displayConfig)
 
-		name, err := conf.Create(context.Background(), index%targetCount+1, map[string]string{}, map[string]string{
+		name, err := conf.Create(context.Background(), 2%targetCount, map[string]string{}, map[string]string{
 			"benchmark":    "clickhouse",
 			"pre_duration": "1",
 			"task_id":      "1",
@@ -100,7 +100,7 @@ func TestHandler2(t *testing.T) {
 
 		childNode := node.Children[strconv.Itoa(node.Value)]
 		childNode.Children[strconv.Itoa(len(childNode.Children))] = &Node{
-			Value: index%targetCount + 1,
+			Value: 2 % targetCount,
 		}
 		pp.Println(NodeToMap(node, true))
 

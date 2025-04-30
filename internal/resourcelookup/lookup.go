@@ -1,6 +1,7 @@
 package resourcelookup
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/javaclassmethods"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/networkdependencies"
 	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
+	"github.com/CUHK-SE-Group/chaos-experiment/utils"
 )
 
 // AppMethodPair represents a flattened app+method combination
@@ -68,18 +70,23 @@ var (
 
 // GetAllAppLabels returns all application labels sorted alphabetically
 func GetAllAppLabels(namespace string, key string) ([]string, error) {
-	if labels, exists := cachedAppLabels[namespace]; exists {
+	prefix, err := utils.ExtractNsPrefix(namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	if labels, exists := cachedAppLabels[prefix]; exists {
 		return labels, nil
 	}
 
-	labels, err := client.GetLabels(namespace, key)
+	labels, err := client.GetLabels(context.Background(), namespace, key)
 	if err != nil {
 		return nil, err
 	}
 
 	// Sort alphabetically
 	sort.Strings(labels)
-	cachedAppLabels[namespace] = labels
+	cachedAppLabels[prefix] = labels
 	return labels, nil
 }
 
@@ -280,11 +287,16 @@ func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
 
 // GetAllContainers returns all containers with their info sorted by app label
 func GetAllContainers(namespace string) ([]ContainerInfo, error) {
-	if result, exists := cachedContainerInfo[namespace]; exists {
+	prefix, err := utils.ExtractNsPrefix(namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	if result, exists := cachedContainerInfo[prefix]; exists {
 		return result, nil
 	}
 
-	containers, err := client.GetContainersWithAppLabel(namespace)
+	containers, err := client.GetContainersWithAppLabel(context.Background(), namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +318,7 @@ func GetAllContainers(namespace string) ([]ContainerInfo, error) {
 		return result[i].ContainerName < result[j].ContainerName
 	})
 
-	cachedContainerInfo[namespace] = result
+	cachedContainerInfo[prefix] = result
 	return result, nil
 }
 
@@ -415,64 +427,88 @@ func PreloadCaches(namespace string, labelKey string) error {
 	// Preload app labels
 	go func() {
 		defer wg.Done()
-		_, err := GetAllAppLabels(namespace, labelKey)
+		labels, err := GetAllAppLabels(namespace, labelKey)
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload app labels cache: %v", err)
 		}
+
+		prefix, err := utils.ExtractNsPrefix(namespace)
+		if err != nil {
+			errChan <- fmt.Errorf("failed to preload app labels cache: %v", err)
+		}
+
+		cachedAppLabels[prefix] = labels
 	}()
 
 	// Preload JVM methods
 	go func() {
 		defer wg.Done()
-		_, err := GetAllJVMMethods()
+		result, err := GetAllJVMMethods()
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload JVM methods cache: %v", err)
 		}
+
+		cachedAppMethods = result
 	}()
 
 	// Preload HTTP endpoints
 	go func() {
 		defer wg.Done()
-		_, err := GetAllHTTPEndpoints()
+		result, err := GetAllHTTPEndpoints()
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload HTTP endpoints cache: %v", err)
 		}
+
+		cachedAppEndpoints = result
 	}()
 
 	// Preload network pairs
 	go func() {
 		defer wg.Done()
-		_, err := GetAllNetworkPairs()
+		result, err := GetAllNetworkPairs()
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload network pairs cache: %v", err)
 		}
+
+		cachedNetworkPairs = result
 	}()
 
 	// Preload DNS endpoints
 	go func() {
 		defer wg.Done()
-		_, err := GetAllDNSEndpoints()
+		result, err := GetAllDNSEndpoints()
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload DNS endpoints cache: %v", err)
 		}
+
+		cachedDNSEndpoints = result
 	}()
 
 	// Preload database operations
 	go func() {
 		defer wg.Done()
-		_, err := GetAllDatabaseOperations()
+		result, err := GetAllDatabaseOperations()
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload database operations cache: %v", err)
 		}
+
+		cachedDBOperations = result
 	}()
 
 	// Preload container info
 	go func() {
 		defer wg.Done()
-		_, err := GetAllContainers(namespace)
+		result, err := GetAllContainers(namespace)
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload container info cache: %v", err)
 		}
+
+		prefix, err := utils.ExtractNsPrefix(namespace)
+		if err != nil {
+			errChan <- fmt.Errorf("failed to preload container info cache: %v", err)
+		}
+
+		cachedContainerInfo[prefix] = result
 	}()
 
 	// Wait for all initialization to complete
