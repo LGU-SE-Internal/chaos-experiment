@@ -43,7 +43,7 @@ func InitTargetConfig(namespaceTargetMap map[string]int, targetLabelKey string) 
 	TargetLabelKey = targetLabelKey
 	namespacePrefixs := make([]string, 0, len(namespaceTargetMap))
 	for ns, count := range namespaceTargetMap {
-		for i := DefaultStartIndex; i <= count; i++ {
+		for i := DefaultStartIndex; i < count; i++ {
 			namespace := fmt.Sprintf("%s%d", ns, i)
 			_, exists := allNamespaceMap[namespace]
 			if !exists {

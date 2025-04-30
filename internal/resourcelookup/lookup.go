@@ -70,6 +70,7 @@ var (
 
 // GetAllAppLabels returns all application labels sorted alphabetically
 func GetAllAppLabels(namespace string, key string) ([]string, error) {
+	fmt.Println(cachedAppLabels)
 	prefix, err := utils.ExtractNsPrefix(namespace)
 	if err != nil {
 		return nil, err
@@ -427,88 +428,64 @@ func PreloadCaches(namespace string, labelKey string) error {
 	// Preload app labels
 	go func() {
 		defer wg.Done()
-		labels, err := GetAllAppLabels(namespace, labelKey)
+		_, err := GetAllAppLabels(namespace, labelKey)
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload app labels cache: %v", err)
 		}
-
-		prefix, err := utils.ExtractNsPrefix(namespace)
-		if err != nil {
-			errChan <- fmt.Errorf("failed to preload app labels cache: %v", err)
-		}
-
-		cachedAppLabels[prefix] = labels
 	}()
 
 	// Preload JVM methods
 	go func() {
 		defer wg.Done()
-		result, err := GetAllJVMMethods()
+		_, err := GetAllJVMMethods()
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload JVM methods cache: %v", err)
 		}
-
-		cachedAppMethods = result
 	}()
 
 	// Preload HTTP endpoints
 	go func() {
 		defer wg.Done()
-		result, err := GetAllHTTPEndpoints()
+		_, err := GetAllHTTPEndpoints()
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload HTTP endpoints cache: %v", err)
 		}
-
-		cachedAppEndpoints = result
 	}()
 
 	// Preload network pairs
 	go func() {
 		defer wg.Done()
-		result, err := GetAllNetworkPairs()
+		_, err := GetAllNetworkPairs()
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload network pairs cache: %v", err)
 		}
-
-		cachedNetworkPairs = result
 	}()
 
 	// Preload DNS endpoints
 	go func() {
 		defer wg.Done()
-		result, err := GetAllDNSEndpoints()
+		_, err := GetAllDNSEndpoints()
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload DNS endpoints cache: %v", err)
 		}
-
-		cachedDNSEndpoints = result
 	}()
 
 	// Preload database operations
 	go func() {
 		defer wg.Done()
-		result, err := GetAllDatabaseOperations()
+		_, err := GetAllDatabaseOperations()
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload database operations cache: %v", err)
 		}
-
-		cachedDBOperations = result
 	}()
 
 	// Preload container info
 	go func() {
 		defer wg.Done()
-		result, err := GetAllContainers(namespace)
+		_, err := GetAllContainers(namespace)
 		if err != nil {
 			errChan <- fmt.Errorf("failed to preload container info cache: %v", err)
 		}
-
-		prefix, err := utils.ExtractNsPrefix(namespace)
-		if err != nil {
-			errChan <- fmt.Errorf("failed to preload container info cache: %v", err)
-		}
-
-		cachedContainerInfo[prefix] = result
 	}()
 
 	// Wait for all initialization to complete
