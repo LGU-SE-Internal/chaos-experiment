@@ -70,7 +70,6 @@ var (
 
 // GetAllAppLabels returns all application labels sorted alphabetically
 func GetAllAppLabels(namespace string, key string) ([]string, error) {
-	fmt.Println(cachedAppLabels)
 	prefix, err := utils.ExtractNsPrefix(namespace)
 	if err != nil {
 		return nil, err
