@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/CUHK-SE-Group/chaos-experiment/tools/clickhouseanalyzer"
+	"github.com/LGU-SE-Internal/chaos-experiment/tools/clickhouseanalyzer"
 )
 
 func main() {

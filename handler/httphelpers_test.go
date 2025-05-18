@@ -3,7 +3,7 @@ package handler
 import (
 	"testing"
 
-	"github.com/CUHK-SE-Group/chaos-experiment/chaos"
+	"github.com/LGU-SE-Internal/chaos-experiment/chaos"
 	"k8s.io/utils/pointer"
 )
 

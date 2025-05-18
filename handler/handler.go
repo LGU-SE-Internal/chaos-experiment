@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/CUHK-SE-Group/chaos-experiment/client"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
-	"github.com/CUHK-SE-Group/chaos-experiment/utils"
+	"github.com/LGU-SE-Internal/chaos-experiment/client"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
+	"github.com/LGU-SE-Internal/chaos-experiment/utils"
 	cli "sigs.k8s.io/controller-runtime/pkg/client"
 )
 

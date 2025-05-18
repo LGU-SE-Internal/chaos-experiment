@@ -3,7 +3,7 @@ package handler
 import (
 	"strconv"
 
-	"github.com/CUHK-SE-Group/chaos-experiment/chaos"
+	"github.com/LGU-SE-Internal/chaos-experiment/chaos"
 )
 
 // HTTP Method enum

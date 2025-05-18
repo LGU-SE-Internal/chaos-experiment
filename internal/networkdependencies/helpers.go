@@ -1,7 +1,7 @@
 package networkdependencies
 
 import (
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
 )
 
 // ServiceDependency represents a dependency between services

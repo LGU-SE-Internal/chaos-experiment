@@ -3,7 +3,7 @@ package handler
 import (
 	"fmt"
 
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 )
 
 // MetricType defines the type of metrics for groundtruth

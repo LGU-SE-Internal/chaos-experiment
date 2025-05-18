@@ -1,9 +1,9 @@
 package testdata
 
 import (
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/javaclassmethods"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/networkdependencies"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/javaclassmethods"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/networkdependencies"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
 )
 
 // MockServiceLabels contains a list of mock service names

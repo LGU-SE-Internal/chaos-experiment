@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	chaos "github.com/CUHK-SE-Group/chaos-experiment/chaos"
-	controllers "github.com/CUHK-SE-Group/chaos-experiment/controllers"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/resourcelookup"
+	chaos "github.com/LGU-SE-Internal/chaos-experiment/chaos"
+	controllers "github.com/LGU-SE-Internal/chaos-experiment/controllers"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"k8s.io/utils/pointer"
 	cli "sigs.k8s.io/controller-runtime/pkg/client"

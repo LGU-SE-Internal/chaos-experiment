@@ -6,12 +6,12 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/CUHK-SE-Group/chaos-experiment/client"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/databaseoperations"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/javaclassmethods"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/networkdependencies"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/serviceendpoints"
-	"github.com/CUHK-SE-Group/chaos-experiment/utils"
+	"github.com/LGU-SE-Internal/chaos-experiment/client"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/databaseoperations"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/javaclassmethods"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/networkdependencies"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
+	"github.com/LGU-SE-Internal/chaos-experiment/utils"
 )
 
 // AppMethodPair represents a flattened app+method combination

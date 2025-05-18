@@ -3,8 +3,8 @@ package javaclassmethods_test
 import (
 	"testing"
 
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/javaclassmethods"
-	"github.com/CUHK-SE-Group/chaos-experiment/internal/testdata"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/javaclassmethods"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/testdata"
 )
 
 // SetupJavaClassMethodsMock sets up mock functions for Java class methods
