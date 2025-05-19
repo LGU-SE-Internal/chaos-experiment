@@ -10,6 +10,7 @@ import (
 	"github.com/LGU-SE-Internal/chaos-experiment/client"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 	"github.com/LGU-SE-Internal/chaos-experiment/utils"
+	"github.com/k0kubun/pp/v3"
 	cli "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -382,7 +383,6 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 
 			if index >= 0 && int(index) < len(NamespacePrefixs) {
 				prefix = NamespacePrefixs[index]
-				result["1"] = prefix
 				break
 			}
 		}
@@ -398,6 +398,8 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 
 		var value any
 		switch i {
+		case 1:
+			result[key] = prefix
 		case 2:
 			switch instanceType.Field(i).Name {
 			case KeyApp:
@@ -470,7 +472,9 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 				return nil, err
 			}
 
-			if instanceType.Field(i).Name != KeyNamespace || instanceType.Field(i).Name != KeyNamespaceTarget {
+			field := instanceType.Field(i)
+			pp.Println(field.Name)
+			if field.Name != KeyNamespace && field.Name != KeyNamespaceTarget {
 				result[key] = value
 
 				if key == "direction" {
