@@ -1,0 +1,22 @@
+{
+    "TestHandler2": [
+        {
+            "children": {
+                "1": {
+                    "children": {
+                        "0": {
+                            "value": 1
+                        },
+                        "1": {
+                            "value": 0
+                        },
+                        "2": {
+                            "value": 42
+                        }
+                    }
+                }
+            },
+            "value": 1
+        }
+    ]
+}

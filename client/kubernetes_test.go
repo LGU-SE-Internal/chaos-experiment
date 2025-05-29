@@ -3,14 +3,16 @@ package client
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
+	"github.com/k0kubun/pp/v3"
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestGetLabel(t *testing.T) {
-	labels, err := GetLabels("ts", "app")
+	labels, err := GetLabels(context.Background(), "ts0", "app")
 	if err != nil {
 		t.Error(err)
 	}
@@ -45,4 +47,13 @@ func TestCRDClient1(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Println(start, end)
+}
+
+func TestGetContainersWithAppLabel(t *testing.T) {
+	containerInfos, err := GetContainersWithAppLabel(context.Background(), "ts0")
+	if err != nil {
+		t.Error(err)
+	}
+
+	pp.Println(containerInfos)
 }

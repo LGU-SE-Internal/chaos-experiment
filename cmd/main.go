@@ -1,9 +1,9 @@
 package main
 
 import (
-	chaos "github.com/CUHK-SE-Group/chaos-experiment/chaos"
-	"github.com/CUHK-SE-Group/chaos-experiment/client"
-	controllers "github.com/CUHK-SE-Group/chaos-experiment/controllers"
+	chaos "github.com/LGU-SE-Internal/chaos-experiment/chaos"
+	"github.com/LGU-SE-Internal/chaos-experiment/client"
+	controllers "github.com/LGU-SE-Internal/chaos-experiment/controllers"
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/utils/pointer"

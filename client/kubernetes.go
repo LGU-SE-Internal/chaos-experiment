@@ -61,20 +61,34 @@ func NewK8sClient() client.Client {
 		}
 		k8sClientInstance = k8sClient
 	})
+
 	return k8sClientInstance
 }
 
-func GetLabels(namespace string, key string) ([]string, error) {
-	cli := NewK8sClient()
+func ListNamespaces() ([]string, error) {
+	var namespaceList corev1.NamespaceList
+	if err := NewK8sClient().List(context.TODO(), &namespaceList); err != nil {
+		return nil, fmt.Errorf("failed to list namespaces: %v", err)
+	}
+
+	namespaces := make([]string, 0, len(namespaceList.Items))
+	for _, item := range namespaceList.Items {
+		namespaces = append(namespaces, item.Name)
+	}
+
+	return namespaces, nil
+}
+
+func GetLabels(ctx context.Context, namespace string, key string) ([]string, error) {
 	labelValues := []string{}
 
 	// List all pods in the specified namespace
 	podList := &corev1.PodList{}
-	err := cli.List(context.Background(), podList, &client.ListOptions{
+	err := NewK8sClient().List(ctx, podList, &client.ListOptions{
 		Namespace: namespace,
 	})
 	if err != nil {
-		fmt.Printf("Error listing pods in namespace %s: %v\n", namespace, err)
+		fmt.Printf("failed to list pods in namespace %s: %v\n", namespace, err)
 		return nil, err
 	}
 
@@ -89,13 +103,63 @@ func GetLabels(namespace string, key string) ([]string, error) {
 	return labelValues, nil
 }
 
+// GetContainersWithAppLabel retrieves all containers along with their pod names and app labels
+// in the specified namespace
+func GetContainersWithAppLabel(ctx context.Context, namespace string) ([]map[string]string, error) {
+	result := []map[string]string{}
+
+	// List all pods in the specified namespace
+	podList := &corev1.PodList{}
+	if err := NewK8sClient().List(ctx, podList, &client.ListOptions{
+		Namespace: namespace,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to list pods in namespace %s: %v", namespace, err)
+	}
+
+	for _, pod := range podList.Items {
+		appLabel := pod.Labels["app"]
+
+		// Add each container with its pod name and app label
+		for _, container := range pod.Spec.Containers {
+			containerInfo := map[string]string{
+				"podName":       pod.Name,
+				"appLabel":      appLabel,
+				"containerName": container.Name,
+			}
+			result = append(result, containerInfo)
+		}
+	}
+
+	return result, nil
+}
+
+func GetPodsByLabel(namespace, labelKey, labelValue string) ([]string, error) {
+	pods := &corev1.PodList{}
+	err := NewK8sClient().List(context.Background(), pods,
+		client.InNamespace(namespace),
+		client.MatchingLabels{labelKey: labelValue})
+	if err != nil {
+		return nil, err
+	}
+
+	podNames := make([]string, 0, len(pods.Items))
+	for _, pod := range pods.Items {
+		podNames = append(podNames, pod.Name)
+	}
+
+	return podNames, nil
+}
+
 // TODO: 添加需要的类型
 func GetCRDMapping() map[schema.GroupVersionResource]client.Object {
 	return map[schema.GroupVersionResource]client.Object{
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "dnschaos"}:     &v1alpha1.DNSChaos{},
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "httpchaos"}:    &v1alpha1.HTTPChaos{},
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "jvmchaos"}:     &v1alpha1.JVMChaos{},
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "networkchaos"}: &v1alpha1.NetworkChaos{},
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "podchaos"}:     &v1alpha1.PodChaos{},
 		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "stresschaos"}:  &v1alpha1.StressChaos{},
+		{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: "timechaos"}:    &v1alpha1.TimeChaos{},
 	}
 }
 

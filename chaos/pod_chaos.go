@@ -64,3 +64,30 @@ func GeneratePodChaosSpec(namespace string, appName string, duration *string, ac
 
 	return spec
 }
+
+// GeneratePodChaosSpecWithContainers creates a PodChaosSpec with specified container names
+func GeneratePodChaosSpecWithContainers(namespace string, appName string, duration *string, action chaosmeshv1alpha1.PodChaosAction, containerNames []string) *chaosmeshv1alpha1.PodChaosSpec {
+	spec := &chaosmeshv1alpha1.PodChaosSpec{
+		Action: action,
+		ContainerSelector: chaosmeshv1alpha1.ContainerSelector{
+			PodSelector: chaosmeshv1alpha1.PodSelector{
+				Selector: chaosmeshv1alpha1.PodSelectorSpec{
+					GenericSelectorSpec: chaosmeshv1alpha1.GenericSelectorSpec{
+						Namespaces: []string{namespace},
+						LabelSelectors: map[string]string{
+							"app": appName,
+						},
+					},
+				},
+				Mode: chaosmeshv1alpha1.AllMode,
+			},
+			ContainerNames: containerNames,
+		},
+	}
+
+	if duration != nil && *duration != "" {
+		spec.Duration = duration
+	}
+
+	return spec
+}
