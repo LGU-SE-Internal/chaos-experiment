@@ -76,7 +76,7 @@ func GetAllAppLabels(namespace string, key string) ([]string, error) {
 		return nil, err
 	}
 
-	if labels, exists := cachedAppLabels[prefix]; exists {
+	if labels, exists := cachedAppLabels[prefix]; exists && len(labels) > 0 {
 		return labels, nil
 	}
 
