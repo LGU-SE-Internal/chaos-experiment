@@ -398,7 +398,7 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 
 			namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
 			values, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
-			if err != nil {
+			if err != nil || len(values) == 0 {
 				return 0, 0, fmt.Errorf("failed to get labels: %w", err)
 			}
 

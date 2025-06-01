@@ -31,7 +31,7 @@ type Groundtruth struct {
 // GetGroundtruthFromAppIdx returns a Groundtruth object for a given app index
 func GetGroundtruthFromAppIdx(namespace string, appIdx int) (Groundtruth, error) {
 	appLabels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
-	if err != nil {
+	if err != nil || len(appLabels) == 0 {
 		return Groundtruth{}, fmt.Errorf("failed to get app labels: %w", err)
 	}
 

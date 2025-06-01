@@ -12,6 +12,7 @@ import (
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/networkdependencies"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
 	"github.com/LGU-SE-Internal/chaos-experiment/utils"
+	"github.com/sirupsen/logrus"
 )
 
 // AppMethodPair represents a flattened app+method combination
@@ -80,6 +81,7 @@ func GetAllAppLabels(namespace string, key string) ([]string, error) {
 	}
 
 	labels, err := client.GetLabels(context.Background(), namespace, key)
+	logrus.Debugf("Fetched labels for namespace %s with key %s: %v", namespace, key, labels)
 	if err != nil {
 		return nil, err
 	}
