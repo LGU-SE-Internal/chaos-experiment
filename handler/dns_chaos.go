@@ -14,10 +14,9 @@ import (
 
 // DNSErrorSpec defines the DNS error chaos injection parameters
 type DNSErrorSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	DNSEndpointIdx  int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
+	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
 
 func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -41,7 +40,7 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -66,10 +65,9 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 
 // DNSRandomSpec defines the DNS random chaos injection parameters
 type DNSRandomSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	DNSEndpointIdx  int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
+	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
 
 func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -93,7 +91,7 @@ func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}

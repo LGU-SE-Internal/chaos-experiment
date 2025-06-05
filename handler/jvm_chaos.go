@@ -38,7 +38,6 @@ type JVMLatencySpec struct {
 	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
 	MethodIdx       int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
 	LatencyDuration int `range:"1-5000" description:"Latency in ms"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
 }
 
 func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -62,7 +61,7 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -96,12 +95,11 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 // JVMReturnSpec defines the JVM return value chaos injection parameters
 // Updated to use flattened MethodIdx
 type JVMReturnSpec struct {
-	Duration        int           `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int           `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
-	MethodIdx       int           `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
-	ReturnType      JVMReturnType `range:"1-2" description:"Return Type (1=String, 2=Int)"`
-	ReturnValueOpt  int           `range:"0-1" description:"Return value option (0=Default, 1=Random)"`
-	NamespaceTarget int           `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration       int           `range:"1-60" description:"Time Unit Minute"`
+	Namespace      int           `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
+	MethodIdx      int           `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
+	ReturnType     JVMReturnType `range:"1-2" description:"Return Type (1=String, 2=Int)"`
+	ReturnValueOpt int           `range:"0-1" description:"Return value option (0=Default, 1=Random)"`
 }
 
 func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -125,7 +123,7 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -174,11 +172,10 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 // JVMExceptionSpec defines the JVM exception injection parameters
 // Updated to use flattened MethodIdx
 type JVMExceptionSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	MethodIdx       int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
-	ExceptionOpt    int `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration     int `range:"1-60" description:"Time Unit Minute"`
+	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
+	MethodIdx    int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
+	ExceptionOpt int `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
 }
 
 func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -202,7 +199,7 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -251,10 +248,9 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 
 // JVMGCSpec defines the JVM garbage collector chaos injection parameters
 type JVMGCSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	AppIdx          int `range:"0-0" dynamic:"true" description:"App Index"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"String"`
+	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
 }
 
 func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -278,7 +274,7 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -302,11 +298,10 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 // JVMCPUStressSpec defines the JVM CPU stress chaos injection parameters
 // Updated to use flattened MethodIdx
 type JVMCPUStressSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	MethodIdx       int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
-	CPUCount        int `range:"1-8" description:"Number of CPU cores to stress"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration  int `range:"1-60" description:"Time Unit Minute"`
+	Namespace int `range:"0-0" dynamic:"true" description:"String"`
+	MethodIdx int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
+	CPUCount  int `range:"1-8" description:"Number of CPU cores to stress"`
 }
 
 func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -330,7 +325,7 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -364,11 +359,10 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 // JVMMemoryStressSpec defines the JVM memory stress chaos injection parameters
 // Updated to use flattened MethodIdx
 type JVMMemoryStressSpec struct {
-	Duration        int           `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int           `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
-	MethodIdx       int           `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
-	MemType         JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
-	NamespaceTarget int           `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration  int           `range:"1-60" description:"Time Unit Minute"`
+	Namespace int           `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
+	MethodIdx int           `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
+	MemType   JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
 }
 
 func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -392,7 +386,7 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, er
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -451,11 +445,10 @@ const (
 
 // JVMMySQLLatencySpec defines the JVM MySQL latency chaos injection parameters
 type JVMMySQLLatencySpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	DatabaseIdx     int `range:"0-0" dynamic:"true" description:"Flattened app+database+table index"`
-	LatencyMs       int `range:"10-5000" description:"Latency in ms"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration    int `range:"1-60" description:"Time Unit Minute"`
+	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	DatabaseIdx int `range:"0-0" dynamic:"true" description:"Flattened app+database+table index"`
+	LatencyMs   int `range:"10-5000" description:"Latency in ms"`
 }
 
 func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -479,7 +472,7 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -514,10 +507,9 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 
 // JVMMySQLExceptionSpec defines the JVM MySQL exception chaos injection parameters
 type JVMMySQLExceptionSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	DatabaseIdx     int `range:"0-0" dynamic:"true" description:"Flattened app+database+table index"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration    int `range:"1-60" description:"Time Unit Minute"`
+	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	DatabaseIdx int `range:"0-0" dynamic:"true" description:"Flattened app+database+table index"`
 }
 
 func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -541,7 +533,7 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, 
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}

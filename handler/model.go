@@ -11,11 +11,11 @@ import (
 )
 
 /*
-Struct <=> Node <=> Map
+Struct <=> Node
 
-any struct can be converted to a node, and then to a map
-any node can be converted to a struct, and then to a map
-any map can be converted to a node, and then to a struct
+any struct can be converted to a node
+any node can be converted to a struct
+
 */
 
 // TODO 校验Node
@@ -30,6 +30,52 @@ type Node struct {
 var (
 	NodeNsPrefixMap map[*Node]string
 )
+
+func Validate[T any](target *Node, namespacePrefix string) (bool, error) {
+	reference, err := StructToNode[T](namespacePrefix)
+	if err != nil {
+		return false, fmt.Errorf("failed to convert struct to node: %v", err)
+	}
+
+	return validateNode(reference, target, true)
+}
+
+func validateNode(reference *Node, target *Node, isFirstLevel bool) (bool, error) {
+	if reference == nil || target == nil {
+		return false, fmt.Errorf("one of the nodes is nil")
+	}
+
+	if target.Children == nil && reference.Range != nil && len(reference.Range) == 2 {
+		if target.Value == ValueNotSet {
+			return false, fmt.Errorf("target value is not set but reference has range constraint %v", reference.Range)
+		}
+
+		if target.Value < reference.Range[0] || target.Value > reference.Range[1] {
+			return false, fmt.Errorf("target value %d is not within reference range %v", target.Value, reference.Range)
+		}
+	}
+
+	if target.Children != nil {
+		if reference.Children == nil {
+			return false, fmt.Errorf("target has children but reference doesn't have children")
+		}
+
+		if !isFirstLevel && len(target.Children) != len(reference.Children) {
+			return false, fmt.Errorf("children count mismatch: target has %d children, reference has %d children",
+				len(target.Children), len(reference.Children))
+		}
+
+		for key, targetChild := range target.Children {
+			if _, exists := reference.Children[key]; !exists {
+				return false, fmt.Errorf("target child key '%s' not found in reference children", key)
+			}
+
+			return validateNode(reference.Children[key], targetChild, false)
+		}
+	}
+
+	return true, nil
+}
 
 func NodeToMap(n *Node, excludeUnset bool) map[string]any {
 	result := make(map[string]any)
@@ -131,9 +177,6 @@ func buildNode(rt reflect.Type, fieldName string, rootNode *Node) (*Node, error)
 	if rt.Kind() == reflect.Struct {
 		for i := range rt.NumField() {
 			field := rt.Field(i)
-			if field.Name == KeyNamespaceTarget {
-				continue
-			}
 
 			child, err := buildFieldNode(field, rootNode)
 			if err != nil {
@@ -204,7 +247,6 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 	}
 
 	val := reflect.New(rt).Elem()
-
 	if rt.Name() == "InjectionConf" && rt.PkgPath() == "github.com/LGU-SE-Internal/chaos-experiment/handler" {
 		if len(n.Children) != 1 {
 			return nil, fmt.Errorf("injection conf must have only one chaos type")
@@ -327,19 +369,6 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 		case KeyNamespace:
 			start = DefaultStartIndex
 			end = len(NamespacePrefixs) - 1
-		case KeyNamespaceTarget:
-			prefix, ok := NodeNsPrefixMap[rootNode]
-			if !ok {
-				return 0, 0, fmt.Errorf("failed to get namespace prefix in %s", KeyNamespaceTarget)
-			}
-
-			targetCount, ok := NamespaceTargetMap[prefix]
-			if !ok {
-				return 0, 0, fmt.Errorf("failed to get namespace targe count")
-			}
-
-			start = DefaultStartIndex
-			end = targetCount - 1
 		case KeyApp:
 			prefix, ok := NodeNsPrefixMap[rootNode]
 			if !ok {

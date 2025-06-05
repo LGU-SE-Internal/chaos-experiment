@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -15,7 +14,7 @@ import (
 
 // 测试获取配置
 func TestHandler(t *testing.T) {
-	if err := InitTargetConfig(map[string]int{"ts": 5}, "app"); err != nil {
+	if err := InitTargetConfig(map[string]int{"ts": 6}, "app"); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -42,7 +41,7 @@ func TestHandler(t *testing.T) {
 
 // 测试创建
 func TestHandler2(t *testing.T) {
-	targetCount := 5
+	targetCount := 6
 	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
 		t.Error(err.Error())
 		return
@@ -120,6 +119,43 @@ func TestHandler2(t *testing.T) {
 	}
 }
 
+func TestValidate(t *testing.T) {
+	targetCount := 6
+	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	filename := filepath.Join(pwd, "handler_test.json")
+	testsMaps, err := readJSONFile(filename, "TestValidate")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	for _, tt := range testsMaps {
+		node, err := MapToNode(tt)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		result, err := Validate[InjectionConf](node, "ts")
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		pp.Println(result)
+	}
+}
+
 func readJSONFile(filename, key string) ([]map[string]any, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -145,39 +181,4 @@ func readJSONFile(filename, key string) ([]map[string]any, error) {
 	}
 
 	return nil, fmt.Errorf("failed to read the value of key %s", key)
-}
-
-func genValue(m map[string]any) (map[string]any, error) {
-	var rangeI []int
-	if r, exist := m["range"]; exist {
-		var ok bool
-		rangeI, ok = r.([]int)
-		if !ok {
-			return nil, fmt.Errorf("range is not a string")
-		}
-	} else {
-		return nil, fmt.Errorf("range not exist")
-	}
-
-	if value, exist := m["children"]; exist && value != nil {
-		subMap, ok := value.(map[int]any)
-		if !ok {
-			return nil, fmt.Errorf("value is not a map[string]interface{}")
-		}
-
-		for i := rangeI[0]; i <= rangeI[1]; i++ {
-			if va, ok := subMap[i].(map[string]interface{}); ok {
-				gened, err := genValue(va)
-				if err != nil {
-					return nil, err
-				}
-				subMap[i] = gened
-			}
-
-		}
-		m["children"] = subMap
-	}
-
-	m["value"] = rand.Intn(rangeI[1]-rangeI[0]+1) + rangeI[0]
-	return m, nil
 }

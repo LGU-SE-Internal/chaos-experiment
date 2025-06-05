@@ -44,11 +44,10 @@ func getNetworkPairByIndex(networkPairIdx int) (*resourcelookup.AppNetworkPair, 
 
 // NetworkPartitionSpec defines network partition chaos parameters
 type NetworkPartitionSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
+	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
 func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -72,7 +71,7 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -99,14 +98,13 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // NetworkDelaySpec defines network delay chaos parameters
 type NetworkDelaySpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Latency         int `range:"1-2000" description:"Latency in milliseconds"`
-	Correlation     int `range:"0-100" description:"Correlation percentage"`
-	Jitter          int `range:"0-1000" description:"Jitter in milliseconds"`
-	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
+	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Latency        int `range:"1-2000" description:"Latency in milliseconds"`
+	Correlation    int `range:"0-100" description:"Correlation percentage"`
+	Jitter         int `range:"0-1000" description:"Jitter in milliseconds"`
+	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
 func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -130,7 +128,7 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -162,13 +160,12 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 
 // NetworkLossSpec defines network packet loss chaos parameters
 type NetworkLossSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Loss            int `range:"1-100" description:"Packet loss percentage"`
-	Correlation     int `range:"0-100" description:"Correlation percentage"`
-	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
+	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Loss           int `range:"1-100" description:"Packet loss percentage"`
+	Correlation    int `range:"0-100" description:"Correlation percentage"`
+	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
 func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -192,7 +189,7 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -223,13 +220,12 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 
 // NetworkDuplicateSpec defines network packet duplication chaos parameters
 type NetworkDuplicateSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Duplicate       int `range:"1-100" description:"Packet duplication percentage"`
-	Correlation     int `range:"0-100" description:"Correlation percentage"`
-	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
+	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Duplicate      int `range:"1-100" description:"Packet duplication percentage"`
+	Correlation    int `range:"0-100" description:"Correlation percentage"`
+	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
 func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -253,7 +249,7 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -284,13 +280,12 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 
 // NetworkCorruptSpec defines network packet corruption chaos parameters
 type NetworkCorruptSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Corrupt         int `range:"1-100" description:"Packet corruption percentage"`
-	Correlation     int `range:"0-100" description:"Correlation percentage"`
-	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
+	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Corrupt        int `range:"1-100" description:"Packet corruption percentage"`
+	Correlation    int `range:"0-100" description:"Correlation percentage"`
+	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
 func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -314,7 +309,7 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
@@ -345,14 +340,13 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 
 // NetworkBandwidthSpec defines network bandwidth limit chaos parameters
 type NetworkBandwidthSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
-	NetworkPairIdx  int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
-	Rate            int `range:"1-1000000" description:"Bandwidth rate in kbps"`
-	Limit           int `range:"1-10000" description:"Number of bytes that can be queued"`
-	Buffer          int `range:"1-10000" description:"Maximum amount of bytes available instantaneously"`
-	Direction       int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration       int `range:"1-60" description:"Time Unit Minute"`
+	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
+	Rate           int `range:"1-1000000" description:"Bandwidth rate in kbps"`
+	Limit          int `range:"1-10000" description:"Number of bytes that can be queued"`
+	Buffer         int `range:"1-10000" description:"Maximum amount of bytes available instantaneously"`
+	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
 
 func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -376,7 +370,7 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}

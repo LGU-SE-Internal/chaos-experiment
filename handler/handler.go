@@ -10,7 +10,6 @@ import (
 	"github.com/LGU-SE-Internal/chaos-experiment/client"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 	"github.com/LGU-SE-Internal/chaos-experiment/utils"
-	"github.com/k0kubun/pp/v3"
 	cli "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -213,7 +212,6 @@ type GroundtruthProvider interface {
 }
 
 var SpecMap = map[ChaosType]any{
-
 	CPUStress:                CPUStressChaosSpec{},
 	MemoryStress:             MemoryStressChaosSpec{},
 	HTTPRequestAbort:         HTTPRequestAbortSpec{},
@@ -318,14 +316,13 @@ func (ic *InjectionConf) Create(ctx context.Context, namespaceTargetIndex int, a
 		return "", err
 	}
 
-	setIntValue(activeField, KeyNamespaceTarget, namespaceTargetIndex)
-
 	instance := activeField.Interface().(Injection)
 	name, err := instance.Create(
 		client.NewK8sClient(),
 		WithAnnotations(annotations),
 		WithContext(ctx),
 		WithLabels(labels),
+		WithNs(GetTargetNamespace(namespaceTargetIndex, DefaultStartIndex)),
 	)
 	if err != nil {
 		return "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
@@ -472,14 +469,9 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 				return nil, err
 			}
 
-			field := instanceType.Field(i)
-			pp.Println(field.Name)
-			if field.Name != KeyNamespace && field.Name != KeyNamespaceTarget {
-				result[key] = value
-
-				if key == "direction" {
-					result[key] = directionMap[int(value)]
-				}
+			result[key] = value
+			if key == "direction" {
+				result[key] = directionMap[int(value)]
 			}
 		}
 	}
@@ -508,14 +500,4 @@ func getIntValue(field reflect.Value) (int64, error) {
 	default:
 		return 0, fmt.Errorf("unsupported field type: %v", field.Kind())
 	}
-}
-
-func setIntValue(activeField reflect.Value, name string, value int) error {
-	activeFieldElem := activeField.Elem()
-	childFieldVal := activeFieldElem.FieldByName(name)
-	if err := setValue(childFieldVal, value); err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -12,11 +12,10 @@ import (
 )
 
 type TimeSkewSpec struct {
-	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true"`
-	ContainerIdx    int `range:"0-0" dynamic:"true" description:"Container Index"`
-	TimeOffset      int `range:"-600-600" description:"Time offset in seconds"`
-	NamespaceTarget int `range:"0-0" dynamic:"true" description:"Namespace Target Index (0-based)"`
+	Duration     int `range:"1-60" description:"Time Unit Minute"`
+	Namespace    int `range:"0-0" dynamic:"true"`
+	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
+	TimeOffset   int `range:"-600-600" description:"Time offset in seconds"`
 }
 
 func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -40,7 +39,7 @@ func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, s.NamespaceTarget)
+	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
 	if conf.Namespace != "" {
 		ns = conf.Namespace
 	}
