@@ -243,13 +243,22 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 	var t T
 	rt := reflect.TypeOf(t)
 	if rt.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("struct T must be a struct type")
+		return nil, fmt.Errorf("NodeToStruct: type parameter T must be a struct type, got %s", rt.Kind())
+	}
+
+	if n == nil {
+		return nil, fmt.Errorf("NodeToStruct: input node is nil for struct type %s", rt.Name())
 	}
 
 	val := reflect.New(rt).Elem()
 	if rt.Name() == "InjectionConf" && rt.PkgPath() == "github.com/LGU-SE-Internal/chaos-experiment/handler" {
 		if len(n.Children) != 1 {
-			return nil, fmt.Errorf("injection conf must have only one chaos type")
+			childCount := len(n.Children)
+			childKeys := make([]string, 0, childCount)
+			for k := range n.Children {
+				childKeys = append(childKeys, k)
+			}
+			return nil, fmt.Errorf("InjectionConf must have exactly one chaos type, got %d children with keys: %v", childCount, childKeys)
 		}
 
 		if NodeNsPrefixMap == nil {
@@ -258,11 +267,22 @@ func NodeToStruct[T any](n *Node) (*T, error) {
 
 		intKey := n.Value
 		if intKey < 0 || intKey >= rt.NumField() {
-			return nil, fmt.Errorf("invalid key in the children of node")
+			return nil, fmt.Errorf("invalid field index %d for struct %s (valid range: 0-%d)", intKey, rt.Name(), rt.NumField()-1)
 		}
 
-		if err := processStructField(rt.Field(intKey), val.Field(intKey), n.Children[strconv.Itoa(n.Value)], n); err != nil {
-			return nil, err
+		expectedChildKey := strconv.Itoa(n.Value)
+		childNode, exists := n.Children[expectedChildKey]
+		if !exists {
+			availableKeys := make([]string, 0, len(n.Children))
+			for k := range n.Children {
+				availableKeys = append(availableKeys, k)
+			}
+			return nil, fmt.Errorf("expected child key '%s' not found in node children, available keys: %v", expectedChildKey, availableKeys)
+		}
+
+		fieldName := rt.Field(intKey).Name
+		if err := processStructField(rt.Field(intKey), val.Field(intKey), childNode, n); err != nil {
+			return nil, fmt.Errorf("failed to process field '%s' (index %d) in struct %s: %w", fieldName, intKey, rt.Name(), err)
 		}
 	}
 
@@ -275,7 +295,7 @@ func processStructField(field reflect.StructField, val reflect.Value, node, root
 			return nil
 		}
 
-		return fmt.Errorf("missing required field: %s", field.Name)
+		return fmt.Errorf("missing required field '%s' (type: %s)", field.Name, field.Type)
 	}
 
 	fieldType := field.Type
@@ -290,43 +310,64 @@ func processStructField(field reflect.StructField, val reflect.Value, node, root
 	if fieldType.Kind() == reflect.Struct {
 		_, end, err := parseRangeTag(field.Tag.Get("range"))
 		if err != nil {
-			return fmt.Errorf("field %s: %v", field.Name, err)
+			return fmt.Errorf("field '%s' (type: %s) has invalid range tag: %w", field.Name, field.Type, err)
 		}
 
-		return processNestedStruct(fieldType, val, node, rootNode, end)
+		if err := processNestedStruct(fieldType, val, node, rootNode, end); err != nil {
+			return fmt.Errorf("failed to process nested struct field '%s' (type: %s): %w", field.Name, fieldType.Name(), err)
+		}
+		return nil
 	}
 
-	return assignBasicType(field, val, node, rootNode)
+	if err := assignBasicType(field, val, node, rootNode); err != nil {
+		return fmt.Errorf("failed to assign value to field '%s' (type: %s): %w", field.Name, field.Type, err)
+	}
+	return nil
 }
 
 func processNestedStruct(rt reflect.Type, val reflect.Value, node, rootNode *Node, maxNum int) error {
 	if rt.Kind() != reflect.Struct {
-		return fmt.Errorf("expected struct type, got %s", rt.Kind())
+		return fmt.Errorf("expected struct type, got %s for type %s", rt.Kind(), rt.Name())
+	}
+
+	if node.Children == nil {
+		return fmt.Errorf("node has no children for struct type %s", rt.Name())
 	}
 
 	intKeys := make([]int, 0, len(node.Children))
+	invalidKeys := make([]string, 0)
+
 	for key := range node.Children {
 		intKey, err := strconv.Atoi(key)
 		if err != nil {
-			return err
+			invalidKeys = append(invalidKeys, key)
+			continue
 		}
-
 		intKeys = append(intKeys, intKey)
 	}
 
+	if len(invalidKeys) > 0 {
+		return fmt.Errorf("struct %s contains non-integer child keys: %v (all keys must be numeric field indices)", rt.Name(), invalidKeys)
+	}
+
 	sort.Ints(intKeys)
-	for intKey := range intKeys {
+	for _, intKey := range intKeys {
 		// 对超出range的部份忽略
 		if maxNum < intKey && intKey < rt.NumField() {
 			continue
 		}
 
 		if intKey < 0 || intKey >= rt.NumField() {
-			return fmt.Errorf("invalid key in the children of node")
+			return fmt.Errorf("invalid field index %d for struct %s (valid range: 0-%d), available field count: %d",
+				intKey, rt.Name(), rt.NumField()-1, rt.NumField())
 		}
 
-		if err := processStructField(rt.Field(intKey), val.Field(intKey), node.Children[strconv.Itoa(intKey)], rootNode); err != nil {
-			return err
+		field := rt.Field(intKey)
+		childNode := node.Children[strconv.Itoa(intKey)]
+
+		if err := processStructField(field, val.Field(intKey), childNode, rootNode); err != nil {
+			return fmt.Errorf("failed to process field '%s' (index %d) in struct %s: %w",
+				field.Name, intKey, rt.Name(), err)
 		}
 	}
 
@@ -343,18 +384,27 @@ func typeName(rt reflect.Type, fieldName string) string {
 func assignBasicType(field reflect.StructField, val reflect.Value, node, rootNode *Node) error {
 	start, end, err := getValueRange(field, rootNode)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get value range for field '%s': %w", field.Name, err)
 	}
 
 	if node.Value < start || node.Value > end {
-		return fmt.Errorf("value %d out of range [%d, %d]", node.Value, start, end)
+		return fmt.Errorf("field '%s': value %d is out of valid range [%d, %d]",
+			field.Name, node.Value, start, end)
 	}
 
 	if field.Name == KeyNamespace {
+		if node.Value >= len(NamespacePrefixs) {
+			return fmt.Errorf("field '%s': namespace index %d exceeds available namespaces count %d",
+				field.Name, node.Value, len(NamespacePrefixs))
+		}
 		NodeNsPrefixMap[rootNode] = NamespacePrefixs[node.Value]
 	}
 
-	return setValue(val, node.Value)
+	if err := setValue(val, node.Value); err != nil {
+		return fmt.Errorf("field '%s': failed to set value %d: %w", field.Name, node.Value, err)
+	}
+
+	return nil
 }
 
 func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) {
@@ -377,7 +427,7 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 
 			namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
 			values, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
-			if err != nil {
+			if err != nil || len(values) == 0 {
 				return 0, 0, fmt.Errorf("failed to get labels: %w", err)
 			}
 
@@ -451,7 +501,7 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 
 func parseRangeTag(tag string) (int, int, error) {
 	if tag == "" {
-		return 0, 0, fmt.Errorf("empty range tag")
+		return 0, 0, fmt.Errorf("range tag is empty (expected format: 'start-end', e.g., '0-100')")
 	}
 
 	// Special handling for ranges with negative numbers
@@ -461,7 +511,7 @@ func parseRangeTag(tag string) (int, int, error) {
 		remainingPart := tag[1:] // Remove the first "-"
 		idx := strings.Index(remainingPart, "-")
 		if idx == -1 {
-			return 0, 0, fmt.Errorf("invalid range format: missing second bound")
+			return 0, 0, fmt.Errorf("invalid range format '%s': missing second bound (expected format: 'start-end')", tag)
 		}
 
 		firstPart := "-" + remainingPart[:idx]
@@ -473,17 +523,21 @@ func parseRangeTag(tag string) (int, int, error) {
 	}
 
 	if len(parts) != 2 {
-		return 0, 0, fmt.Errorf("invalid range format: expected format 'start-end'")
+		return 0, 0, fmt.Errorf("invalid range format '%s': expected format 'start-end' (e.g., '0-100' or '-50-50'), got %d parts", tag, len(parts))
 	}
 
 	start, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return 0, 0, fmt.Errorf("invalid start value: %v", err)
+		return 0, 0, fmt.Errorf("invalid start value '%s' in range '%s': %v", parts[0], tag, err)
 	}
 
 	end, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return 0, 0, fmt.Errorf("invalid end value: %v", err)
+		return 0, 0, fmt.Errorf("invalid end value '%s' in range '%s': %v", parts[1], tag, err)
+	}
+
+	if start > end {
+		return 0, 0, fmt.Errorf("invalid range '%s': start value %d is greater than end value %d", tag, start, end)
 	}
 
 	return start, end, nil
@@ -507,22 +561,55 @@ func setValue(val reflect.Value, value int) error {
 	switch val.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if val.OverflowInt(int64(value)) {
-			return fmt.Errorf("value %d overflow for type %s", value, val.Type())
+			return fmt.Errorf("value %d causes overflow for %s type (max: %d)",
+				value, val.Type(), getMaxValueForType(val.Type()))
 		}
 		val.SetInt(int64(value))
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if value < 0 {
-			return fmt.Errorf("negative value %d for unsigned type %s", value, val.Type())
+			return fmt.Errorf("cannot assign negative value %d to unsigned type %s", value, val.Type())
 		}
 		if val.OverflowUint(uint64(value)) {
-			return fmt.Errorf("value %d overflow for type %s", value, val.Type())
+			return fmt.Errorf("value %d causes overflow for %s type (max: %d)",
+				value, val.Type(), getMaxValueForUnsignedType(val.Type()))
 		}
 		val.SetUint(uint64(value))
 
 	default:
-		return fmt.Errorf("unsupported type %s", val.Kind())
+		return fmt.Errorf("unsupported type %s for integer assignment (supported: int, uint and their variants)", val.Kind())
 	}
 
 	return nil
+}
+
+// Helper functions to get max values for better error messages
+func getMaxValueForType(t reflect.Type) int64 {
+	switch t.Kind() {
+	case reflect.Int8:
+		return 127
+	case reflect.Int16:
+		return 32767
+	case reflect.Int32:
+		return 2147483647
+	case reflect.Int64, reflect.Int:
+		return 9223372036854775807
+	default:
+		return 0
+	}
+}
+
+func getMaxValueForUnsignedType(t reflect.Type) uint64 {
+	switch t.Kind() {
+	case reflect.Uint8:
+		return 255
+	case reflect.Uint16:
+		return 65535
+	case reflect.Uint32:
+		return 4294967295
+	case reflect.Uint64, reflect.Uint:
+		return 18446744073709551615
+	default:
+		return 0
+	}
 }

@@ -97,6 +97,9 @@ func GetLabels(ctx context.Context, namespace string, key string) ([]string, err
 			labelValues = append(labelValues, value)
 		}
 	}
+	if len(labelValues) == 0 {
+		return nil, fmt.Errorf("no labels found for key %s in namespace %s", key, namespace)
+	}
 
 	slices.Sort(labelValues)
 	labelValues = slices.Compact(labelValues)

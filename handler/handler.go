@@ -402,7 +402,7 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 			case KeyApp:
 				namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
 				labels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
-				if err != nil {
+				if err != nil || len(labels) == 0 {
 					return nil, err
 				}
 
