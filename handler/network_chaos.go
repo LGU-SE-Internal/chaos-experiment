@@ -71,10 +71,7 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
 	if err != nil {
@@ -128,10 +125,7 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
 	if err != nil {
@@ -189,10 +183,7 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
 	if err != nil {
@@ -249,10 +240,7 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
 	if err != nil {
@@ -309,10 +297,7 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
 	if err != nil {
@@ -370,10 +355,7 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
 	if err != nil {

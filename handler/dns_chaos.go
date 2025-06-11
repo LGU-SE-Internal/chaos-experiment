@@ -40,10 +40,7 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllDNSEndpoints()
 	if err != nil {
@@ -91,10 +88,7 @@ func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllDNSEndpoints()
 	if err != nil {

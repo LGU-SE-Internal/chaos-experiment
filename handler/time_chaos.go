@@ -39,10 +39,7 @@ func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	containers, err := resourcelookup.GetAllContainers(ns)
 	if err != nil {

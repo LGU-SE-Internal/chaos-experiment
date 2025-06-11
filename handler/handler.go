@@ -68,20 +68,6 @@ func InitTargetConfig(namespaceTargetMap map[string]int, targetLabelKey string) 
 	return nil
 }
 
-// GetTargetNamespace generates a namespace name from an index (1-based)
-func GetTargetNamespace(namespaceIndex, targetIndex int) string {
-	prefix := NamespacePrefixs[namespaceIndex]
-	targetCount := NamespaceTargetMap[prefix]
-
-	if targetIndex < DefaultStartIndex {
-		targetIndex = DefaultStartIndex
-	} else if targetIndex > targetCount {
-		targetIndex = targetCount
-	}
-
-	return fmt.Sprintf("%s%d", prefix, targetIndex)
-}
-
 const (
 	// PodChaos
 	PodKill ChaosType = iota
@@ -310,7 +296,7 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-2"`
 }
 
-func (ic *InjectionConf) Create(ctx context.Context, namespaceTargetIndex int, annotations map[string]string, labels map[string]string) (string, error) {
+func (ic *InjectionConf) Create(ctx context.Context, namespace string, annotations map[string]string, labels map[string]string) (string, error) {
 	activeField, err := ic.getActiveField()
 	if err != nil {
 		return "", err
@@ -322,7 +308,7 @@ func (ic *InjectionConf) Create(ctx context.Context, namespaceTargetIndex int, a
 		WithAnnotations(annotations),
 		WithContext(ctx),
 		WithLabels(labels),
-		WithNs(GetTargetNamespace(namespaceTargetIndex, DefaultStartIndex)),
+		WithNs(namespace),
 	)
 	if err != nil {
 		return "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)

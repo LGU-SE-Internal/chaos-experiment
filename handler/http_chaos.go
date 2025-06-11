@@ -41,10 +41,7 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, e
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 	if err != nil {
@@ -109,10 +106,7 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, 
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 	if err != nil {
@@ -178,10 +172,7 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, e
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 	if err != nil {
@@ -247,10 +238,7 @@ func (s *HTTPResponseDelaySpec) Create(cli cli.Client, opts ...Option) (string, 
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 	if err != nil {
@@ -324,10 +312,7 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (st
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 	if err != nil {
@@ -397,10 +382,7 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (stri
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 	if err != nil {
@@ -464,10 +446,7 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 	if err != nil {
@@ -506,10 +485,10 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 
 // HTTPRequestReplaceMethodSpec defines HTTP request method replacement chaos
 type HTTPRequestReplaceMethodSpec struct {
-	Duration        int        `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int        `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
-	EndpointIdx     int        `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
-	ReplaceMethod   HTTPMethod `range:"0-6" description:"HTTP Method to replace with"`
+	Duration      int        `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int        `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
+	EndpointIdx   int        `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
+	ReplaceMethod HTTPMethod `range:"0-6" description:"HTTP Method to replace with"`
 }
 
 func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -533,10 +512,7 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 	if err != nil {
@@ -575,10 +551,10 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 
 // HTTPResponseReplaceCodeSpec defines HTTP response status code replacement chaos
 type HTTPResponseReplaceCodeSpec struct {
-	Duration        int            `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int            `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
-	EndpointIdx     int            `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
-	StatusCode      HTTPStatusCode `range:"0-9" description:"HTTP Status Code to replace with"`
+	Duration    int            `range:"1-60" description:"Time Unit Minute"`
+	Namespace   int            `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
+	EndpointIdx int            `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
+	StatusCode  HTTPStatusCode `range:"0-9" description:"HTTP Status Code to replace with"`
 }
 
 func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -602,10 +578,7 @@ func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (st
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 	if err != nil {

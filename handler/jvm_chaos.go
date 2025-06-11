@@ -61,10 +61,7 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	methods, err := resourcelookup.GetAllJVMMethods()
 	if err != nil {
@@ -123,10 +120,7 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	methods, err := resourcelookup.GetAllJVMMethods()
 	if err != nil {
@@ -199,10 +193,7 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	methods, err := resourcelookup.GetAllJVMMethods()
 	if err != nil {
@@ -274,10 +265,7 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	appLabels, err := resourcelookup.GetAllAppLabels(ns, TargetLabelKey)
 	if err != nil {
@@ -325,10 +313,7 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	methods, err := resourcelookup.GetAllJVMMethods()
 	if err != nil {
@@ -386,10 +371,7 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, er
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	methods, err := resourcelookup.GetAllJVMMethods()
 	if err != nil {
@@ -472,10 +454,7 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	dbOps, err := resourcelookup.GetAllDatabaseOperations()
 	if err != nil {
@@ -533,10 +512,7 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, 
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	dbOps, err := resourcelookup.GetAllDatabaseOperations()
 	if err != nil {

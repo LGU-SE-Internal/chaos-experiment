@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 
 	"github.com/k0kubun/pp"
@@ -83,7 +82,7 @@ func TestHandler2(t *testing.T) {
 
 		pp.Println(displayConfig)
 
-		name, err := conf.Create(context.Background(), 2%targetCount, map[string]string{}, map[string]string{
+		name, err := conf.Create(context.Background(), "ts0", map[string]string{}, map[string]string{
 			"benchmark":    "clickhouse",
 			"pre_duration": "1",
 			"task_id":      "1",
@@ -96,12 +95,6 @@ func TestHandler2(t *testing.T) {
 		}
 
 		pp.Println(name)
-
-		childNode := node.Children[strconv.Itoa(node.Value)]
-		childNode.Children[strconv.Itoa(len(childNode.Children))] = &Node{
-			Value: 2 % targetCount,
-		}
-		pp.Println(NodeToMap(node, true))
 
 		newConf, err := NodeToStruct[InjectionConf](node)
 		if err != nil {

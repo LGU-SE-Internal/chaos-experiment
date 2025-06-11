@@ -39,10 +39,7 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	appLabels, err := resourcelookup.GetAllAppLabels(ns, TargetLabelKey)
 	if err != nil {
@@ -88,10 +85,7 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	appLabels, err := resourcelookup.GetAllAppLabels(ns, TargetLabelKey)
 	if err != nil {
@@ -136,10 +130,7 @@ func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, erro
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	containers, err := resourcelookup.GetAllContainers(ns)
 	if err != nil {

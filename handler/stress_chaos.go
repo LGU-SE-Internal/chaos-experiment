@@ -40,10 +40,7 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	containers, err := resourcelookup.GetAllContainers(ns)
 	if err != nil {
@@ -96,10 +93,7 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 		labels = conf.Labels
 	}
 
-	ns := GetTargetNamespace(s.Namespace, DefaultStartIndex)
-	if conf.Namespace != "" {
-		ns = conf.Namespace
-	}
+	ns := conf.Namespace
 
 	containers, err := resourcelookup.GetAllContainers(ns)
 	if err != nil {
