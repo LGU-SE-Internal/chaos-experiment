@@ -22,9 +22,9 @@ any node can be converted to a struct
 type Node struct {
 	Name        string           `json:"name"`
 	Range       []int            `json:"range"`
-	Children    map[string]*Node `json:"children,omitempty"`
-	Description string           `json:"description,omitempty"`
-	Value       int              `json:"value,omitempty"`
+	Children    map[string]*Node `json:"children"`
+	Description string           `json:"description"`
+	Value       int              `json:"value"`
 }
 
 var (
