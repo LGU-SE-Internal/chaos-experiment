@@ -1,4 +1,5 @@
 package javaanalyzer
+
 import (
 	"fmt"
 	"os"
@@ -63,7 +64,7 @@ func GenerateJavaClassMethodsFile(servicesBasePath string, outputFilePath string
 		"ts-security-service", "ts-travel-plan-service", "ts-admin-route-service",
 		"ts-cancel-service", "ts-delivery-service", "ts-notification-service",
 		"ts-price-service", "ts-station-food-service", "ts-travel-service",
-		"ts-admin-travel-service", "ts-common", "ts-execute-service",
+		"ts-admin-travel-service", "ts-execute-service",
 		"ts-order-other-service", "ts-rebook-service", "ts-station-service",
 		"ts-user-service", "ts-admin-user-service", "ts-config-service",
 		"ts-food-delivery-service", "ts-order-service", "ts-route-plan-service",
