@@ -485,10 +485,10 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 
 // HTTPRequestReplaceMethodSpec defines HTTP request method replacement chaos
 type HTTPRequestReplaceMethodSpec struct {
-	Duration      int        `range:"1-60" description:"Time Unit Minute"`
-	Namespace     int        `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
-	EndpointIdx   int        `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
-	ReplaceMethod HTTPMethod `range:"0-6" description:"HTTP Method to replace with"`
+	Duration      int `range:"1-60" description:"Time Unit Minute"`
+	Namespace     int `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
+	EndpointIdx   int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
+	ReplaceMethod int `range:"0-5" description:"HTTP Method index (filtered, excluding original method)"`
 }
 
 func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -535,7 +535,10 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 	}
 
 	duration := pointer.String(strconv.Itoa(s.Duration) + "m")
-	newMethod := GetHTTPMethodName(s.ReplaceMethod)
+
+	// Get filtered method excluding the original endpoint method
+	filteredMethod := GetFilteredHTTPMethodByIndex(endpoint.Method, s.ReplaceMethod)
+	newMethod := GetHTTPMethodName(filteredMethod)
 
 	// Create options with endpoint-specific values
 	optss := []chaos.OptHTTPChaos{

@@ -37,6 +37,46 @@ func GetHTTPMethodName(method HTTPMethod) string {
 	return "GET" // Default to GET
 }
 
+// GetFilteredHTTPMethods returns HTTP methods excluding the specified original method
+func GetFilteredHTTPMethods(originalMethod string) []HTTPMethod {
+	var filtered []HTTPMethod
+
+	for method, name := range httpMethodMap {
+		if name != originalMethod {
+			filtered = append(filtered, method)
+		}
+	}
+
+	// Sort to ensure consistent ordering
+	// Manual sort since we have a small, fixed set
+	var sorted []HTTPMethod
+	methodOrder := []HTTPMethod{GET, POST, PUT, DELETE, HEAD, OPTIONS, PATCH}
+
+	for _, orderedMethod := range methodOrder {
+		for _, filteredMethod := range filtered {
+			if orderedMethod == filteredMethod {
+				sorted = append(sorted, filteredMethod)
+				break
+			}
+		}
+	}
+
+	return sorted
+}
+
+// GetFilteredHTTPMethodByIndex returns the HTTP method at the given index from filtered list
+func GetFilteredHTTPMethodByIndex(originalMethod string, index int) HTTPMethod {
+	filtered := GetFilteredHTTPMethods(originalMethod)
+	if index >= 0 && index < len(filtered) {
+		return filtered[index]
+	}
+	// Return first available method as fallback
+	if len(filtered) > 0 {
+		return filtered[0]
+	}
+	return GET // Ultimate fallback
+}
+
 // HTTP Status Codes for replace
 type HTTPStatusCode int
 
