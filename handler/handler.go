@@ -391,6 +391,7 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 	result := make(map[string]any, instanceValue.NumField())
 
 	var prefix string
+	var endpointMethod string
 	for i := range instanceValue.NumField() {
 		if instanceType.Field(i).Name == KeyNamespace {
 			index, err := getIntValue(instanceValue.Field(i))
@@ -441,6 +442,9 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 				}
 
 				value = endpoints[index]
+
+				endpointMethod = endpoints[index].Method
+
 			case KeyNetworkPair:
 				networkpairs, err := resourcelookup.GetAllNetworkPairs()
 				if err != nil {
@@ -492,6 +496,10 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 			result[key] = value
 			if key == "direction" {
 				result[key] = directionMap[int(value)]
+			} else if key == "replace_method" && endpointMethod != "" {
+				// Get the actual HTTP method name for replace_method
+				filteredMethod := GetFilteredHTTPMethodByIndex(endpointMethod, int(value))
+				result[key] = GetHTTPMethodName(filteredMethod)
 			}
 		}
 	}
