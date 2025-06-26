@@ -150,6 +150,40 @@ var ChaosTypeMap = map[ChaosType]string{
 	JVMMySQLException:        "JVMMySQLException",
 }
 
+var ChaosNameMap = map[string]ChaosType{
+	"PodKill":                  PodKill,
+	"PodFailure":               PodFailure,
+	"ContainerKill":            ContainerKill,
+	"MemoryStress":             MemoryStress,
+	"CPUStress":                CPUStress,
+	"HTTPRequestAbort":         HTTPRequestAbort,
+	"HTTPResponseAbort":        HTTPResponseAbort,
+	"HTTPRequestDelay":         HTTPRequestDelay,
+	"HTTPResponseDelay":        HTTPResponseDelay,
+	"HTTPResponseReplaceBody":  HTTPResponseReplaceBody,
+	"HTTPResponsePatchBody":    HTTPResponsePatchBody,
+	"HTTPRequestReplacePath":   HTTPRequestReplacePath,
+	"HTTPRequestReplaceMethod": HTTPRequestReplaceMethod,
+	"HTTPResponseReplaceCode":  HTTPResponseReplaceCode,
+	"DNSError":                 DNSError,
+	"DNSRandom":                DNSRandom,
+	"TimeSkew":                 TimeSkew,
+	"NetworkDelay":             NetworkDelay,
+	"NetworkLoss":              NetworkLoss,
+	"NetworkDuplicate":         NetworkDuplicate,
+	"NetworkCorrupt":           NetworkCorrupt,
+	"NetworkBandwidth":         NetworkBandwidth,
+	"NetworkPartition":         NetworkPartition,
+	"JVMLatency":               JVMLatency,
+	"JVMReturn":                JVMReturn,
+	"JVMException":             JVMException,
+	"JVMGarbageCollector":      JVMGarbageCollector,
+	"JVMCPUStress":             JVMCPUStress,
+	"JVMMemoryStress":          JVMMemoryStress,
+	"JVMMySQLLatency":          JVMMySQLLatency,
+	"JVMMySQLException":        JVMMySQLException,
+}
+
 // GetChaosTypeName 根据 ChaosType 获取名称
 func GetChaosTypeName(c ChaosType) string {
 	if name, ok := ChaosTypeMap[c]; ok {
