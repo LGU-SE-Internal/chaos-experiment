@@ -269,6 +269,22 @@ func TestHTTPRequestReplaceMethodDisplayConfig(t *testing.T) {
 	pp.Println(displayConfig)
 }
 
+func TestGetResources(t *testing.T) {
+	targetCount := 6
+	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	resourceMap, err := GetAllResources()
+	if err != nil {
+		t.Errorf("GetAllResources failed: %v", err)
+		return
+	}
+
+	pp.Println(resourceMap)
+}
+
 func readJSONFile(filename, key string) ([]map[string]any, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {

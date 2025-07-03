@@ -43,7 +43,7 @@ func InitTargetConfig(namespaceTargetMap map[string]int, targetLabelKey string) 
 	TargetLabelKey = targetLabelKey
 	namespacePrefixs := make([]string, 0, len(namespaceTargetMap))
 	for ns, count := range namespaceTargetMap {
-		for i := DefaultStartIndex; i < count; i++ {
+		for i := range count {
 			namespace := fmt.Sprintf("%s%d", ns, i)
 			_, exists := allNamespaceMap[namespace]
 			if !exists {
@@ -66,6 +66,125 @@ func InitTargetConfig(namespaceTargetMap map[string]int, targetLabelKey string) 
 	}
 
 	return nil
+}
+
+type Pair struct {
+	Source string `json:"source"`
+	Target string `json:"target"`
+}
+
+type Resource struct {
+	AppLabels        []string `json:"app_labels"`
+	JVMAppNames      []string `json:"jvm_app_names"`
+	HTTPAppNames     []string `json:"http_app_names"`
+	NetworkPairs     []Pair   `json:"network_pairs"`
+	DNSAppNames      []string `json:"dns_app_names"`
+	DatabaseAppNames []string `json:"database_app_names"`
+	ContainerNames   []string `json:"container_app_names"`
+}
+
+func GetAllResources() (map[string]Resource, error) {
+	resourceMap := make(map[string]Resource, len(NamespacePrefixs))
+	for _, ns := range NamespacePrefixs {
+		namespace := fmt.Sprintf("%s%d", ns, DefaultStartIndex)
+		appLabels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get app labels for namespace %s: %v", ns, err)
+		}
+
+		methods, err := resourcelookup.GetAllJVMMethods()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get JVM methods: %v", err)
+		}
+
+		jvmAppNames := make([]string, 0, len(methods))
+		for _, method := range methods {
+			if method.AppName != "" {
+				jvmAppNames = append(jvmAppNames, method.AppName)
+			}
+		}
+
+		endpoints, err := resourcelookup.GetAllHTTPEndpoints()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get HTTP endpoints: %v", err)
+		}
+
+		httpAppNames := make([]string, 0, len(endpoints))
+		for _, endpoint := range endpoints {
+			if endpoint.AppName != "" {
+				httpAppNames = append(httpAppNames, endpoint.AppName)
+			}
+		}
+
+		pairs, err := resourcelookup.GetAllNetworkPairs()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get network pairs: %v", err)
+		}
+
+		networkPairs := make([]Pair, 0, len(pairs))
+		for _, pair := range pairs {
+			if pair.SourceService != "" && pair.TargetService != "" {
+				networkPairs = append(networkPairs, Pair{
+					Source: pair.SourceService,
+					Target: pair.TargetService,
+				})
+			}
+		}
+
+		dnsEndpoints, err := resourcelookup.GetAllDNSEndpoints()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get DNS endpoints: %v", err)
+		}
+
+		dnsAppNames := make([]string, 0, len(dnsEndpoints))
+		for _, endpoint := range dnsEndpoints {
+			if endpoint.AppName != "" {
+				dnsAppNames = append(dnsAppNames, endpoint.AppName)
+			}
+		}
+
+		operations, err := resourcelookup.GetAllDatabaseOperations()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get database operations: %v", err)
+		}
+
+		databaseAppNames := make([]string, 0, len(operations))
+		for _, operation := range operations {
+			if operation.AppName != "" {
+				databaseAppNames = append(databaseAppNames, operation.AppName)
+			}
+		}
+
+		containers, err := resourcelookup.GetAllContainers(namespace)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get containers for namespace %s: %v", ns, err)
+		}
+
+		containerNames := make([]string, 0, len(containers))
+		for _, container := range containers {
+			if container.AppLabel != "" {
+				containerNames = append(containerNames, container.AppLabel)
+			}
+		}
+
+		jvmAppNames = utils.RemoveDuplicates(jvmAppNames)
+		httpAppNames = utils.RemoveDuplicates(httpAppNames)
+		dnsAppNames = utils.RemoveDuplicates(dnsAppNames)
+		databaseAppNames = utils.RemoveDuplicates(databaseAppNames)
+		containerNames = utils.RemoveDuplicates(containerNames)
+
+		resourceMap[ns] = Resource{
+			AppLabels:        appLabels,
+			JVMAppNames:      jvmAppNames,
+			HTTPAppNames:     httpAppNames,
+			NetworkPairs:     networkPairs,
+			DNSAppNames:      dnsAppNames,
+			DatabaseAppNames: databaseAppNames,
+			ContainerNames:   containerNames,
+		}
+	}
+
+	return resourceMap, nil
 }
 
 const (
