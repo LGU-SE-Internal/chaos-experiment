@@ -99,9 +99,7 @@ func GetAllResources() (map[string]Resource, error) {
 
 		jvmAppNames := make([]string, 0, len(methods))
 		for _, method := range methods {
-			if method.AppName != "" {
-				jvmAppNames = append(jvmAppNames, method.AppName)
-			}
+			jvmAppNames = append(jvmAppNames, method.AppName)
 		}
 
 		endpoints, err := resourcelookup.GetAllHTTPEndpoints()
@@ -111,9 +109,7 @@ func GetAllResources() (map[string]Resource, error) {
 
 		httpAppNames := make([]string, 0, len(endpoints))
 		for _, endpoint := range endpoints {
-			if endpoint.AppName != "" {
-				httpAppNames = append(httpAppNames, endpoint.AppName)
-			}
+			httpAppNames = append(httpAppNames, endpoint.AppName)
 		}
 
 		pairs, err := resourcelookup.GetAllNetworkPairs()
@@ -123,12 +119,10 @@ func GetAllResources() (map[string]Resource, error) {
 
 		networkPairs := make([]Pair, 0, len(pairs))
 		for _, pair := range pairs {
-			if pair.SourceService != "" && pair.TargetService != "" {
-				networkPairs = append(networkPairs, Pair{
-					Source: pair.SourceService,
-					Target: pair.TargetService,
-				})
-			}
+			networkPairs = append(networkPairs, Pair{
+				Source: pair.SourceService,
+				Target: pair.TargetService,
+			})
 		}
 
 		dnsEndpoints, err := resourcelookup.GetAllDNSEndpoints()
@@ -138,9 +132,7 @@ func GetAllResources() (map[string]Resource, error) {
 
 		dnsAppNames := make([]string, 0, len(dnsEndpoints))
 		for _, endpoint := range dnsEndpoints {
-			if endpoint.AppName != "" {
-				dnsAppNames = append(dnsAppNames, endpoint.AppName)
-			}
+			dnsAppNames = append(dnsAppNames, endpoint.AppName)
 		}
 
 		operations, err := resourcelookup.GetAllDatabaseOperations()
@@ -150,9 +142,7 @@ func GetAllResources() (map[string]Resource, error) {
 
 		databaseAppNames := make([]string, 0, len(operations))
 		for _, operation := range operations {
-			if operation.AppName != "" {
-				databaseAppNames = append(databaseAppNames, operation.AppName)
-			}
+			databaseAppNames = append(databaseAppNames, operation.AppName)
 		}
 
 		containers, err := resourcelookup.GetAllContainers(namespace)
@@ -162,9 +152,7 @@ func GetAllResources() (map[string]Resource, error) {
 
 		containerNames := make([]string, 0, len(containers))
 		for _, container := range containers {
-			if container.AppLabel != "" {
-				containerNames = append(containerNames, container.AppLabel)
-			}
+			containerNames = append(containerNames, container.AppLabel)
 		}
 
 		jvmAppNames = utils.RemoveDuplicates(jvmAppNames)

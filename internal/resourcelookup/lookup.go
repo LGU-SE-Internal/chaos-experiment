@@ -305,11 +305,13 @@ func GetAllContainers(namespace string) ([]ContainerInfo, error) {
 
 	result := make([]ContainerInfo, 0, len(containers))
 	for _, c := range containers {
-		result = append(result, ContainerInfo{
-			PodName:       c["podName"],
-			AppLabel:      c["appLabel"],
-			ContainerName: c["containerName"],
-		})
+		if c["appLabel"] != "" {
+			result = append(result, ContainerInfo{
+				PodName:       c["podName"],
+				AppLabel:      c["appLabel"],
+				ContainerName: c["containerName"],
+			})
+		}
 	}
 
 	// Sort by app label for consistency
