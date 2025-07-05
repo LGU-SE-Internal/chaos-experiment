@@ -10,14 +10,14 @@ const (
 )
 
 const (
-	KeyNamespace   = "Namespace"
-	KeyApp         = "AppIdx"
-	KeyMethod      = "MethodIdx"
-	KeyEndpoint    = "EndpointIdx"
-	KeyNetworkPair = "NetworkPairIdx"
-	KeyContainer   = "ContainerIdx"
-	KeyDNSEndpoint = "DNSEndpointIdx"
-	KeyDatabase    = "DatabaseIdx"
+	keyNamespace   = "Namespace"
+	keyApp         = "AppIdx"
+	keyMethod      = "MethodIdx"
+	keyEndpoint    = "EndpointIdx"
+	keyNetworkPair = "NetworkPairIdx"
+	keyContainer   = "ContainerIdx"
+	keyDNSEndpoint = "DNSEndpointIdx"
+	keyDatabase    = "DatabaseIdx"
 )
 
 const (

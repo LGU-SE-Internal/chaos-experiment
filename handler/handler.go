@@ -68,123 +68,6 @@ func InitTargetConfig(namespaceTargetMap map[string]int, targetLabelKey string) 
 	return nil
 }
 
-type Pair struct {
-	Source string `json:"source"`
-	Target string `json:"target"`
-}
-
-type Resources struct {
-	AppLabels        []string `json:"app_labels"`
-	JVMAppNames      []string `json:"jvm_app_names"`
-	HTTPAppNames     []string `json:"http_app_names"`
-	NetworkPairs     []Pair   `json:"network_pairs"`
-	DNSAppNames      []string `json:"dns_app_names"`
-	DatabaseAppNames []string `json:"database_app_names"`
-	ContainerNames   []string `json:"container_names"`
-}
-
-var KeyResourceMap = map[string]string{
-	KeyApp:         "app_labels",
-	KeyMethod:      "jvm_app_names",
-	KeyEndpoint:    "http_app_names",
-	KeyNetworkPair: "network_pairs",
-	KeyDNSEndpoint: "dns_app_names",
-	KeyDatabase:    "database_app_names",
-	KeyContainer:   "container_names",
-}
-
-func GetNsResources() (map[string]Resources, error) {
-	resourceMap := make(map[string]Resources, len(NamespacePrefixs))
-	for _, ns := range NamespacePrefixs {
-		namespace := fmt.Sprintf("%s%d", ns, DefaultStartIndex)
-		appLabels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get app labels for namespace %s: %v", ns, err)
-		}
-
-		methods, err := resourcelookup.GetAllJVMMethods()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get JVM methods: %v", err)
-		}
-
-		jvmAppNames := make([]string, 0, len(methods))
-		for _, method := range methods {
-			jvmAppNames = append(jvmAppNames, method.AppName)
-		}
-
-		endpoints, err := resourcelookup.GetAllHTTPEndpoints()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get HTTP endpoints: %v", err)
-		}
-
-		httpAppNames := make([]string, 0, len(endpoints))
-		for _, endpoint := range endpoints {
-			httpAppNames = append(httpAppNames, endpoint.AppName)
-		}
-
-		pairs, err := resourcelookup.GetAllNetworkPairs()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get network pairs: %v", err)
-		}
-
-		networkPairs := make([]Pair, 0, len(pairs))
-		for _, pair := range pairs {
-			networkPairs = append(networkPairs, Pair{
-				Source: pair.SourceService,
-				Target: pair.TargetService,
-			})
-		}
-
-		dnsEndpoints, err := resourcelookup.GetAllDNSEndpoints()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get DNS endpoints: %v", err)
-		}
-
-		dnsAppNames := make([]string, 0, len(dnsEndpoints))
-		for _, endpoint := range dnsEndpoints {
-			dnsAppNames = append(dnsAppNames, endpoint.AppName)
-		}
-
-		operations, err := resourcelookup.GetAllDatabaseOperations()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get database operations: %v", err)
-		}
-
-		databaseAppNames := make([]string, 0, len(operations))
-		for _, operation := range operations {
-			databaseAppNames = append(databaseAppNames, operation.AppName)
-		}
-
-		containers, err := resourcelookup.GetAllContainers(namespace)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get containers for namespace %s: %v", ns, err)
-		}
-
-		containerNames := make([]string, 0, len(containers))
-		for _, container := range containers {
-			containerNames = append(containerNames, container.AppLabel)
-		}
-
-		jvmAppNames = utils.RemoveDuplicates(jvmAppNames)
-		httpAppNames = utils.RemoveDuplicates(httpAppNames)
-		dnsAppNames = utils.RemoveDuplicates(dnsAppNames)
-		databaseAppNames = utils.RemoveDuplicates(databaseAppNames)
-		containerNames = utils.RemoveDuplicates(containerNames)
-
-		resourceMap[ns] = Resources{
-			AppLabels:        appLabels,
-			JVMAppNames:      jvmAppNames,
-			HTTPAppNames:     httpAppNames,
-			NetworkPairs:     networkPairs,
-			DNSAppNames:      dnsAppNames,
-			DatabaseAppNames: databaseAppNames,
-			ContainerNames:   containerNames,
-		}
-	}
-
-	return resourceMap, nil
-}
-
 const (
 	// PodChaos
 	PodKill ChaosType = iota
@@ -510,7 +393,7 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 	var prefix string
 	var endpointMethod string
 	for i := range instanceValue.NumField() {
-		if instanceType.Field(i).Name == KeyNamespace {
+		if instanceType.Field(i).Name == keyNamespace {
 			index, err := getIntValue(instanceValue.Field(i))
 			if err != nil {
 				return nil, err
@@ -537,7 +420,7 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 			result[key] = prefix
 		case 2:
 			switch instanceType.Field(i).Name {
-			case KeyApp:
+			case keyApp:
 				namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
 				labels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
 				if err != nil || len(labels) == 0 {
@@ -545,14 +428,14 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 				}
 
 				value = map[string]any{"app_name": labels[index]}
-			case KeyMethod:
+			case keyMethod:
 				methods, err := resourcelookup.GetAllJVMMethods()
 				if err != nil {
 					return nil, err
 				}
 
 				value = methods[index]
-			case KeyEndpoint:
+			case keyEndpoint:
 				endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 				if err != nil {
 					return nil, err
@@ -562,14 +445,14 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 
 				endpointMethod = endpoints[index].Method
 
-			case KeyNetworkPair:
+			case keyNetworkPair:
 				networkpairs, err := resourcelookup.GetAllNetworkPairs()
 				if err != nil {
 					return nil, err
 				}
 
 				value = networkpairs[index]
-			case KeyContainer:
+			case keyContainer:
 				namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
 				containers, err := resourcelookup.GetAllContainers(namespace)
 				if err != nil {
@@ -577,14 +460,14 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 				}
 
 				value = containers[index]
-			case KeyDNSEndpoint:
+			case keyDNSEndpoint:
 				endpoints, err := resourcelookup.GetAllDNSEndpoints()
 				if err != nil {
 					return nil, err
 				}
 
 				value = endpoints[index]
-			case KeyDatabase:
+			case keyDatabase:
 				operations, err := resourcelookup.GetAllDatabaseOperations()
 				if err != nil {
 					return nil, err
@@ -645,4 +528,157 @@ func getIntValue(field reflect.Value) (int64, error) {
 	default:
 		return 0, fmt.Errorf("unsupported field type: %v", field.Kind())
 	}
+}
+
+type Pair struct {
+	Source string `json:"source"`
+	Target string `json:"target"`
+}
+
+type Resources struct {
+	AppLabels        []string `json:"app_labels"`
+	JVMAppNames      []string `json:"jvm_app_names"`
+	HTTPAppNames     []string `json:"http_app_names"`
+	NetworkPairs     []Pair   `json:"network_pairs"`
+	DNSAppNames      []string `json:"dns_app_names"`
+	DatabaseAppNames []string `json:"database_app_names"`
+	ContainerNames   []string `json:"container_names"`
+}
+
+type ResourceField struct {
+	IndexName string `json:"index_name"`
+	Name      string `json:"name"`
+}
+
+var keyResourceMap = map[string]string{
+	keyApp:         "app_labels",
+	keyMethod:      "jvm_app_names",
+	keyEndpoint:    "http_app_names",
+	keyNetworkPair: "network_pairs",
+	keyDNSEndpoint: "dns_app_names",
+	keyDatabase:    "database_app_names",
+	keyContainer:   "container_names",
+}
+
+func GetNsResources() (map[string]Resources, error) {
+	resourceMap := make(map[string]Resources, len(NamespacePrefixs))
+	for _, ns := range NamespacePrefixs {
+		namespace := fmt.Sprintf("%s%d", ns, DefaultStartIndex)
+		appLabels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get app labels for namespace %s: %v", ns, err)
+		}
+
+		methods, err := resourcelookup.GetAllJVMMethods()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get JVM methods: %v", err)
+		}
+
+		jvmAppNames := make([]string, 0, len(methods))
+		for _, method := range methods {
+			jvmAppNames = append(jvmAppNames, method.AppName)
+		}
+
+		endpoints, err := resourcelookup.GetAllHTTPEndpoints()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get HTTP endpoints: %v", err)
+		}
+
+		httpAppNames := make([]string, 0, len(endpoints))
+		for _, endpoint := range endpoints {
+			httpAppNames = append(httpAppNames, endpoint.AppName)
+		}
+
+		pairs, err := resourcelookup.GetAllNetworkPairs()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get network pairs: %v", err)
+		}
+
+		networkPairs := make([]Pair, 0, len(pairs))
+		for _, pair := range pairs {
+			networkPairs = append(networkPairs, Pair{
+				Source: pair.SourceService,
+				Target: pair.TargetService,
+			})
+		}
+
+		dnsEndpoints, err := resourcelookup.GetAllDNSEndpoints()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get DNS endpoints: %v", err)
+		}
+
+		dnsAppNames := make([]string, 0, len(dnsEndpoints))
+		for _, endpoint := range dnsEndpoints {
+			dnsAppNames = append(dnsAppNames, endpoint.AppName)
+		}
+
+		operations, err := resourcelookup.GetAllDatabaseOperations()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get database operations: %v", err)
+		}
+
+		databaseAppNames := make([]string, 0, len(operations))
+		for _, operation := range operations {
+			databaseAppNames = append(databaseAppNames, operation.AppName)
+		}
+
+		containers, err := resourcelookup.GetAllContainers(namespace)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get containers for namespace %s: %v", ns, err)
+		}
+
+		containerNames := make([]string, 0, len(containers))
+		for _, container := range containers {
+			containerNames = append(containerNames, container.AppLabel)
+		}
+
+		jvmAppNames = utils.RemoveDuplicates(jvmAppNames)
+		httpAppNames = utils.RemoveDuplicates(httpAppNames)
+		dnsAppNames = utils.RemoveDuplicates(dnsAppNames)
+		databaseAppNames = utils.RemoveDuplicates(databaseAppNames)
+		containerNames = utils.RemoveDuplicates(containerNames)
+
+		resourceMap[ns] = Resources{
+			AppLabels:        appLabels,
+			JVMAppNames:      jvmAppNames,
+			HTTPAppNames:     httpAppNames,
+			NetworkPairs:     networkPairs,
+			DNSAppNames:      dnsAppNames,
+			DatabaseAppNames: databaseAppNames,
+			ContainerNames:   containerNames,
+		}
+	}
+
+	return resourceMap, nil
+}
+
+func GetChaosResourceMap() (map[string]ResourceField, error) {
+	injectionConfType := reflect.TypeOf(InjectionConf{})
+
+	result := make(map[string]ResourceField, injectionConfType.NumField())
+	for i := 0; i < injectionConfType.NumField(); i++ {
+		field := injectionConfType.Field(i)
+		fieldName := field.Name
+		fieldType := field.Type
+
+		if fieldType.Kind() == reflect.Ptr {
+			elemType := fieldType.Elem()
+			if elemType.NumField() >= 3 {
+				resourceIndexName := elemType.Field(2).Name
+				resourceKey, exists := keyResourceMap[resourceIndexName]
+				if !exists {
+					return nil, fmt.Errorf("unknown resource index name: %s", resourceIndexName)
+				}
+
+				result[fieldName] = ResourceField{
+					IndexName: resourceIndexName,
+					Name:      resourceKey,
+				}
+			} else {
+				return nil, fmt.Errorf("field %s does not have enough fields", fieldName)
+			}
+		}
+	}
+
+	return result, nil
 }

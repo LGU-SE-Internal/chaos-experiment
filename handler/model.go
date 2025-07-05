@@ -198,7 +198,7 @@ func buildFieldNode(field reflect.StructField, rootNode *Node) (*Node, error) {
 
 	value := ValueNotSet
 	description := field.Tag.Get("description")
-	if field.Name == KeyNamespace {
+	if field.Name == keyNamespace {
 		namespacePrefixMap := make(map[string]int, len(NamespacePrefixs))
 		for idx, ns := range NamespacePrefixs {
 			namespacePrefixMap[ns] = idx
@@ -392,7 +392,7 @@ func assignBasicType(field reflect.StructField, val reflect.Value, node, rootNod
 			field.Name, node.Value, start, end)
 	}
 
-	if field.Name == KeyNamespace {
+	if field.Name == keyNamespace {
 		if node.Value >= len(NamespacePrefixs) {
 			return fmt.Errorf("field '%s': namespace index %d exceeds available namespaces count %d",
 				field.Name, node.Value, len(NamespacePrefixs))
@@ -416,13 +416,13 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 	dyn := field.Tag.Get("dynamic")
 	if dyn == "true" {
 		switch field.Name {
-		case KeyNamespace:
+		case keyNamespace:
 			start = DefaultStartIndex
 			end = len(NamespacePrefixs) - 1
-		case KeyApp:
+		case keyApp:
 			prefix, ok := NodeNsPrefixMap[rootNode]
 			if !ok {
-				return 0, 0, fmt.Errorf("failed to get namespace prefix in %s", KeyApp)
+				return 0, 0, fmt.Errorf("failed to get namespace prefix in %s", keyApp)
 			}
 
 			namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
@@ -433,7 +433,7 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 
 			start = DefaultStartIndex
 			end = len(values) - 1
-		case KeyMethod:
+		case keyMethod:
 			// For flattened JVM methods
 			methods, err := resourcelookup.GetAllJVMMethods()
 			if err != nil {
@@ -442,7 +442,7 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 
 			start = DefaultStartIndex
 			end = len(methods) - 1
-		case KeyEndpoint:
+		case keyEndpoint:
 			// For flattened HTTP endpoints
 			endpoints, err := resourcelookup.GetAllHTTPEndpoints()
 			if err != nil {
@@ -451,7 +451,7 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 
 			start = DefaultStartIndex
 			end = len(endpoints) - 1
-		case KeyNetworkPair:
+		case keyNetworkPair:
 			// For flattened network pairs
 			pairs, err := resourcelookup.GetAllNetworkPairs()
 			if err != nil {
@@ -460,11 +460,11 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 
 			start = DefaultStartIndex
 			end = len(pairs) - 1
-		case KeyContainer:
+		case keyContainer:
 			// For flattened containers
 			prefix, ok := NodeNsPrefixMap[rootNode]
 			if !ok {
-				return 0, 0, fmt.Errorf("failed to get namespace prefix in %s", KeyContainer)
+				return 0, 0, fmt.Errorf("failed to get namespace prefix in %s", keyContainer)
 			}
 
 			namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
@@ -475,7 +475,7 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 
 			start = DefaultStartIndex
 			end = len(containers) - 1
-		case KeyDNSEndpoint:
+		case keyDNSEndpoint:
 			// For flattened DNS endpoints
 			endpoints, err := resourcelookup.GetAllDNSEndpoints()
 			if err != nil {
@@ -484,7 +484,7 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 
 			start = DefaultStartIndex
 			end = len(endpoints) - 1
-		case KeyDatabase:
+		case keyDatabase:
 			// For flattened database operations
 			dbOps, err := resourcelookup.GetAllDatabaseOperations()
 			if err != nil {
