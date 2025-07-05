@@ -47,8 +47,8 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -106,8 +106,8 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -179,8 +179,8 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -251,8 +251,8 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -299,8 +299,8 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -357,8 +357,8 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, er
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -440,8 +440,8 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -498,8 +498,8 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, 
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()

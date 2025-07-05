@@ -25,8 +25,8 @@ func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()

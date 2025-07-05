@@ -26,8 +26,8 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -79,8 +79,8 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()

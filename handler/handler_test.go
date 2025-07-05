@@ -276,7 +276,7 @@ func TestGetResources(t *testing.T) {
 		return
 	}
 
-	resourceMap, err := GetAllResources()
+	resourceMap, err := GetNsResources()
 	if err != nil {
 		t.Errorf("GetAllResources failed: %v", err)
 		return

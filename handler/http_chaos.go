@@ -27,8 +27,8 @@ func (s *HTTPRequestAbortSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -92,8 +92,8 @@ func (s *HTTPResponseAbortSpec) Create(cli cli.Client, opts ...Option) (string, 
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -158,8 +158,8 @@ func (s *HTTPRequestDelaySpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -224,8 +224,8 @@ func (s *HTTPResponseDelaySpec) Create(cli cli.Client, opts ...Option) (string, 
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -298,8 +298,8 @@ func (s *HTTPResponseReplaceBodySpec) Create(cli cli.Client, opts ...Option) (st
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -368,8 +368,8 @@ func (s *HTTPResponsePatchBodySpec) Create(cli cli.Client, opts ...Option) (stri
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -432,8 +432,8 @@ func (s *HTTPRequestReplacePathSpec) Create(cli cli.Client, opts ...Option) (str
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -498,8 +498,8 @@ func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (s
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -567,8 +567,8 @@ func (s *HTTPResponseReplaceCodeSpec) Create(cli cli.Client, opts ...Option) (st
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()

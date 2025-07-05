@@ -73,18 +73,28 @@ type Pair struct {
 	Target string `json:"target"`
 }
 
-type Resource struct {
+type Resources struct {
 	AppLabels        []string `json:"app_labels"`
 	JVMAppNames      []string `json:"jvm_app_names"`
 	HTTPAppNames     []string `json:"http_app_names"`
 	NetworkPairs     []Pair   `json:"network_pairs"`
 	DNSAppNames      []string `json:"dns_app_names"`
 	DatabaseAppNames []string `json:"database_app_names"`
-	ContainerNames   []string `json:"container_app_names"`
+	ContainerNames   []string `json:"container_names"`
 }
 
-func GetAllResources() (map[string]Resource, error) {
-	resourceMap := make(map[string]Resource, len(NamespacePrefixs))
+var KeyResourceMap = map[string]string{
+	KeyApp:         "app_labels",
+	KeyMethod:      "jvm_app_names",
+	KeyEndpoint:    "http_app_names",
+	KeyNetworkPair: "network_pairs",
+	KeyDNSEndpoint: "dns_app_names",
+	KeyDatabase:    "database_app_names",
+	KeyContainer:   "container_names",
+}
+
+func GetNsResources() (map[string]Resources, error) {
+	resourceMap := make(map[string]Resources, len(NamespacePrefixs))
 	for _, ns := range NamespacePrefixs {
 		namespace := fmt.Sprintf("%s%d", ns, DefaultStartIndex)
 		appLabels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
@@ -161,7 +171,7 @@ func GetAllResources() (map[string]Resource, error) {
 		databaseAppNames = utils.RemoveDuplicates(databaseAppNames)
 		containerNames = utils.RemoveDuplicates(containerNames)
 
-		resourceMap[ns] = Resource{
+		resourceMap[ns] = Resources{
 			AppLabels:        appLabels,
 			JVMAppNames:      jvmAppNames,
 			HTTPAppNames:     httpAppNames,
@@ -300,16 +310,16 @@ func GetChaosTypeName(c ChaosType) string {
 }
 
 type Conf struct {
-	Annoations map[string]string
-	Context    context.Context
-	Labels     map[string]string
-	Namespace  string
+	Annotations map[string]string
+	Context     context.Context
+	Labels      map[string]string
+	Namespace   string
 }
 type Option func(*Conf)
 
 func WithAnnotations(annotations map[string]string) Option {
 	return func(c *Conf) {
-		c.Annoations = annotations
+		c.Annotations = annotations
 	}
 }
 

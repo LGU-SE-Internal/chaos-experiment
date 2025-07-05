@@ -25,8 +25,8 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -71,8 +71,8 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -116,8 +116,8 @@ func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, erro
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()

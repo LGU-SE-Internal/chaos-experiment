@@ -57,8 +57,8 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -111,8 +111,8 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -169,8 +169,8 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -226,8 +226,8 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -283,8 +283,8 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
@@ -341,8 +341,8 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	annotations := make(map[string]string)
-	if conf.Annoations != nil {
-		annotations = conf.Annoations
+	if conf.Annotations != nil {
+		annotations = conf.Annotations
 	}
 
 	ctx := context.Background()
