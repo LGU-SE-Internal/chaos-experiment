@@ -632,12 +632,6 @@ func GetNsResources() (map[string]Resources, error) {
 			containerNames = append(containerNames, container.AppLabel)
 		}
 
-		jvmAppNames = utils.RemoveDuplicates(jvmAppNames)
-		httpAppNames = utils.RemoveDuplicates(httpAppNames)
-		dnsAppNames = utils.RemoveDuplicates(dnsAppNames)
-		databaseAppNames = utils.RemoveDuplicates(databaseAppNames)
-		containerNames = utils.RemoveDuplicates(containerNames)
-
 		resourceMap[ns] = Resources{
 			AppLabels:        appLabels,
 			JVMAppNames:      jvmAppNames,
