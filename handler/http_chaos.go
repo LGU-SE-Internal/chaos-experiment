@@ -488,7 +488,7 @@ type HTTPRequestReplaceMethodSpec struct {
 	Duration      int `range:"1-60" description:"Time Unit Minute"`
 	Namespace     int `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
 	EndpointIdx   int `range:"0-0" dynamic:"true" description:"Flattened HTTP Endpoint Index"`
-	ReplaceMethod int `range:"0-5" description:"HTTP Method index (filtered, excluding original method)"`
+	ReplaceMethod int `range:"0-6" description:"HTTP Method index (filtered, excluding original method)"`
 }
 
 func (s *HTTPRequestReplaceMethodSpec) Create(cli cli.Client, opts ...Option) (string, error) {
