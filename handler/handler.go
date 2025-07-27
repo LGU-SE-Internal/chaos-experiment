@@ -545,6 +545,28 @@ type Resources struct {
 	ContainerNames   []string `json:"container_names"`
 }
 
+func (r *Resources) ToResourceMap() map[string][]string {
+	result := make(map[string][]string)
+
+	result["app_labels"] = r.AppLabels
+	result["jvm_app_names"] = r.JVMAppNames
+	result["http_app_names"] = r.HTTPAppNames
+	result["dns_app_names"] = r.DNSAppNames
+	result["database_app_names"] = r.DatabaseAppNames
+	result["container_names"] = r.ContainerNames
+
+	if len(r.NetworkPairs) > 0 {
+		var networkPairStrings []string
+		for _, pair := range r.NetworkPairs {
+			networkPairStrings = append(networkPairStrings, fmt.Sprintf("%s->%s", pair.Source, pair.Target))
+		}
+
+		result["network_pairs"] = networkPairStrings
+	}
+
+	return result
+}
+
 type ResourceField struct {
 	IndexName string `json:"index_name"`
 	Name      string `json:"name"`
