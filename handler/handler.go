@@ -573,7 +573,7 @@ func (r *Resources) ToDeduplicatedMap() map[string][]string {
 		result[key] = utils.RemoveDuplicates(value)
 	}
 
-	return nil
+	return result
 }
 
 type ResourceField struct {

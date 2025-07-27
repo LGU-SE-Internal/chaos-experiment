@@ -301,6 +301,24 @@ func TestGetChaosResourceMap(t *testing.T) {
 	pp.Println(resourceMap)
 }
 
+func TestGetNsResources(t *testing.T) {
+	targetCount := 6
+	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	resourceMap, err := GetNsResources()
+	if err != nil {
+		t.Errorf("GetNsResources failed: %v", err)
+		return
+	}
+
+	for _, resource := range resourceMap {
+		pp.Println(resource.ToDeduplicatedMap())
+	}
+}
+
 func readJSONFile(filename, key string) ([]map[string]any, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
