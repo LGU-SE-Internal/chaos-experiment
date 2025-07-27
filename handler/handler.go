@@ -545,7 +545,7 @@ type Resources struct {
 	ContainerNames   []string `json:"container_names"`
 }
 
-func (r *Resources) ToResourceMap() map[string][]string {
+func (r *Resources) ToMap() map[string][]string {
 	result := make(map[string][]string)
 
 	result["app_labels"] = r.AppLabels
@@ -565,6 +565,15 @@ func (r *Resources) ToResourceMap() map[string][]string {
 	}
 
 	return result
+}
+
+func (r *Resources) ToDeduplicatedMap() map[string][]string {
+	result := make(map[string][]string)
+	for key, value := range r.ToMap() {
+		result[key] = utils.RemoveDuplicates(value)
+	}
+
+	return nil
 }
 
 type ResourceField struct {
