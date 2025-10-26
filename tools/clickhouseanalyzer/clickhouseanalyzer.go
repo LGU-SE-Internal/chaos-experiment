@@ -36,7 +36,6 @@ type DatabaseOperation struct {
 	DBTable     string
 	Operation   string
 }
-
 // Create materialized view SQL statement
 const createMaterializedViewSQL = `
 CREATE MATERIALIZED VIEW IF NOT EXISTS otel_traces_mv 
@@ -189,7 +188,7 @@ SELECT
     SpanAttributes['db.user'] AS db_user
 FROM otel_traces
 WHERE 
-    ResourceAttributes['service.namespace'] = 'ts'
+    ResourceAttributes['service.namespace'] = 'ts0'
     AND SpanKind IN ('Server', 'Client')
     AND mapExists(
         (k, v) -> (k IS NOT NULL AND k != '') AND (v IS NOT NULL AND v != ''),
@@ -199,7 +198,7 @@ WHERE
 
 // Client query
 const clientTracesQuery = `
-SELECT 
+SELECT DISTINCT
     ServiceName,
     request_method,
     response_status_code,
@@ -214,7 +213,7 @@ ORDER BY version ASC
 
 // Dashboard query
 const dashboardRoutesQuery = `
-SELECT 
+SELECT DISTINCT
     ServiceName,
     request_method,
     response_status_code,
@@ -227,7 +226,7 @@ ORDER BY version ASC
 
 // MySQL operations query
 const mysqlOperationsQuery = `
-SELECT 
+SELECT DISTINCT
     ServiceName,
     db_name,
     db_sql_table,

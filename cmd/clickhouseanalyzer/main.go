@@ -11,11 +11,11 @@ import (
 
 func main() {
 	// Define command-line flags
-	host := flag.String("host", "localhost", "ClickHouse server host")
+	host := flag.String("host", "10.10.10.58", "ClickHouse server host")
 	port := flag.Int("port", 9000, "ClickHouse server port")
 	database := flag.String("database", "default", "ClickHouse database name")
 	username := flag.String("username", "default", "ClickHouse username")
-	password := flag.String("password", "", "ClickHouse password")
+	password := flag.String("password", "password", "ClickHouse password")
 	outputEndpoints := flag.String("output", "", "Path for the generated endpoints Go file (default: internal/serviceendpoints/serviceendpoints.go)")
 	outputDatabase := flag.String("output-db", "", "Path for the generated database operations Go file (default: internal/databaseoperations/databaseoperations.go)")
 	skipView := flag.Bool("skip-view", false, "Skip creating the materialized view")
