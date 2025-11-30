@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 	"github.com/LGU-SE-Internal/chaos-experiment/tools/clickhouseanalyzer"
 )
 
@@ -24,9 +25,14 @@ func main() {
 	skipView := flag.Bool("skip-view", false, "Skip creating the materialized view")
 	flag.Parse()
 
-	// Validate system flag
-	if *system != "ts" && *system != "otel-demo" {
+	// Validate and set the system type using systemconfig
+	systemType, err := systemconfig.ParseSystemType(*system)
+	if err != nil {
 		fmt.Printf("Invalid system: %s. Must be 'ts' or 'otel-demo'\n", *system)
+		os.Exit(1)
+	}
+	if err := systemconfig.SetCurrentSystem(systemType); err != nil {
+		fmt.Printf("Error setting system type: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -67,9 +73,9 @@ func main() {
 	}
 	defer db.Close()
 
-	fmt.Printf("Analyzing system: %s\n", *system)
+	fmt.Printf("Analyzing system: %s\n", systemconfig.GetCurrentSystem())
 
-	if *system == "ts" {
+	if systemconfig.IsTrainTicket() {
 		runTrainTicketAnalysis(db, *outputEndpoints, *outputDatabase, *skipView)
 	} else {
 		runOtelDemoAnalysis(db, *outputEndpoints, *outputDatabase, *outputGRPC, *skipView)
