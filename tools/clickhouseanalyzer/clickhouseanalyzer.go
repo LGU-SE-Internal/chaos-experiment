@@ -31,11 +31,27 @@ type ServiceEndpoint struct {
 
 // DatabaseOperation represents a database operation with its details
 type DatabaseOperation struct {
-	ServiceName string
-	DBName      string
-	DBTable     string
-	Operation   string
+	ServiceName   string
+	DBName        string
+	DBTable       string
+	Operation     string
+	DBSystem      string
+	ServerAddress string
+	ServerPort    string
 }
+
+// GRPCOperation represents a gRPC operation with its details
+type GRPCOperation struct {
+	ServiceName    string
+	RPCSystem      string
+	RPCService     string
+	RPCMethod      string
+	GRPCStatusCode string
+	ServerAddress  string
+	ServerPort     string
+	SpanKind       string
+}
+
 // Create materialized view SQL statement
 const createMaterializedViewSQL = `
 CREATE MATERIALIZED VIEW IF NOT EXISTS otel_traces_mv 
@@ -196,6 +212,111 @@ WHERE
     );
 `
 
+// Create materialized view SQL statement for OpenTelemetry Demo
+const createOtelDemoMaterializedViewSQL = `
+CREATE MATERIALIZED VIEW IF NOT EXISTS otel_demo_traces_mv 
+ENGINE = ReplacingMergeTree(version)
+PARTITION BY toYYYYMM(Timestamp)
+PRIMARY KEY (masked_route, ServiceName, db_name)
+ORDER BY (
+    masked_route,
+    ServiceName,
+    db_name,
+    SpanKind,
+    request_method,
+    response_status_code,
+    server_address,
+    server_port,
+    db_operation,
+    db_sql_table,
+    rpc_system,
+    rpc_service,
+    rpc_method,
+    grpc_status_code
+)
+SETTINGS allow_nullable_key = 1
+POPULATE
+AS 
+WITH 
+    replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/[^?]*)', '\\1') AS path
+SELECT 
+    ResourceAttributes['service.name'] AS ServiceName,
+    4294967295 - toUnixTimestamp(Timestamp) AS version,
+    Timestamp,
+    SpanKind,
+    SpanAttributes['client.address'] AS client_address,
+    SpanAttributes['http.request.method'] AS http_request_method,
+    SpanAttributes['http.response.status_code'] AS http_response_status_code,
+    SpanAttributes['http.route'] AS http_route,
+    SpanAttributes['http.method'] AS http_method,
+    SpanAttributes['url.full'] AS url_full,
+    SpanAttributes['http.status_code'] AS http_status_code,
+    SpanAttributes['http.target'] AS http_target,
+    
+    CASE 
+        WHEN SpanAttributes['http.request.method'] IS NOT NULL AND SpanAttributes['http.request.method'] != '' 
+            THEN SpanAttributes['http.request.method']
+        WHEN SpanAttributes['http.method'] IS NOT NULL AND SpanAttributes['http.method'] != '' 
+            THEN SpanAttributes['http.method']
+        ELSE ''
+    END AS request_method,
+    
+    CASE 
+        WHEN SpanAttributes['http.response.status_code'] IS NOT NULL AND SpanAttributes['http.response.status_code'] != '' 
+            THEN SpanAttributes['http.response.status_code']
+        WHEN SpanAttributes['http.status_code'] IS NOT NULL AND SpanAttributes['http.status_code'] != '' 
+            THEN SpanAttributes['http.status_code']
+        ELSE ''
+    END AS response_status_code,
+    
+    CASE
+        WHEN SpanAttributes['http.route'] IS NOT NULL AND SpanAttributes['http.route'] != ''
+            THEN replaceRegexpAll(SpanAttributes['http.route'], '/[A-Z0-9]{10}', '/*')
+            
+        WHEN SpanAttributes['url.full'] IS NOT NULL AND SpanAttributes['url.full'] != ''
+            THEN 
+                CASE
+                    WHEN match(path, '/api/products/[A-Z0-9]+')
+                        THEN replaceRegexpAll(path, '(/api/products/)[A-Z0-9]+', '\\1*')
+                    WHEN match(path, '/api/recommendations\\?productIds=[A-Z0-9]+')
+                        THEN replaceRegexpAll(path, '(/api/recommendations\\?productIds=)[A-Z0-9]+', '\\1*')
+                    WHEN match(path, '/api/data\\?contextKeys=')
+                        THEN replaceRegexpAll(path, '(/api/data\\?contextKeys=)[^&]+', '\\1*')
+                    WHEN match(path, '/api/data/\\?contextKeys=')
+                        THEN replaceRegexpAll(path, '(/api/data/\\?contextKeys=)[^&]+', '\\1*')
+                    WHEN match(path, '/ofrep/v1/evaluate/flags/')
+                        THEN replaceRegexpAll(path, '(/ofrep/v1/evaluate/flags/)[^/]+', '\\1*')
+                    ELSE path
+                END
+                
+        WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
+            THEN SpanAttributes['http.target']
+        ELSE ''
+    END AS masked_route,
+    
+    SpanAttributes['server.address'] AS server_address,
+    SpanAttributes['server.port'] AS server_port,
+    SpanAttributes['db.connection_string'] AS db_connection_string,
+    SpanAttributes['db.name'] AS db_name,
+    SpanAttributes['db.operation'] AS db_operation,
+    SpanAttributes['db.sql.table'] AS db_sql_table, 
+    SpanAttributes['db.statement'] AS db_statement,
+    SpanAttributes['db.system'] AS db_system,
+    SpanAttributes['db.user'] AS db_user,
+    SpanAttributes['rpc.system'] AS rpc_system,
+    SpanAttributes['rpc.service'] AS rpc_service,
+    SpanAttributes['rpc.method'] AS rpc_method,
+    SpanAttributes['rpc.grpc.status_code'] AS grpc_status_code
+FROM otel_traces
+WHERE 
+	ResourceAttributes['service.namespace'] == 'otel-demo'
+    AND SpanKind IN ('Server', 'Client')
+    AND mapExists(
+        (k, v) -> (k IS NOT NULL AND k != '') AND (v IS NOT NULL AND v != ''),
+        SpanAttributes
+    );
+`
+
 // Client query
 const clientTracesQuery = `
 SELECT DISTINCT
@@ -237,6 +358,72 @@ WHERE db_system = 'mysql'
 ORDER BY version ASC
 `
 
+// HTTP Client traces query for OTel Demo
+const otelDemoHTTPClientTracesQuery = `
+SELECT DISTINCT
+    ServiceName,
+    request_method,
+    response_status_code,
+    masked_route,
+    server_address,
+    server_port
+FROM otel_demo_traces_mv
+FINAL
+WHERE SpanKind = 'Client'
+  AND request_method != ''
+  AND masked_route != ''
+ORDER BY ServiceName, masked_route
+`
+
+// HTTP Server traces query for OTel Demo
+const otelDemoHTTPServerTracesQuery = `
+SELECT DISTINCT
+    ServiceName,
+    request_method,
+    response_status_code,
+    masked_route,
+    server_address,
+    server_port
+FROM otel_demo_traces_mv
+FINAL
+WHERE SpanKind = 'Server'
+  AND request_method != ''
+  AND masked_route != ''
+ORDER BY ServiceName, masked_route
+`
+
+// gRPC operations query for OTel Demo
+const otelDemoGRPCOperationsQuery = `
+SELECT DISTINCT
+    ServiceName,
+    rpc_system,
+    rpc_service,
+    rpc_method,
+    grpc_status_code,
+    server_address,
+    server_port,
+    SpanKind
+FROM otel_demo_traces_mv
+FINAL
+WHERE rpc_system != ''
+  AND rpc_service != ''
+ORDER BY ServiceName, rpc_service, rpc_method
+`
+
+// Database operations query for OTel Demo
+const otelDemoDatabaseOperationsQuery = `
+SELECT DISTINCT
+    ServiceName,
+    db_name,
+    db_sql_table,
+    db_operation,
+    db_system
+FROM otel_demo_traces_mv
+FINAL
+WHERE db_system != ''
+ORDER BY ServiceName, db_name
+`
+
 // ConnectToDB establishes a connection to ClickHouse
 func ConnectToDB(config ClickHouseConfig) (*sql.DB, error) {
 	dsn := fmt.Sprintf("clickhouse://%s:%d/%s?username=%s&password=%s",
@@ -265,6 +452,18 @@ func CreateMaterializedView(db *sql.DB) error {
 
 	if _, err := db.ExecContext(ctx, createMaterializedViewSQL); err != nil {
 		return fmt.Errorf("error creating materialized view: %w", err)
+	}
+
+	return nil
+}
+
+// CreateOtelDemoMaterializedView creates the materialized view for OTel Demo
+func CreateOtelDemoMaterializedView(db *sql.DB) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if _, err := db.ExecContext(ctx, createOtelDemoMaterializedViewSQL); err != nil {
+		return fmt.Errorf("error creating OTel Demo materialized view: %w", err)
 	}
 
 	return nil
@@ -403,6 +602,205 @@ func QueryMySQLOperations(db *sql.DB) ([]DatabaseOperation, error) {
 	return results, nil
 }
 
+// QueryOtelDemoHTTPClientTraces retrieves HTTP client traces for OTel Demo
+func QueryOtelDemoHTTPClientTraces(db *sql.DB) ([]ServiceEndpoint, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	rows, err := db.QueryContext(ctx, otelDemoHTTPClientTracesQuery)
+	if err != nil {
+		return nil, fmt.Errorf("error querying OTel Demo HTTP client traces: %w", err)
+	}
+	defer rows.Close()
+
+	var results []ServiceEndpoint
+	for rows.Next() {
+		var endpoint ServiceEndpoint
+		var serverAddr, serverPort sql.NullString
+
+		if err := rows.Scan(
+			&endpoint.ServiceName,
+			&endpoint.RequestMethod,
+			&endpoint.ResponseStatus,
+			&endpoint.Route,
+			&serverAddr,
+			&serverPort,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		if serverAddr.Valid {
+			endpoint.ServerAddress = serverAddr.String
+		}
+		if serverPort.Valid {
+			endpoint.ServerPort = serverPort.String
+		}
+
+		// Map empty server address to service based on route
+		if endpoint.ServerAddress == "" {
+			mapOtelDemoRouteToService(&endpoint)
+		}
+
+		results = append(results, endpoint)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return results, nil
+}
+
+// QueryOtelDemoHTTPServerTraces retrieves HTTP server traces for OTel Demo
+func QueryOtelDemoHTTPServerTraces(db *sql.DB) ([]ServiceEndpoint, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	rows, err := db.QueryContext(ctx, otelDemoHTTPServerTracesQuery)
+	if err != nil {
+		return nil, fmt.Errorf("error querying OTel Demo HTTP server traces: %w", err)
+	}
+	defer rows.Close()
+
+	var results []ServiceEndpoint
+	for rows.Next() {
+		var endpoint ServiceEndpoint
+		var serverAddr, serverPort sql.NullString
+
+		if err := rows.Scan(
+			&endpoint.ServiceName,
+			&endpoint.RequestMethod,
+			&endpoint.ResponseStatus,
+			&endpoint.Route,
+			&serverAddr,
+			&serverPort,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		if serverAddr.Valid {
+			endpoint.ServerAddress = serverAddr.String
+		}
+		if serverPort.Valid {
+			endpoint.ServerPort = serverPort.String
+		}
+
+		results = append(results, endpoint)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return results, nil
+}
+
+// QueryOtelDemoGRPCOperations retrieves gRPC operations for OTel Demo
+func QueryOtelDemoGRPCOperations(db *sql.DB) ([]GRPCOperation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	rows, err := db.QueryContext(ctx, otelDemoGRPCOperationsQuery)
+	if err != nil {
+		return nil, fmt.Errorf("error querying OTel Demo gRPC operations: %w", err)
+	}
+	defer rows.Close()
+
+	var results []GRPCOperation
+	for rows.Next() {
+		var operation GRPCOperation
+		var serverAddr, serverPort, grpcStatus sql.NullString
+
+		if err := rows.Scan(
+			&operation.ServiceName,
+			&operation.RPCSystem,
+			&operation.RPCService,
+			&operation.RPCMethod,
+			&grpcStatus,
+			&serverAddr,
+			&serverPort,
+			&operation.SpanKind,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		if serverAddr.Valid {
+			operation.ServerAddress = serverAddr.String
+		}
+		if serverPort.Valid {
+			operation.ServerPort = serverPort.String
+		}
+		if grpcStatus.Valid {
+			operation.GRPCStatusCode = grpcStatus.String
+		}
+
+		// Map empty server address to service based on RPC service
+		if operation.ServerAddress == "" {
+			mapOtelDemoGRPCToService(&operation)
+		}
+
+		results = append(results, operation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return results, nil
+}
+
+// QueryOtelDemoDatabaseOperations retrieves database operations for OTel Demo
+func QueryOtelDemoDatabaseOperations(db *sql.DB) ([]DatabaseOperation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	rows, err := db.QueryContext(ctx, otelDemoDatabaseOperationsQuery)
+	if err != nil {
+		return nil, fmt.Errorf("error querying OTel Demo database operations: %w", err)
+	}
+	defer rows.Close()
+
+	var results []DatabaseOperation
+	for rows.Next() {
+		var operation DatabaseOperation
+		var dbName, dbTable, dbOperation, dbSystem sql.NullString
+
+		if err := rows.Scan(
+			&operation.ServiceName,
+			&dbName,
+			&dbTable,
+			&dbOperation,
+			&dbSystem,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		if dbName.Valid {
+			operation.DBName = dbName.String
+		}
+		if dbTable.Valid {
+			operation.DBTable = dbTable.String
+		}
+		if dbOperation.Valid {
+			operation.Operation = dbOperation.String
+		}
+		if dbSystem.Valid {
+			operation.DBSystem = dbSystem.String
+		}
+
+		// Map database system to server address and port
+		mapOtelDemoDatabaseToService(&operation)
+
+		results = append(results, operation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return results, nil
+}
+
 // mapRouteToService maps a route to a service based on Caddy rules
 func mapRouteToService(endpoint *ServiceEndpoint) {
 	// Default to RabbitMQ if we can't determine service
@@ -474,5 +872,88 @@ func mapRouteToService(endpoint *ServiceEndpoint) {
 		service := routeMap[longestPrefix]
 		endpoint.ServerAddress = service.service
 		endpoint.ServerPort = service.port
+	}
+}
+
+// mapOtelDemoRouteToService maps routes to services for OTel Demo
+func mapOtelDemoRouteToService(endpoint *ServiceEndpoint) {
+	route := endpoint.Route
+
+	// Map based on route patterns
+	routeMap := map[string]struct {
+		service string
+		port    string
+	}{
+		"/api/products":            {"product-catalog", "8080"},
+		"/api/cart":                {"cart", "8080"},
+		"/api/checkout":            {"checkout", "8080"},
+		"/api/recommendations":     {"recommendation", "8080"},
+		"/api/data":                {"frontend", "8080"},
+		"/ship-order":              {"shipping", "8080"},
+		"/get-quote":               {"shipping", "8080"},
+		"/getquote":                {"quote", "8080"},
+		"/send_order_confirmation": {"email", "8080"},
+		"/ofrep/v1/evaluate":       {"flagd", "8016"},
+		"/status":                  {"image-provider", "8080"},
+	}
+
+	for prefix, service := range routeMap {
+		if strings.HasPrefix(route, prefix) {
+			endpoint.ServerAddress = service.service
+			endpoint.ServerPort = service.port
+			return
+		}
+	}
+
+	// Default to frontend-proxy
+	endpoint.ServerAddress = "frontend-proxy"
+	endpoint.ServerPort = "8080"
+}
+
+// mapOtelDemoGRPCToService maps gRPC services to server addresses for OTel Demo
+func mapOtelDemoGRPCToService(operation *GRPCOperation) {
+	rpcService := operation.RPCService
+
+	// Map RPC service to actual service
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		"oteldemo.AdService":             {"ad", "8080"},
+		"oteldemo.CartService":           {"cart", "8080"},
+		"oteldemo.CheckoutService":       {"checkout", "8080"},
+		"oteldemo.CurrencyService":       {"currency", "8080"},
+		"oteldemo.PaymentService":        {"payment", "8080"},
+		"oteldemo.ProductCatalogService": {"product-catalog", "8080"},
+		"oteldemo.RecommendationService": {"recommendation", "8080"},
+		"flagd.evaluation.v1.Service":    {"flagd", "8013"},
+	}
+
+	if service, exists := serviceMap[rpcService]; exists {
+		operation.ServerAddress = service.service
+		operation.ServerPort = service.port
+		return
+	}
+
+	// Default - keep empty or use service name
+	operation.ServerAddress = ""
+	operation.ServerPort = ""
+}
+
+// mapOtelDemoDatabaseToService maps database systems to server addresses for OTel Demo
+func mapOtelDemoDatabaseToService(operation *DatabaseOperation) {
+	switch operation.DBSystem {
+	case "postgresql":
+		operation.ServerAddress = "postgresql"
+		operation.ServerPort = "5432"
+	case "redis":
+		operation.ServerAddress = "redis"
+		operation.ServerPort = "6379"
+	case "mysql":
+		operation.ServerAddress = "mysql"
+		operation.ServerPort = "3306"
+	default:
+		operation.ServerAddress = ""
+		operation.ServerPort = ""
 	}
 }

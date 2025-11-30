@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"os"
@@ -16,10 +17,18 @@ func main() {
 	database := flag.String("database", "default", "ClickHouse database name")
 	username := flag.String("username", "default", "ClickHouse username")
 	password := flag.String("password", "password", "ClickHouse password")
-	outputEndpoints := flag.String("output", "", "Path for the generated endpoints Go file (default: internal/serviceendpoints/serviceendpoints.go)")
-	outputDatabase := flag.String("output-db", "", "Path for the generated database operations Go file (default: internal/databaseoperations/databaseoperations.go)")
+	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket) or 'otel-demo' (OpenTelemetry Demo)")
+	outputEndpoints := flag.String("output", "", "Path for the generated endpoints Go file")
+	outputDatabase := flag.String("output-db", "", "Path for the generated database operations Go file")
+	outputGRPC := flag.String("output-grpc", "", "Path for the generated gRPC operations Go file (otel-demo only)")
 	skipView := flag.Bool("skip-view", false, "Skip creating the materialized view")
 	flag.Parse()
+
+	// Validate system flag
+	if *system != "ts" && *system != "otel-demo" {
+		fmt.Printf("Invalid system: %s. Must be 'ts' or 'otel-demo'\n", *system)
+		os.Exit(1)
+	}
 
 	// Set default output paths if not specified
 	projectRoot, err := os.Getwd()
@@ -34,6 +43,10 @@ func main() {
 
 	if *outputDatabase == "" {
 		*outputDatabase = filepath.Join(projectRoot, "internal", "databaseoperations", "databaseoperations.go")
+	}
+
+	if *outputGRPC == "" {
+		*outputGRPC = filepath.Join(projectRoot, "internal", "grpcoperations", "grpcoperations.go")
 	}
 
 	// Configure ClickHouse connection
@@ -54,9 +67,19 @@ func main() {
 	}
 	defer db.Close()
 
+	fmt.Printf("Analyzing system: %s\n", *system)
+
+	if *system == "ts" {
+		runTrainTicketAnalysis(db, *outputEndpoints, *outputDatabase, *skipView)
+	} else {
+		runOtelDemoAnalysis(db, *outputEndpoints, *outputDatabase, *outputGRPC, *skipView)
+	}
+}
+
+func runTrainTicketAnalysis(db *sql.DB, outputEndpoints, outputDatabase string, skipView bool) {
 	// Create materialized view if needed
-	if !*skipView {
-		fmt.Println("Creating materialized view...")
+	if !skipView {
+		fmt.Println("Creating materialized view for TrainTicket...")
 		if err := clickhouseanalyzer.CreateMaterializedView(db); err != nil {
 			fmt.Printf("Error creating materialized view: %v\n", err)
 			os.Exit(1)
@@ -91,18 +114,88 @@ func main() {
 	allEndpoints := append(clientEndpoints, dashboardEndpoints...)
 
 	// Generate service endpoints file
-	fmt.Printf("Generating service endpoints file at %s...\n", *outputEndpoints)
-	if err := clickhouseanalyzer.GenerateServiceEndpointsFile(allEndpoints, *outputEndpoints); err != nil {
+	fmt.Printf("Generating service endpoints file at %s...\n", outputEndpoints)
+	if err := clickhouseanalyzer.GenerateServiceEndpointsFile(allEndpoints, outputEndpoints); err != nil {
 		fmt.Printf("Error generating service endpoints file: %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Println("Service endpoints file generated successfully!")
 
 	// Generate database operations file
-	fmt.Printf("Generating database operations file at %s...\n", *outputDatabase)
-	if err := clickhouseanalyzer.GenerateDatabaseOperationsFile(dbOperations, *outputDatabase); err != nil {
+	fmt.Printf("Generating database operations file at %s...\n", outputDatabase)
+	if err := clickhouseanalyzer.GenerateDatabaseOperationsFile(dbOperations, outputDatabase); err != nil {
 		fmt.Printf("Error generating database operations file: %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Println("Database operations file generated successfully!")
+}
+
+func runOtelDemoAnalysis(db *sql.DB, outputEndpoints, outputDatabase, outputGRPC string, skipView bool) {
+	// Create materialized view if needed
+	if !skipView {
+		fmt.Println("Creating materialized view for OTel Demo...")
+		if err := clickhouseanalyzer.CreateOtelDemoMaterializedView(db); err != nil {
+			fmt.Printf("Error creating materialized view: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// Query HTTP client traces
+	fmt.Println("Querying HTTP client traces...")
+	clientEndpoints, err := clickhouseanalyzer.QueryOtelDemoHTTPClientTraces(db)
+	if err != nil {
+		fmt.Printf("Error querying HTTP client traces: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Query HTTP server traces
+	fmt.Println("Querying HTTP server traces...")
+	serverEndpoints, err := clickhouseanalyzer.QueryOtelDemoHTTPServerTraces(db)
+	if err != nil {
+		fmt.Printf("Error querying HTTP server traces: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Query gRPC operations
+	fmt.Println("Querying gRPC operations...")
+	grpcOperations, err := clickhouseanalyzer.QueryOtelDemoGRPCOperations(db)
+	if err != nil {
+		fmt.Printf("Error querying gRPC operations: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Query database operations
+	fmt.Println("Querying database operations...")
+	dbOperations, err := clickhouseanalyzer.QueryOtelDemoDatabaseOperations(db)
+	if err != nil {
+		fmt.Printf("Error querying database operations: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Combine HTTP endpoints
+	allEndpoints := append(clientEndpoints, serverEndpoints...)
+
+	// Generate service endpoints file
+	fmt.Printf("Generating service endpoints file at %s...\n", outputEndpoints)
+	if err := clickhouseanalyzer.GenerateServiceEndpointsFile(allEndpoints, outputEndpoints); err != nil {
+		fmt.Printf("Error generating service endpoints file: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Service endpoints file generated successfully!")
+
+	// Generate database operations file
+	fmt.Printf("Generating database operations file at %s...\n", outputDatabase)
+	if err := clickhouseanalyzer.GenerateDatabaseOperationsFile(dbOperations, outputDatabase); err != nil {
+		fmt.Printf("Error generating database operations file: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Database operations file generated successfully!")
+
+	// Generate gRPC operations file
+	fmt.Printf("Generating gRPC operations file at %s...\n", outputGRPC)
+	if err := clickhouseanalyzer.GenerateGRPCOperationsFile(grpcOperations, outputGRPC); err != nil {
+		fmt.Printf("Error generating gRPC operations file: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("gRPC operations file generated successfully!")
 }
