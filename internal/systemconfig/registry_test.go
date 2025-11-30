@@ -59,7 +59,7 @@ func TestMetadataRegistry(t *testing.T) {
 	// Reset the registry and system for testing
 	registry := GetRegistry()
 	registry.Clear()
-	currentSystem = SystemTrainTicket
+	_ = SetCurrentSystem(SystemTrainTicket)
 
 	// Create mock providers
 	tsEndpointProvider := &MockServiceEndpointProvider{
@@ -118,7 +118,7 @@ func TestMetadataRegistry(t *testing.T) {
 func TestRegistryHasProviders(t *testing.T) {
 	registry := GetRegistry()
 	registry.Clear()
-	currentSystem = SystemTrainTicket
+	_ = SetCurrentSystem(SystemTrainTicket)
 
 	// Initially no providers
 	if registry.HasServiceEndpointProvider() {
@@ -143,7 +143,7 @@ func TestRegistryHasProviders(t *testing.T) {
 func TestRegistryGetProviderNotRegistered(t *testing.T) {
 	registry := GetRegistry()
 	registry.Clear()
-	currentSystem = SystemTrainTicket
+	_ = SetCurrentSystem(SystemTrainTicket)
 
 	_, err := registry.GetServiceEndpointProvider()
 	if err == nil {
@@ -164,7 +164,7 @@ func TestRegistryGetProviderNotRegistered(t *testing.T) {
 func TestDatabaseOperationProviderRegistry(t *testing.T) {
 	registry := GetRegistry()
 	registry.Clear()
-	currentSystem = SystemTrainTicket
+	_ = SetCurrentSystem(SystemTrainTicket)
 
 	mockProvider := &MockDatabaseOperationProvider{
 		services: []string{"ts-order-service"},
@@ -195,7 +195,6 @@ func TestDatabaseOperationProviderRegistry(t *testing.T) {
 func TestGRPCOperationProviderRegistry(t *testing.T) {
 	registry := GetRegistry()
 	registry.Clear()
-	currentSystem = SystemOtelDemo
 	_ = SetCurrentSystem(SystemOtelDemo)
 
 	mockProvider := &MockGRPCOperationProvider{

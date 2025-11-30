@@ -6,7 +6,7 @@ import (
 
 func TestSetCurrentSystem(t *testing.T) {
 	// Reset to default before tests
-	currentSystem = SystemTrainTicket
+	_ = SetCurrentSystem(SystemTrainTicket)
 
 	tests := []struct {
 		name        string
@@ -49,7 +49,7 @@ func TestSetCurrentSystem(t *testing.T) {
 
 func TestGetCurrentSystem(t *testing.T) {
 	// Reset to default
-	currentSystem = SystemTrainTicket
+	_ = SetCurrentSystem(SystemTrainTicket)
 
 	if got := GetCurrentSystem(); got != SystemTrainTicket {
 		t.Errorf("GetCurrentSystem() = %v, want %v", got, SystemTrainTicket)
@@ -63,7 +63,7 @@ func TestGetCurrentSystem(t *testing.T) {
 
 func TestIsTrainTicket(t *testing.T) {
 	// Reset to TrainTicket
-	currentSystem = SystemTrainTicket
+	_ = SetCurrentSystem(SystemTrainTicket)
 
 	if !IsTrainTicket() {
 		t.Error("IsTrainTicket() should return true when system is TrainTicket")
@@ -77,7 +77,7 @@ func TestIsTrainTicket(t *testing.T) {
 
 func TestIsOtelDemo(t *testing.T) {
 	// Reset to TrainTicket
-	currentSystem = SystemTrainTicket
+	_ = SetCurrentSystem(SystemTrainTicket)
 
 	if IsOtelDemo() {
 		t.Error("IsOtelDemo() should return false when system is TrainTicket")

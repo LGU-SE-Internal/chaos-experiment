@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-
-	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 )
 
 // ServiceEndpoints holds the service endpoints for a service
@@ -270,19 +268,6 @@ func getPackageNameFromPath(outputFilePath string) string {
 	// Sanitize package name (replace - with _ for valid Go package names)
 	packageName = strings.ReplaceAll(packageName, "-", "_")
 	return packageName
-}
-
-// GetSystemSpecificPackageName returns a package name based on the current system type.
-// For TrainTicket (ts), it returns the base package name.
-// For other systems, it returns {system}_{baseName} (e.g., oteldemo_serviceendpoints).
-func GetSystemSpecificPackageName(baseName string) string {
-	system := systemconfig.GetCurrentSystem()
-	if system == systemconfig.SystemTrainTicket {
-		return baseName
-	}
-	// For other systems, prefix with system name (sanitized)
-	prefix := strings.ReplaceAll(string(system), "-", "")
-	return prefix + "_" + baseName
 }
 
 // GenerateServiceEndpointsFile generates a Go file with service endpoints
