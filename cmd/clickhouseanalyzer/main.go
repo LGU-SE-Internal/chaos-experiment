@@ -125,8 +125,11 @@ func runTrainTicketAnalysis(db *sql.DB, outputEndpoints, outputDatabase string, 
 		os.Exit(1)
 	}
 
-	// Combine results
+	// Combine results - include database operations as endpoints
 	allEndpoints := append(clientEndpoints, dashboardEndpoints...)
+	// Convert database operations to service endpoints
+	dbEndpoints := clickhouseanalyzer.ConvertDatabaseOperationsToEndpoints(dbOperations)
+	allEndpoints = append(allEndpoints, dbEndpoints...)
 
 	// Generate service endpoints file
 	fmt.Printf("Generating service endpoints file at %s...\n", outputEndpoints)
@@ -189,6 +192,12 @@ func runOtelDemoAnalysis(db *sql.DB, outputEndpoints, outputDatabase, outputGRPC
 
 	// Combine HTTP endpoints
 	allEndpoints := append(clientEndpoints, serverEndpoints...)
+	// Convert database operations to service endpoints
+	dbEndpoints := clickhouseanalyzer.ConvertDatabaseOperationsToEndpoints(dbOperations)
+	allEndpoints = append(allEndpoints, dbEndpoints...)
+	// Convert gRPC operations to service endpoints
+	grpcEndpoints := clickhouseanalyzer.ConvertGRPCOperationsToEndpoints(grpcOperations)
+	allEndpoints = append(allEndpoints, grpcEndpoints...)
 
 	// Generate service endpoints file
 	fmt.Printf("Generating service endpoints file at %s...\n", outputEndpoints)

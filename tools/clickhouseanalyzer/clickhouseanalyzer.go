@@ -644,6 +644,11 @@ func QueryMySQLOperations(db *sql.DB) ([]DatabaseOperation, error) {
 			operation.Operation = dbOperation.String
 		}
 
+		// Set fixed MySQL connection info for TrainTicket
+		operation.DBSystem = "mysql"
+		operation.ServerAddress = "mysql"
+		operation.ServerPort = "3306"
+
 		results = append(results, operation)
 	}
 
@@ -864,6 +869,74 @@ func QueryOtelDemoDatabaseOperations(db *sql.DB) ([]DatabaseOperation, error) {
 	}
 
 	return results, nil
+}
+
+// ConvertDatabaseOperationsToEndpoints converts database operations to service endpoints
+// This allows database connections to be included in the service endpoints for network dependency analysis
+func ConvertDatabaseOperationsToEndpoints(operations []DatabaseOperation) []ServiceEndpoint {
+	// Use a map to deduplicate - one entry per service-database combination
+	seen := make(map[string]bool)
+	var endpoints []ServiceEndpoint
+
+	for _, op := range operations {
+		// Create a unique key for deduplication
+		key := fmt.Sprintf("%s-%s-%s", op.ServiceName, op.ServerAddress, op.ServerPort)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+
+		endpoint := ServiceEndpoint{
+			ServiceName:    op.ServiceName,
+			RequestMethod:  "", // Database operations don't have HTTP methods
+			ResponseStatus: "", // Database operations don't have HTTP status
+			Route:          "", // Database operations don't have routes
+			ServerAddress:  op.ServerAddress,
+			ServerPort:     op.ServerPort,
+			SpanKind:       "Client", // Database connections are always client-side
+		}
+		endpoints = append(endpoints, endpoint)
+	}
+
+	return endpoints
+}
+
+// ConvertGRPCOperationsToEndpoints converts gRPC operations to service endpoints
+// This allows gRPC connections to be included in the service endpoints for network dependency analysis
+func ConvertGRPCOperationsToEndpoints(operations []GRPCOperation) []ServiceEndpoint {
+	// Use a map to deduplicate
+	seen := make(map[string]bool)
+	var endpoints []ServiceEndpoint
+
+	for _, op := range operations {
+		// Only include client-side gRPC operations (outgoing calls)
+		if op.SpanKind != "Client" {
+			continue
+		}
+
+		// Create a unique key for deduplication
+		key := fmt.Sprintf("%s-%s-%s-%s", op.ServiceName, op.ServerAddress, op.ServerPort, op.RPCService)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+
+		// Build the route from RPC service and method
+		route := fmt.Sprintf("/%s/%s", op.RPCService, op.RPCMethod)
+
+		endpoint := ServiceEndpoint{
+			ServiceName:    op.ServiceName,
+			RequestMethod:  "POST", // gRPC uses POST
+			ResponseStatus: "",     // gRPC status codes are different from HTTP
+			Route:          route,
+			ServerAddress:  op.ServerAddress,
+			ServerPort:     op.ServerPort,
+			SpanKind:       "Client",
+		}
+		endpoints = append(endpoints, endpoint)
+	}
+
+	return endpoints
 }
 
 // mapRouteToService maps a route to a service based on Caddy rules
