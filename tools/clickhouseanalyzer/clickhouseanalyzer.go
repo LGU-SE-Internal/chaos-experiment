@@ -27,6 +27,7 @@ type ServiceEndpoint struct {
 	Route          string
 	ServerAddress  string
 	ServerPort     string
+	SpanKind       string // Add SpanKind to track if it's Server or Client
 }
 
 // DatabaseOperation represents a database operation with its details
@@ -238,7 +239,14 @@ SETTINGS allow_nullable_key = 1
 POPULATE
 AS 
 WITH 
-    replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/[^?]*)', '\\1') AS path
+    -- Extract path from url.full (without query string)
+    replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/[^?]*)?.*', '\\1') AS url_path,
+    -- Extract query string from url.full  
+    replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+[^?]*(\\?.*)?$', '\\1') AS url_query,
+    -- Extract path from http.target (without query string)
+    replaceRegexpOne(SpanAttributes['http.target'], '^([^?]*)(\\?.*)?$', '\\1') AS target_path,
+    -- Extract query string from http.target
+    replaceRegexpOne(SpanAttributes['http.target'], '^[^?]*(\\?.*)?$', '\\1') AS target_query
 SELECT 
     ResourceAttributes['service.name'] AS ServiceName,
     4294967295 - toUnixTimestamp(Timestamp) AS version,
@@ -270,27 +278,70 @@ SELECT
     END AS response_status_code,
     
     CASE
+        -- Priority 1: http.route (usually already parameterized like /api/products/{productId})
         WHEN SpanAttributes['http.route'] IS NOT NULL AND SpanAttributes['http.route'] != ''
-            THEN replaceRegexpAll(SpanAttributes['http.route'], '/[A-Z0-9]{10}', '/*')
-            
+            THEN 
+                -- Replace {param} style with * and product IDs like /XXXXXX with /*
+                replaceRegexpAll(
+                    replaceRegexpAll(SpanAttributes['http.route'], '\\{[^}]+\\}', '*'),
+                    '/[A-Z0-9]{10}',
+                    '/*'
+                )
+        
+        -- Priority 2: url.full - need to extract path and mask parameters
         WHEN SpanAttributes['url.full'] IS NOT NULL AND SpanAttributes['url.full'] != ''
             THEN 
                 CASE
-                    WHEN match(path, '/api/products/[A-Z0-9]+')
-                        THEN replaceRegexpAll(path, '(/api/products/)[A-Z0-9]+', '\\1*')
-                    WHEN match(path, '/api/recommendations\\?productIds=[A-Z0-9]+')
-                        THEN replaceRegexpAll(path, '(/api/recommendations\\?productIds=)[A-Z0-9]+', '\\1*')
-                    WHEN match(path, '/api/data\\?contextKeys=')
-                        THEN replaceRegexpAll(path, '(/api/data\\?contextKeys=)[^&]+', '\\1*')
-                    WHEN match(path, '/api/data/\\?contextKeys=')
-                        THEN replaceRegexpAll(path, '(/api/data/\\?contextKeys=)[^&]+', '\\1*')
-                    WHEN match(path, '/ofrep/v1/evaluate/flags/')
-                        THEN replaceRegexpAll(path, '(/ofrep/v1/evaluate/flags/)[^/]+', '\\1*')
-                    ELSE path
+                    -- /api/products/{productId} - product IDs are 10 char alphanumeric
+                    WHEN match(url_path, '^/api/products/[A-Z0-9]+$')
+                        THEN '/api/products/*'
+                    -- /api/recommendations?productIds={id}
+                    WHEN url_path = '/api/recommendations' AND match(url_query, '^\\?productIds=')
+                        THEN '/api/recommendations?productIds=*'
+                    -- /api/data?contextKeys={key}
+                    WHEN url_path = '/api/data' AND match(url_query, '^\\?contextKeys=')
+                        THEN '/api/data?contextKeys=*'
+                    -- /api/data/?contextKeys={key} (with trailing slash before query)
+                    WHEN url_path = '/api/data/' AND match(url_query, '^\\?contextKeys=')
+                        THEN '/api/data/?contextKeys=*'
+                    -- /ofrep/v1/evaluate/flags/{flagName}
+                    WHEN match(url_path, '^/ofrep/v1/evaluate/flags/[^/]+$')
+                        THEN '/ofrep/v1/evaluate/flags/*'
+                    -- Default: just use the path without query params
+                    ELSE 
+                        CASE 
+                            WHEN url_path != '' THEN url_path 
+                            ELSE '/' 
+                        END
                 END
-                
+        
+        -- Priority 3: http.target - also need to mask parameters
         WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
-            THEN SpanAttributes['http.target']
+            THEN 
+                CASE
+                    -- /api/products/{productId}
+                    WHEN match(target_path, '^/api/products/[A-Z0-9]+$')
+                        THEN '/api/products/*'
+                    -- /api/recommendations?productIds={id}
+                    WHEN target_path = '/api/recommendations' AND match(target_query, '^\\?productIds=')
+                        THEN '/api/recommendations?productIds=*'
+                    -- /api/data?contextKeys={key}
+                    WHEN target_path = '/api/data' AND match(target_query, '^\\?contextKeys=')
+                        THEN '/api/data?contextKeys=*'
+                    -- /api/data/?contextKeys={key}
+                    WHEN target_path = '/api/data/' AND match(target_query, '^\\?contextKeys=')
+                        THEN '/api/data/?contextKeys=*'
+                    -- /ofrep/v1/evaluate/flags/{flagName}
+                    WHEN match(target_path, '^/ofrep/v1/evaluate/flags/[^/]+$')
+                        THEN '/ofrep/v1/evaluate/flags/*'
+                    -- Default: use target_path without query
+                    ELSE 
+                        CASE 
+                            WHEN target_path != '' THEN target_path 
+                            ELSE SpanAttributes['http.target']
+                        END
+                END
+        
         ELSE ''
     END AS masked_route,
     
@@ -309,7 +360,7 @@ SELECT
     SpanAttributes['rpc.grpc.status_code'] AS grpc_status_code
 FROM otel_traces
 WHERE 
-	ResourceAttributes['service.namespace'] == 'otel-demo'
+    ResourceAttributes['service.namespace'] = 'otel-demo'
     AND SpanKind IN ('Server', 'Client')
     AND mapExists(
         (k, v) -> (k IS NOT NULL AND k != '') AND (v IS NOT NULL AND v != ''),
@@ -375,7 +426,7 @@ WHERE SpanKind = 'Client'
 ORDER BY ServiceName, masked_route
 `
 
-// HTTP Server traces query for OTel Demo
+// HTTP Server traces query for OTel Demo - include client_address
 const otelDemoHTTPServerTracesQuery = `
 SELECT DISTINCT
     ServiceName,
@@ -383,7 +434,8 @@ SELECT DISTINCT
     response_status_code,
     masked_route,
     server_address,
-    server_port
+    server_port,
+    client_address
 FROM otel_demo_traces_mv
 FINAL
 WHERE SpanKind = 'Server'
@@ -629,6 +681,8 @@ func QueryOtelDemoHTTPClientTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
 
+		endpoint.SpanKind = "Client"
+
 		if serverAddr.Valid {
 			endpoint.ServerAddress = serverAddr.String
 		}
@@ -665,7 +719,7 @@ func QueryOtelDemoHTTPServerTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 	var results []ServiceEndpoint
 	for rows.Next() {
 		var endpoint ServiceEndpoint
-		var serverAddr, serverPort sql.NullString
+		var serverAddr, serverPort, clientAddr sql.NullString
 
 		if err := rows.Scan(
 			&endpoint.ServiceName,
@@ -674,16 +728,27 @@ func QueryOtelDemoHTTPServerTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 			&endpoint.Route,
 			&serverAddr,
 			&serverPort,
+			&clientAddr,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
 
-		if serverAddr.Valid {
+		endpoint.SpanKind = "Server"
+
+		// For Server spans, use the client address as the "caller"
+		// The ServerAddress field will represent who is calling this service
+		if clientAddr.Valid && clientAddr.String != "" {
+			endpoint.ServerAddress = clientAddr.String
+			endpoint.ServerPort = "" // Client port is usually dynamic, leave empty
+		} else if serverAddr.Valid {
 			endpoint.ServerAddress = serverAddr.String
 		}
 		if serverPort.Valid {
 			endpoint.ServerPort = serverPort.String
 		}
+
+		// Map client address (IP) to service name if possible
+		mapOtelDemoClientToService(&endpoint)
 
 		results = append(results, endpoint)
 	}
@@ -956,4 +1021,78 @@ func mapOtelDemoDatabaseToService(operation *DatabaseOperation) {
 		operation.ServerAddress = ""
 		operation.ServerPort = ""
 	}
+}
+
+// mapOtelDemoClientToService maps client addresses (IPs) to service names for OTel Demo Server spans
+func mapOtelDemoClientToService(endpoint *ServiceEndpoint) {
+	// For Server spans, the ServerAddress contains the client IP
+	// We try to map it to a known service name based on the route pattern
+	// Since client IPs are dynamic in Kubernetes, we use route-based inference
+
+	route := endpoint.Route
+
+	// Known callers based on route patterns in OTel Demo
+	// These are the services that call specific endpoints
+	callerMap := map[string]string{
+		"/":                        "load-generator",
+		"/api/cart":                "load-generator",
+		"/api/checkout":            "load-generator",
+		"/api/products":            "load-generator",
+		"/api/recommendations":     "load-generator",
+		"/api/data":                "load-generator",
+		"/getquote":                "shipping",
+		"/get-quote":               "checkout",
+		"/ship-order":              "checkout",
+		"/send_order_confirmation": "checkout",
+		"/status":                  "load-generator",
+		"/ofrep/v1/evaluate":       "load-generator",
+	}
+
+	// Try to find a matching caller
+	for prefix, caller := range callerMap {
+		if strings.HasPrefix(route, prefix) {
+			// Only set if we don't have a better value
+			if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+				endpoint.ServerAddress = caller
+			}
+			return
+		}
+	}
+
+	// For gRPC-style routes, infer the caller from route pattern
+	if strings.HasPrefix(route, "/oteldemo.CartService/") {
+		endpoint.ServerAddress = "frontend"
+	} else if strings.HasPrefix(route, "/oteldemo.CheckoutService/") {
+		endpoint.ServerAddress = "frontend"
+	} else if strings.HasPrefix(route, "/oteldemo.ProductCatalogService/") {
+		endpoint.ServerAddress = "frontend"
+	} else if strings.HasPrefix(route, "/oteldemo.RecommendationService/") {
+		endpoint.ServerAddress = "frontend"
+	} else if strings.HasPrefix(route, "/oteldemo.AdService/") {
+		endpoint.ServerAddress = "frontend"
+	} else if strings.HasPrefix(route, "/oteldemo.CurrencyService/") {
+		endpoint.ServerAddress = "checkout"
+	} else if strings.HasPrefix(route, "/oteldemo.PaymentService/") {
+		endpoint.ServerAddress = "checkout"
+	} else if strings.HasPrefix(route, "/flagd.evaluation.v1.Service/") {
+		// flagd is called by multiple services
+		endpoint.ServerAddress = "multiple"
+	}
+
+	// If still an IP address or empty, mark as unknown
+	if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+		endpoint.ServerAddress = "unknown-client"
+	}
+}
+
+// isIPAddress checks if a string looks like an IP address
+func isIPAddress(s string) bool {
+	// Simple check: if it starts with a digit and contains dots, it's likely an IP
+	if len(s) == 0 {
+		return false
+	}
+	if s[0] >= '0' && s[0] <= '9' && strings.Contains(s, ".") {
+		return true
+	}
+	return false
 }
