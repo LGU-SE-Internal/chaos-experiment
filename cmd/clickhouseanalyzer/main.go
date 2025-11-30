@@ -37,22 +37,31 @@ func main() {
 	}
 
 	// Set default output paths if not specified
+	// Each system has its own directory to allow coexistence
 	projectRoot, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Error determining project root: %v\n", err)
 		os.Exit(1)
 	}
 
+	// Determine system-specific subdirectory
+	var systemDir string
+	if systemType == systemconfig.SystemTrainTicket {
+		systemDir = "ts"
+	} else {
+		systemDir = "oteldemo"
+	}
+
 	if *outputEndpoints == "" {
-		*outputEndpoints = filepath.Join(projectRoot, "internal", "serviceendpoints", "serviceendpoints.go")
+		*outputEndpoints = filepath.Join(projectRoot, "internal", systemDir, "serviceendpoints", "serviceendpoints.go")
 	}
 
 	if *outputDatabase == "" {
-		*outputDatabase = filepath.Join(projectRoot, "internal", "databaseoperations", "databaseoperations.go")
+		*outputDatabase = filepath.Join(projectRoot, "internal", systemDir, "databaseoperations", "databaseoperations.go")
 	}
 
 	if *outputGRPC == "" {
-		*outputGRPC = filepath.Join(projectRoot, "internal", "grpcoperations", "grpcoperations.go")
+		*outputGRPC = filepath.Join(projectRoot, "internal", systemDir, "grpcoperations", "grpcoperations.go")
 	}
 
 	// Configure ClickHouse connection
