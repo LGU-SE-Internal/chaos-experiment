@@ -11,6 +11,7 @@ import (
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/javaclassmethods"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/networkdependencies"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 	"github.com/LGU-SE-Internal/chaos-experiment/utils"
 	"github.com/sirupsen/logrus"
 )
@@ -58,15 +59,15 @@ type ContainerInfo struct {
 	ContainerName string `json:"container_name"`
 }
 
-// Global cache for lookups
+// Global cache for lookups - now system-aware
 var (
 	cachedAppLabels     map[string][]string
-	cachedAppMethods    []AppMethodPair
-	cachedAppEndpoints  []AppEndpointPair
-	cachedNetworkPairs  []AppNetworkPair
-	cachedDNSEndpoints  []AppDNSPair
+	cachedAppMethods    map[systemconfig.SystemType][]AppMethodPair
+	cachedAppEndpoints  map[systemconfig.SystemType][]AppEndpointPair
+	cachedNetworkPairs  map[systemconfig.SystemType][]AppNetworkPair
+	cachedDNSEndpoints  map[systemconfig.SystemType][]AppDNSPair
 	cachedContainerInfo map[string][]ContainerInfo
-	cachedDBOperations  []AppDatabasePair
+	cachedDBOperations  map[systemconfig.SystemType][]AppDatabasePair
 )
 
 // GetAllAppLabels returns all application labels sorted alphabetically
@@ -93,9 +94,14 @@ func GetAllAppLabels(namespace string, key string) ([]string, error) {
 }
 
 // GetAllJVMMethods returns all app+method pairs sorted by app name
+// This function uses the current system from systemconfig
 func GetAllJVMMethods() ([]AppMethodPair, error) {
+	currentSystem := systemconfig.GetCurrentSystem()
+	
 	if cachedAppMethods != nil {
-		return cachedAppMethods, nil
+		if result, exists := cachedAppMethods[currentSystem]; exists {
+			return result, nil
+		}
 	}
 
 	// Get all service names first
@@ -125,14 +131,22 @@ func GetAllJVMMethods() ([]AppMethodPair, error) {
 		return result[i].MethodName < result[j].MethodName
 	})
 
-	cachedAppMethods = result
+	if cachedAppMethods == nil {
+		cachedAppMethods = make(map[systemconfig.SystemType][]AppMethodPair)
+	}
+	cachedAppMethods[currentSystem] = result
 	return result, nil
 }
 
 // GetAllHTTPEndpoints returns all app+endpoint pairs sorted by app name
+// This function uses the current system from systemconfig
 func GetAllHTTPEndpoints() ([]AppEndpointPair, error) {
+	currentSystem := systemconfig.GetCurrentSystem()
+	
 	if cachedAppEndpoints != nil {
-		return cachedAppEndpoints, nil
+		if result, exists := cachedAppEndpoints[currentSystem]; exists {
+			return result, nil
+		}
 	}
 
 	// Get all service names
@@ -169,14 +183,22 @@ func GetAllHTTPEndpoints() ([]AppEndpointPair, error) {
 		return result[i].Route < result[j].Route
 	})
 
-	cachedAppEndpoints = result
+	if cachedAppEndpoints == nil {
+		cachedAppEndpoints = make(map[systemconfig.SystemType][]AppEndpointPair)
+	}
+	cachedAppEndpoints[currentSystem] = result
 	return result, nil
 }
 
 // GetAllNetworkPairs returns all network pairs sorted by source service
+// This function uses the current system from systemconfig
 func GetAllNetworkPairs() ([]AppNetworkPair, error) {
+	currentSystem := systemconfig.GetCurrentSystem()
+	
 	if cachedNetworkPairs != nil {
-		return cachedNetworkPairs, nil
+		if result, exists := cachedNetworkPairs[currentSystem]; exists {
+			return result, nil
+		}
 	}
 
 	// Get all service-to-service pairs
@@ -198,14 +220,22 @@ func GetAllNetworkPairs() ([]AppNetworkPair, error) {
 		return result[i].TargetService < result[j].TargetService
 	})
 
-	cachedNetworkPairs = result
+	if cachedNetworkPairs == nil {
+		cachedNetworkPairs = make(map[systemconfig.SystemType][]AppNetworkPair)
+	}
+	cachedNetworkPairs[currentSystem] = result
 	return result, nil
 }
 
 // GetAllDNSEndpoints returns all app+domain pairs for DNS chaos sorted by app name
+// This function uses the current system from systemconfig
 func GetAllDNSEndpoints() ([]AppDNSPair, error) {
+	currentSystem := systemconfig.GetCurrentSystem()
+	
 	if cachedDNSEndpoints != nil {
-		return cachedDNSEndpoints, nil
+		if result, exists := cachedDNSEndpoints[currentSystem]; exists {
+			return result, nil
+		}
 	}
 
 	// Get all service names
@@ -242,14 +272,22 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 		return result[i].Domain < result[j].Domain
 	})
 
-	cachedDNSEndpoints = result
+	if cachedDNSEndpoints == nil {
+		cachedDNSEndpoints = make(map[systemconfig.SystemType][]AppDNSPair)
+	}
+	cachedDNSEndpoints[currentSystem] = result
 	return result, nil
 }
 
 // GetAllDatabaseOperations returns all app+database operations pairs sorted by app name
+// This function uses the current system from systemconfig
 func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
+	currentSystem := systemconfig.GetCurrentSystem()
+	
 	if cachedDBOperations != nil {
-		return cachedDBOperations, nil
+		if result, exists := cachedDBOperations[currentSystem]; exists {
+			return result, nil
+		}
 	}
 
 	// Get all service names that have database operations
@@ -283,7 +321,10 @@ func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
 		return result[i].OperationType < result[j].OperationType
 	})
 
-	cachedDBOperations = result
+	if cachedDBOperations == nil {
+		cachedDBOperations = make(map[systemconfig.SystemType][]AppDatabasePair)
+	}
+	cachedDBOperations[currentSystem] = result
 	return result, nil
 }
 
@@ -418,6 +459,11 @@ func GetContainersAndPodsByServices(namespace string, serviceNames []string) ([]
 func InitCaches() {
 	cachedAppLabels = make(map[string][]string)
 	cachedContainerInfo = make(map[string][]ContainerInfo)
+	cachedAppMethods = make(map[systemconfig.SystemType][]AppMethodPair)
+	cachedAppEndpoints = make(map[systemconfig.SystemType][]AppEndpointPair)
+	cachedNetworkPairs = make(map[systemconfig.SystemType][]AppNetworkPair)
+	cachedDNSEndpoints = make(map[systemconfig.SystemType][]AppDNSPair)
+	cachedDBOperations = make(map[systemconfig.SystemType][]AppDatabasePair)
 }
 
 // PreloadCaches preloads resource caches to reduce first-access latency
@@ -512,11 +558,10 @@ func PreloadCaches(namespace string, labelKey string) error {
 // InvalidateCache clears all cached data
 func InvalidateCache() {
 	cachedAppLabels = make(map[string][]string)
-
-	cachedAppMethods = nil
-	cachedAppEndpoints = nil
-	cachedNetworkPairs = nil
-	cachedDNSEndpoints = nil
-	cachedContainerInfo = nil
-	cachedDBOperations = nil
+	cachedContainerInfo = make(map[string][]ContainerInfo)
+	cachedAppMethods = make(map[systemconfig.SystemType][]AppMethodPair)
+	cachedAppEndpoints = make(map[systemconfig.SystemType][]AppEndpointPair)
+	cachedNetworkPairs = make(map[systemconfig.SystemType][]AppNetworkPair)
+	cachedDNSEndpoints = make(map[systemconfig.SystemType][]AppDNSPair)
+	cachedDBOperations = make(map[systemconfig.SystemType][]AppDatabasePair)
 }

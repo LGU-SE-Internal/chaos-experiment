@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 	"github.com/LGU-SE-Internal/chaos-experiment/tools/clickhouseanalyzer"
 )
 
@@ -24,29 +25,43 @@ func main() {
 	skipView := flag.Bool("skip-view", false, "Skip creating the materialized view")
 	flag.Parse()
 
-	// Validate system flag
-	if *system != "ts" && *system != "otel-demo" {
+	// Validate and set the system type using systemconfig
+	systemType, err := systemconfig.ParseSystemType(*system)
+	if err != nil {
 		fmt.Printf("Invalid system: %s. Must be 'ts' or 'otel-demo'\n", *system)
+		os.Exit(1)
+	}
+	if err := systemconfig.SetCurrentSystem(systemType); err != nil {
+		fmt.Printf("Error setting system type: %v\n", err)
 		os.Exit(1)
 	}
 
 	// Set default output paths if not specified
+	// Each system has its own directory to allow coexistence
 	projectRoot, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Error determining project root: %v\n", err)
 		os.Exit(1)
 	}
 
+	// Determine system-specific subdirectory
+	var systemDir string
+	if systemType == systemconfig.SystemTrainTicket {
+		systemDir = "ts"
+	} else {
+		systemDir = "oteldemo"
+	}
+
 	if *outputEndpoints == "" {
-		*outputEndpoints = filepath.Join(projectRoot, "internal", "serviceendpoints", "serviceendpoints.go")
+		*outputEndpoints = filepath.Join(projectRoot, "internal", systemDir, "serviceendpoints", "serviceendpoints.go")
 	}
 
 	if *outputDatabase == "" {
-		*outputDatabase = filepath.Join(projectRoot, "internal", "databaseoperations", "databaseoperations.go")
+		*outputDatabase = filepath.Join(projectRoot, "internal", systemDir, "databaseoperations", "databaseoperations.go")
 	}
 
 	if *outputGRPC == "" {
-		*outputGRPC = filepath.Join(projectRoot, "internal", "grpcoperations", "grpcoperations.go")
+		*outputGRPC = filepath.Join(projectRoot, "internal", systemDir, "grpcoperations", "grpcoperations.go")
 	}
 
 	// Configure ClickHouse connection
@@ -67,9 +82,9 @@ func main() {
 	}
 	defer db.Close()
 
-	fmt.Printf("Analyzing system: %s\n", *system)
+	fmt.Printf("Analyzing system: %s\n", systemconfig.GetCurrentSystem())
 
-	if *system == "ts" {
+	if systemconfig.IsTrainTicket() {
 		runTrainTicketAnalysis(db, *outputEndpoints, *outputDatabase, *skipView)
 	} else {
 		runOtelDemoAnalysis(db, *outputEndpoints, *outputDatabase, *outputGRPC, *skipView)
@@ -110,8 +125,11 @@ func runTrainTicketAnalysis(db *sql.DB, outputEndpoints, outputDatabase string, 
 		os.Exit(1)
 	}
 
-	// Combine results
+	// Combine results - include database operations as endpoints
 	allEndpoints := append(clientEndpoints, dashboardEndpoints...)
+	// Convert database operations to service endpoints
+	dbEndpoints := clickhouseanalyzer.ConvertDatabaseOperationsToEndpoints(dbOperations)
+	allEndpoints = append(allEndpoints, dbEndpoints...)
 
 	// Generate service endpoints file
 	fmt.Printf("Generating service endpoints file at %s...\n", outputEndpoints)
@@ -174,6 +192,12 @@ func runOtelDemoAnalysis(db *sql.DB, outputEndpoints, outputDatabase, outputGRPC
 
 	// Combine HTTP endpoints
 	allEndpoints := append(clientEndpoints, serverEndpoints...)
+	// Convert database operations to service endpoints
+	dbEndpoints := clickhouseanalyzer.ConvertDatabaseOperationsToEndpoints(dbOperations)
+	allEndpoints = append(allEndpoints, dbEndpoints...)
+	// Convert gRPC operations to service endpoints
+	grpcEndpoints := clickhouseanalyzer.ConvertGRPCOperationsToEndpoints(grpcOperations)
+	allEndpoints = append(allEndpoints, grpcEndpoints...)
 
 	// Generate service endpoints file
 	fmt.Printf("Generating service endpoints file at %s...\n", outputEndpoints)
