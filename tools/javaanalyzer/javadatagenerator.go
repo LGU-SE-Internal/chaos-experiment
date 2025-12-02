@@ -74,11 +74,13 @@ var trainTicketServiceDirs = []string{
 	"ts-route-service", "ts-train-service", "ts-wait-order-service",
 }
 
-// OtelDemo service directories (placeholder - add actual service names when available)
+// OtelDemo service directories - these are under src/ subdirectory
 var otelDemoServiceDirs = []string{
-	// Add OtelDemo Java service directories here when available
-	// For example: "adservice", "cartservice", "checkoutservice", etc.
+	"ad", // AdService (Java)
 }
+
+// OtelDemo source subdirectory
+const otelDemoSrcSubdir = "src"
 
 // GetServiceDirsForSystem returns the list of service directories for the current system
 func GetServiceDirsForSystem() []string {
@@ -86,6 +88,15 @@ func GetServiceDirsForSystem() []string {
 		return trainTicketServiceDirs
 	}
 	return otelDemoServiceDirs
+}
+
+// GetServiceBasePath returns the base path for services based on the system type
+// For OtelDemo, services are under src/ subdirectory
+func GetServiceBasePath(basePath string) string {
+	if systemconfig.IsOtelDemo() {
+		return filepath.Join(basePath, otelDemoSrcSubdir)
+	}
+	return basePath
 }
 
 // getPackageNameFromPath extracts the package name from the output file path
@@ -97,19 +108,45 @@ func getPackageNameFromPath(outputFilePath string) string {
 	return packageName
 }
 
+// FilterClassMethods filters out unwanted class-method entries based on system-specific rules
+func FilterClassMethods(entries []ClassMethodEntry) []ClassMethodEntry {
+	var filtered []ClassMethodEntry
+	for _, entry := range entries {
+		// For OTel Demo, exclude problempattern classes
+		if systemconfig.IsOtelDemo() {
+			if strings.Contains(entry.ClassName, "problempattern") {
+				continue
+			}
+		}
+		filtered = append(filtered, entry)
+	}
+	return filtered
+}
+
 // GenerateJavaClassMethodsFile analyzes Java services and generates a Go file
 // with class-method pairs for each service
 func GenerateJavaClassMethodsFile(servicesBasePath string, outputFilePath string) error {
 	// Get service directories based on current system
 	serviceDirs := GetServiceDirsForSystem()
 
+	// Get the correct base path (OtelDemo has src/ subdirectory)
+	basePath := GetServiceBasePath(servicesBasePath)
+
 	// Prepare full paths for analysis
 	var servicePaths []string
 	for _, serviceDir := range serviceDirs {
-		servicePath := filepath.Join(servicesBasePath, serviceDir)
-		if _, err := os.Stat(servicePath); err == nil {
+		servicePath := filepath.Join(basePath, serviceDir)
+		if info, err := os.Stat(servicePath); err == nil && info.IsDir() {
 			servicePaths = append(servicePaths, servicePath)
+			fmt.Printf("Found service directory: %s\n", servicePath)
+		} else {
+			fmt.Printf("Service directory not found or not a directory: %s\n", servicePath)
 		}
+	}
+
+	if len(servicePaths) == 0 {
+		fmt.Printf("Warning: No service directories found in %s\n", basePath)
+		fmt.Printf("Expected directories: %v\n", serviceDirs)
 	}
 
 	// Analyze Java services
@@ -118,14 +155,21 @@ func GenerateJavaClassMethodsFile(servicesBasePath string, outputFilePath string
 		return fmt.Errorf("failed to analyze Java services: %w", err)
 	}
 
+	fmt.Printf("Analyzed %d service paths\n", len(pathResults))
+
 	// Transform path results to service class methods
 	var services []ServiceClassMethods
 	for _, result := range pathResults {
 		serviceName := result.PathName
 
+		// Filter out unwanted classes
+		filteredMethods := FilterClassMethods(result.Methods)
+
+		fmt.Printf("Service %s: found %d methods (after filtering)\n", serviceName, len(filteredMethods))
+
 		services = append(services, ServiceClassMethods{
 			ServiceName: serviceName,
-			Methods:     result.Methods,
+			Methods:     filteredMethods,
 		})
 	}
 
