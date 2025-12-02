@@ -10,6 +10,7 @@ type ServiceEndpoint struct {
 	Route            string
 	ServerAddress    string
 	ServerPort       string
+	SpanName         string
 }
 
 // ServiceEndpoints maps service names to their endpoints
@@ -22,6 +23,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "postgresql",
 			ServerPort:     "5432",
+			SpanName:       "",
 		},
 	},
 	"ad": {
@@ -32,6 +34,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/flagd.evaluation.v1.Service/EventStream",
 			ServerAddress:  "flagd",
 			ServerPort:     "8013",
+			SpanName:       "",
 		},
 	},
 	"recommendation": {
@@ -42,6 +45,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/flagd.evaluation.v1.Service/EventStream",
 			ServerAddress:  "flagd",
 			ServerPort:     "8013",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "recommendation",
@@ -50,6 +54,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.ProductCatalogService/ListProducts",
 			ServerAddress:  "product-catalog",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"shipping": {
@@ -60,6 +65,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/getquote",
 			ServerAddress:  "quote",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "shipping",
@@ -68,6 +74,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/getquote",
 			ServerAddress:  "quote",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "shipping",
@@ -76,6 +83,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/get-quote",
 			ServerAddress:  "load-generator",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "shipping",
@@ -84,6 +92,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/get-quote",
 			ServerAddress:  "load-generator",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "shipping",
@@ -92,6 +101,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/ship-order",
 			ServerAddress:  "checkout",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"image-provider": {
@@ -102,6 +112,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/status",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 	},
 	"email": {
@@ -112,6 +123,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/send_order_confirmation",
 			ServerAddress:  "checkout",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 	},
 	"frontend": {
@@ -122,6 +134,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -130,6 +143,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/cart",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -138,6 +152,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/cart",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -146,6 +161,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/checkout",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -154,6 +170,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/checkout",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -162,6 +179,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/data",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -170,6 +188,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/data/",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -178,6 +197,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/data/?contextKeys=*",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -186,6 +206,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/data?contextKeys=*",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -194,6 +215,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/products/*",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -202,6 +224,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/recommendations?productIds=*",
 			ServerAddress:  "load-generator",
 			ServerPort:     "",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -210,6 +233,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.AdService/GetAds",
 			ServerAddress:  "ad",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -218,6 +242,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.CartService/AddItem",
 			ServerAddress:  "cart",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -226,6 +251,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.CheckoutService/PlaceOrder",
 			ServerAddress:  "checkout",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -234,6 +260,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.ProductCatalogService/GetProduct",
 			ServerAddress:  "product-catalog",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "frontend",
@@ -242,6 +269,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.RecommendationService/ListRecommendations",
 			ServerAddress:  "recommendation",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"quote": {
@@ -252,6 +280,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/getquote",
 			ServerAddress:  "quote",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"fraud-detection": {
@@ -262,6 +291,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/flagd.evaluation.v1.Service/EventStream",
 			ServerAddress:  "flagd",
 			ServerPort:     "8013",
+			SpanName:       "",
 		},
 	},
 	"cart": {
@@ -272,6 +302,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/flagd.evaluation.v1.Service/ResolveBoolean",
 			ServerAddress:  "flagd",
 			ServerPort:     "8013",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "cart",
@@ -280,6 +311,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.CartService/AddItem",
 			ServerAddress:  "cart",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "cart",
@@ -288,6 +320,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.CartService/EmptyCart",
 			ServerAddress:  "cart",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "cart",
@@ -296,6 +329,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.CartService/GetCart",
 			ServerAddress:  "cart",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "cart",
@@ -304,6 +338,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/flagd.evaluation.v1.Service/ResolveBoolean",
 			ServerAddress:  "flagd",
 			ServerPort:     "8013",
+			SpanName:       "",
 		},
 	},
 	"checkout": {
@@ -314,6 +349,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/get-quote",
 			ServerAddress:  "shipping",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "checkout",
@@ -322,6 +358,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/get-quote",
 			ServerAddress:  "shipping",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "checkout",
@@ -330,6 +367,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/get-quote",
 			ServerAddress:  "shipping",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "checkout",
@@ -338,6 +376,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/send_order_confirmation",
 			ServerAddress:  "email",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "checkout",
@@ -346,6 +385,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/ship-order",
 			ServerAddress:  "shipping",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "checkout",
@@ -354,6 +394,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.CartService/EmptyCart",
 			ServerAddress:  "10.109.238.118",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "checkout",
@@ -362,6 +403,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.CurrencyService/Convert",
 			ServerAddress:  "10.109.43.36",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "checkout",
@@ -370,6 +412,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.PaymentService/Charge",
 			ServerAddress:  "10.110.65.72",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "checkout",
@@ -378,6 +421,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/oteldemo.ProductCatalogService/GetProduct",
 			ServerAddress:  "10.110.106.226",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 }

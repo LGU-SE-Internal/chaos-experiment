@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,6 +29,71 @@ type ServiceEndpoint struct {
 	ServerAddress  string
 	ServerPort     string
 	SpanKind       string // Add SpanKind to track if it's Server or Client
+	SpanName       string // Span name for groundtruth generation
+}
+
+// TrainTicket span name pattern replacements for ts-ui-dashboard and loadgenerator services
+// These patterns normalize dynamic URL parameters to template placeholders
+var tsSpanNamePatterns = []struct {
+	Pattern     *regexp.Regexp
+	Replacement string
+}{
+	{
+		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/verifycode/verify/[0-9a-zA-Z]+`),
+		"${1}GET ${2}/api/v1/verifycode/verify/{verifyCode}",
+	},
+	{
+		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/foodservice/foods/[0-9]{4}-[0-9]{2}-[0-9]{2}/[a-z]+/[a-z]+/[A-Z0-9]+`),
+		"${1}GET ${2}/api/v1/foodservice/foods/{date}/{startStation}/{endStation}/{tripId}",
+	},
+	{
+		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/contactservice/contacts/account/[0-9a-f-]+`),
+		"${1}GET ${2}/api/v1/contactservice/contacts/account/{accountId}",
+	},
+	{
+		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/userservice/users/id/[0-9a-f-]+`),
+		"${1}GET ${2}/api/v1/userservice/users/id/{userId}",
+	},
+	{
+		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/consignservice/consigns/order/[0-9a-f-]+`),
+		"${1}GET ${2}/api/v1/consignservice/consigns/order/{id}",
+	},
+	{
+		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/consignservice/consigns/account/[0-9a-f-]+`),
+		"${1}GET ${2}/api/v1/consignservice/consigns/account/{id}",
+	},
+	{
+		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/executeservice/execute/collected/[0-9a-f-]+`),
+		"${1}GET ${2}/api/v1/executeservice/execute/collected/{orderId}",
+	},
+	{
+		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/cancelservice/cancel/[0-9a-f-]+/[0-9a-f-]+`),
+		"${1}GET ${2}/api/v1/cancelservice/cancel/{orderId}/{loginId}",
+	},
+	{
+		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/cancelservice/cancel/refound/[0-9a-f-]+`),
+		"${1}GET ${2}/api/v1/cancelservice/cancel/refound/{orderId}",
+	},
+	{
+		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/executeservice/execute/execute/[0-9a-f-]+`),
+		"${1}GET ${2}/api/v1/executeservice/execute/execute/{orderId}",
+	},
+}
+
+// NormalizeTrainTicketSpanName applies pattern replacements to normalize
+// span names for ts-ui-dashboard and loadgenerator services
+func NormalizeTrainTicketSpanName(spanName string, serviceName string) string {
+	// Only apply replacements for ts-ui-dashboard and loadgenerator
+	if serviceName != "ts-ui-dashboard" && serviceName != "loadgenerator" {
+		return spanName
+	}
+
+	for _, p := range tsSpanNamePatterns {
+		if p.Pattern.MatchString(spanName) {
+			return p.Pattern.ReplaceAllString(spanName, p.Replacement)
+		}
+	}
+	return spanName
 }
 
 // DatabaseOperation represents a database operation with its details
@@ -202,7 +268,8 @@ SELECT
     SpanAttributes['db.sql.table'] AS db_sql_table, 
     SpanAttributes['db.statement'] AS db_statement,
     SpanAttributes['db.system'] AS db_system,
-    SpanAttributes['db.user'] AS db_user
+    SpanAttributes['db.user'] AS db_user,
+    SpanName AS span_name
 FROM otel_traces
 WHERE 
     ResourceAttributes['service.namespace'] = 'ts0'
@@ -357,7 +424,8 @@ SELECT
     SpanAttributes['rpc.system'] AS rpc_system,
     SpanAttributes['rpc.service'] AS rpc_service,
     SpanAttributes['rpc.method'] AS rpc_method,
-    SpanAttributes['rpc.grpc.status_code'] AS grpc_status_code
+    SpanAttributes['rpc.grpc.status_code'] AS grpc_status_code,
+    SpanName AS span_name
 FROM otel_traces
 WHERE 
     ResourceAttributes['service.namespace'] = 'otel-demo'
@@ -376,7 +444,8 @@ SELECT DISTINCT
     response_status_code,
     masked_route,
     server_address,
-    server_port
+    server_port,
+    span_name
 FROM otel_traces_mv
 FINAL
 WHERE SpanKind = 'Client'
@@ -389,7 +458,8 @@ SELECT DISTINCT
     ServiceName,
     request_method,
     response_status_code,
-    masked_route
+    masked_route,
+    span_name
 FROM otel_traces_mv
 FINAL
 WHERE ServiceName = 'ts-ui-dashboard'
@@ -417,7 +487,8 @@ SELECT DISTINCT
     response_status_code,
     masked_route,
     server_address,
-    server_port
+    server_port,
+    span_name
 FROM otel_demo_traces_mv
 FINAL
 WHERE SpanKind = 'Client'
@@ -435,7 +506,8 @@ SELECT DISTINCT
     masked_route,
     server_address,
     server_port,
-    client_address
+    client_address,
+    span_name
 FROM otel_demo_traces_mv
 FINAL
 WHERE SpanKind = 'Server'
@@ -535,7 +607,7 @@ func QueryClientTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 	var results []ServiceEndpoint
 	for rows.Next() {
 		var endpoint ServiceEndpoint
-		var serverAddr, serverPort sql.NullString
+		var serverAddr, serverPort, spanName sql.NullString
 
 		if err := rows.Scan(
 			&endpoint.ServiceName,
@@ -544,6 +616,7 @@ func QueryClientTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 			&endpoint.Route,
 			&serverAddr,
 			&serverPort,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -554,6 +627,11 @@ func QueryClientTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 		}
 		if serverPort.Valid {
 			endpoint.ServerPort = serverPort.String
+		}
+
+		// Handle span name with normalization for TrainTicket services
+		if spanName.Valid {
+			endpoint.SpanName = NormalizeTrainTicketSpanName(spanName.String, endpoint.ServiceName)
 		}
 
 		// If both server address and port are empty, default to RabbitMQ
@@ -586,14 +664,21 @@ func QueryDashboardRoutes(db *sql.DB) ([]ServiceEndpoint, error) {
 	var results []ServiceEndpoint
 	for rows.Next() {
 		var endpoint ServiceEndpoint
+		var spanName sql.NullString
 
 		if err := rows.Scan(
 			&endpoint.ServiceName,
 			&endpoint.RequestMethod,
 			&endpoint.ResponseStatus,
 			&endpoint.Route,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		// Handle span name with normalization for TrainTicket services
+		if spanName.Valid {
+			endpoint.SpanName = NormalizeTrainTicketSpanName(spanName.String, endpoint.ServiceName)
 		}
 
 		// Add server information based on route
@@ -673,7 +758,7 @@ func QueryOtelDemoHTTPClientTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 	var results []ServiceEndpoint
 	for rows.Next() {
 		var endpoint ServiceEndpoint
-		var serverAddr, serverPort sql.NullString
+		var serverAddr, serverPort, spanName sql.NullString
 
 		if err := rows.Scan(
 			&endpoint.ServiceName,
@@ -682,6 +767,7 @@ func QueryOtelDemoHTTPClientTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 			&endpoint.Route,
 			&serverAddr,
 			&serverPort,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -693,6 +779,9 @@ func QueryOtelDemoHTTPClientTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 		}
 		if serverPort.Valid {
 			endpoint.ServerPort = serverPort.String
+		}
+		if spanName.Valid {
+			endpoint.SpanName = spanName.String
 		}
 
 		// Map empty server address to service based on route
@@ -724,7 +813,7 @@ func QueryOtelDemoHTTPServerTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 	var results []ServiceEndpoint
 	for rows.Next() {
 		var endpoint ServiceEndpoint
-		var serverAddr, serverPort, clientAddr sql.NullString
+		var serverAddr, serverPort, clientAddr, spanName sql.NullString
 
 		if err := rows.Scan(
 			&endpoint.ServiceName,
@@ -734,6 +823,7 @@ func QueryOtelDemoHTTPServerTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 			&serverAddr,
 			&serverPort,
 			&clientAddr,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -750,6 +840,9 @@ func QueryOtelDemoHTTPServerTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 		}
 		if serverPort.Valid {
 			endpoint.ServerPort = serverPort.String
+		}
+		if spanName.Valid {
+			endpoint.SpanName = spanName.String
 		}
 
 		// Map client address (IP) to service name if possible

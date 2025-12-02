@@ -10,6 +10,7 @@ type ServiceEndpoint struct {
 	Route            string
 	ServerAddress    string
 	ServerPort       string
+	SpanName         string
 }
 
 // ServiceEndpoints maps service names to their endpoints
@@ -22,6 +23,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travel",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-service",
@@ -30,6 +32,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travels",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-service",
@@ -38,6 +41,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/seatservice/seats/left_tickets",
 			ServerAddress:  "ts-seat-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-service",
@@ -46,6 +50,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travel",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-service",
@@ -54,6 +59,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travels",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-service",
@@ -62,6 +68,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travel",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-service",
@@ -70,6 +77,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeservice/routes/*",
 			ServerAddress:  "ts-route-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-service",
@@ -78,6 +86,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/seatservice/seats/left_tickets",
 			ServerAddress:  "ts-seat-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-service",
@@ -86,6 +95,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travels",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-service",
@@ -94,6 +104,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-service",
@@ -102,6 +113,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-auth-service": {
@@ -112,6 +124,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/verifycode/verify/*",
 			ServerAddress:  "ts-verification-code-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-auth-service",
@@ -120,6 +133,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-auth-service",
@@ -128,6 +142,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-wait-order-service": {
@@ -138,6 +153,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-wait-order-service",
@@ -146,6 +162,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-train-service": {
@@ -156,6 +173,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-train-service",
@@ -164,6 +182,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-ui-dashboard": {
@@ -174,6 +193,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/users/login",
 			ServerAddress:  "ts-auth-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -182,6 +202,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/preserveservice/preserve",
 			ServerAddress:  "ts-preserve-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -190,6 +211,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/trips/left",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -198,6 +220,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/consignservice/consigns",
 			ServerAddress:  "ts-consign-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -206,6 +229,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/trips/left",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -214,6 +238,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelplanservice/travelPlan/quickest",
 			ServerAddress:  "ts-travel-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -222,6 +247,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelplanservice/travelPlan/minStation",
 			ServerAddress:  "ts-travel-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -230,6 +256,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelplanservice/travelPlan/cheapest",
 			ServerAddress:  "ts-travel-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -238,6 +265,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/trips/left",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -246,6 +274,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelplanservice/travelPlan/minStation",
 			ServerAddress:  "ts-travel-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -254,6 +283,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/users/login",
 			ServerAddress:  "ts-auth-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -262,6 +292,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/rebookservice/rebook",
 			ServerAddress:  "ts-rebook-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -270,6 +301,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/consignservice/consigns/order/*",
 			ServerAddress:  "ts-consign-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -278,6 +310,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/cancelservice/cancel/*/*",
 			ServerAddress:  "ts-cancel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -286,6 +319,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/cancelservice/cancel/refound/*",
 			ServerAddress:  "ts-cancel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -294,6 +328,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/consignservice/consigns/account/*",
 			ServerAddress:  "ts-consign-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -302,6 +337,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/consignservice/consigns",
 			ServerAddress:  "ts-consign-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -310,6 +346,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/consignservice/consigns/order/*",
 			ServerAddress:  "ts-consign-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -318,6 +355,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelplanservice/travelPlan/cheapest",
 			ServerAddress:  "ts-travel-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -326,6 +364,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/preserveservice/preserve",
 			ServerAddress:  "ts-preserve-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -334,6 +373,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelplanservice/travelPlan/minStation",
 			ServerAddress:  "ts-travel-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -342,6 +382,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/assuranceservice/assurances/types",
 			ServerAddress:  "ts-assurance-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -350,6 +391,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/inside_pay_service/inside_payment",
 			ServerAddress:  "ts-inside-payment-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -358,6 +400,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/trips/left",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -366,6 +409,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/foodservice/foods/*/*/*",
 			ServerAddress:  "ts-food-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -374,6 +418,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/contactservice/contacts/account/*",
 			ServerAddress:  "ts-contacts-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -382,6 +427,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/trips/left",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -390,6 +436,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/trainservice/trains",
 			ServerAddress:  "ts-train-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -398,6 +445,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/executeservice/execute/execute/*",
 			ServerAddress:  "ts-execute-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -406,6 +454,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/executeservice/execute/collected/*",
 			ServerAddress:  "ts-execute-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -414,6 +463,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelplanservice/travelPlan/quickest",
 			ServerAddress:  "ts-travel-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -422,6 +472,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeservice/routes",
 			ServerAddress:  "ts-route-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -430,6 +481,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderservice/order/refresh",
 			ServerAddress:  "ts-order-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -438,6 +490,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderOtherService/orderOther/refresh",
 			ServerAddress:  "ts-order-other-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -446,6 +499,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/users/login",
 			ServerAddress:  "ts-auth-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -454,6 +508,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/userservice/users/id/*",
 			ServerAddress:  "ts-user-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-ui-dashboard",
@@ -462,6 +517,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/verifycode/verify/*",
 			ServerAddress:  "ts-verification-code-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"ts-travel2-service": {
@@ -472,6 +528,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travel",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -480,6 +537,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travels",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -488,6 +546,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/seatservice/seats/left_tickets",
 			ServerAddress:  "ts-seat-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -496,6 +555,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/seatservice/seats/left_tickets",
 			ServerAddress:  "ts-seat-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -504,6 +564,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travel",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -512,6 +573,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travels",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -520,6 +582,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travel",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -528,6 +591,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeservice/routes/*",
 			ServerAddress:  "ts-route-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -536,6 +600,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/seatservice/seats/left_tickets",
 			ServerAddress:  "ts-seat-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -544,6 +609,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travels",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -552,6 +618,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel2-service",
@@ -560,6 +627,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-consign-service": {
@@ -570,6 +638,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/consignpriceservice/consignprice/*/*",
 			ServerAddress:  "ts-consign-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-consign-service",
@@ -578,6 +647,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/consignpriceservice/consignprice/*/*",
 			ServerAddress:  "ts-consign-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-consign-service",
@@ -586,6 +656,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-consign-service",
@@ -594,6 +665,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-inside-payment-service": {
@@ -604,6 +676,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/paymentservice/payment",
 			ServerAddress:  "ts-payment-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-inside-payment-service",
@@ -612,6 +685,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderservice/order/*",
 			ServerAddress:  "ts-order-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-inside-payment-service",
@@ -620,6 +694,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderservice/order/status/*/1",
 			ServerAddress:  "ts-order-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-inside-payment-service",
@@ -628,6 +703,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-inside-payment-service",
@@ -636,6 +712,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-execute-service": {
@@ -646,6 +723,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderOtherService/orderOther/status/*/6",
 			ServerAddress:  "ts-order-other-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-execute-service",
@@ -654,6 +732,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderOtherService/orderOther/status/*/2",
 			ServerAddress:  "ts-order-other-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-execute-service",
@@ -662,6 +741,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderOtherService/orderOther/*",
 			ServerAddress:  "ts-order-other-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-execute-service",
@@ -670,6 +750,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderservice/order/*",
 			ServerAddress:  "ts-order-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"ts-config-service": {
@@ -680,6 +761,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-config-service",
@@ -688,6 +770,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-route-service": {
@@ -698,6 +781,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-service",
@@ -706,6 +790,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-station-service": {
@@ -716,6 +801,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-station-service",
@@ -724,6 +810,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-food-service": {
@@ -734,6 +821,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-food-service",
@@ -742,6 +830,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/stationfoodservice/stationfoodstores",
 			ServerAddress:  "ts-station-food-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-food-service",
@@ -750,6 +839,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/routes/*",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-food-service",
@@ -758,6 +848,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/trainfoodservice/trainfoods/*",
 			ServerAddress:  "ts-train-food-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-food-service",
@@ -766,6 +857,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-food-service",
@@ -774,6 +866,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-delivery-service": {
@@ -784,6 +877,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-delivery-service",
@@ -792,6 +886,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-delivery-service",
@@ -800,6 +895,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-station-food-service": {
@@ -810,6 +906,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-station-food-service",
@@ -818,6 +915,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-seat-service": {
@@ -828,6 +926,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/configservice/configs/DirectTicketAllocationProportion",
 			ServerAddress:  "ts-config-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-seat-service",
@@ -836,6 +935,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderOtherService/orderOther/*",
 			ServerAddress:  "ts-order-other-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-seat-service",
@@ -844,6 +944,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderservice/order/*",
 			ServerAddress:  "ts-order-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-seat-service",
@@ -852,6 +953,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderOtherService/orderOther/*",
 			ServerAddress:  "ts-order-other-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-seat-service",
@@ -860,6 +962,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/configservice/configs/DirectTicketAllocationProportion",
 			ServerAddress:  "ts-config-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"ts-contacts-service": {
@@ -870,6 +973,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-contacts-service",
@@ -878,6 +982,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-assurance-service": {
@@ -888,6 +993,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-assurance-service",
@@ -896,6 +1002,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-preserve-service": {
@@ -906,6 +1013,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderservice/order",
 			ServerAddress:  "ts-order-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -914,6 +1022,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/seatservice/seats",
 			ServerAddress:  "ts-seat-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -922,6 +1031,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/trip_detail",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -930,6 +1040,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travel",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -938,6 +1049,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/trip_detail",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -946,6 +1058,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/foodservice/orders",
 			ServerAddress:  "ts-food-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -954,6 +1067,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/userservice/users/id/*",
 			ServerAddress:  "ts-user-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -962,6 +1076,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderservice/order",
 			ServerAddress:  "ts-order-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -970,6 +1085,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/assuranceservice/assurances/1/*",
 			ServerAddress:  "ts-assurance-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -978,6 +1094,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/trip_detail",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -986,6 +1103,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/basicservice/basic/travel",
 			ServerAddress:  "ts-basic-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -994,6 +1112,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/seatservice/seats",
 			ServerAddress:  "ts-seat-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -1002,6 +1121,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/contactservice/contacts/*",
 			ServerAddress:  "ts-contacts-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-preserve-service",
@@ -1010,6 +1130,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/securityservice/securityConfigs/*",
 			ServerAddress:  "ts-security-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"ts-basic-service": {
@@ -1020,6 +1141,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeservice/routes/byIds/",
 			ServerAddress:  "ts-route-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1028,6 +1150,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/TeKuai",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1036,6 +1159,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/KuaiSu",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1044,6 +1168,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/DongCheOne",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1052,6 +1177,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/GaoTieOne",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1060,6 +1186,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/ZhiDa",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1068,6 +1195,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/byRouteIdsAndTrainTypes",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1076,6 +1204,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/KuaiSu",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1084,6 +1213,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/TeKuai",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1092,6 +1222,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/ZhiDa",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1100,6 +1231,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/DongCheOne",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1108,6 +1240,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/trainservice/trains/byName/*",
 			ServerAddress:  "ts-train-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1116,6 +1249,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/stationservice/stations/id/*",
 			ServerAddress:  "ts-station-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1124,6 +1258,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/GaoTieOne",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1132,6 +1267,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/*/GaoTieTwo",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1140,6 +1276,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeservice/routes/*",
 			ServerAddress:  "ts-route-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1148,6 +1285,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/priceservice/prices/byRouteIdsAndTrainTypes",
 			ServerAddress:  "ts-price-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1156,6 +1294,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeservice/routes/byIds/",
 			ServerAddress:  "ts-route-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1164,6 +1303,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/trainservice/trains/byNames",
 			ServerAddress:  "ts-train-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-basic-service",
@@ -1172,6 +1312,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/stationservice/stations/idlist",
 			ServerAddress:  "ts-station-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"ts-travel-plan-service": {
@@ -1182,6 +1323,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/trainservice/trains/byName/*",
 			ServerAddress:  "ts-train-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-plan-service",
@@ -1190,6 +1332,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/seatservice/seats/left_tickets",
 			ServerAddress:  "ts-seat-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-plan-service",
@@ -1198,6 +1341,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeplanservice/routePlan/quickestRoute",
 			ServerAddress:  "ts-route-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-plan-service",
@@ -1206,6 +1350,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeplanservice/routePlan/minStopStations",
 			ServerAddress:  "ts-route-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-plan-service",
@@ -1214,6 +1359,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeplanservice/routePlan/cheapestRoute",
 			ServerAddress:  "ts-route-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-plan-service",
@@ -1222,6 +1368,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeplanservice/routePlan/cheapestRoute",
 			ServerAddress:  "ts-route-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-plan-service",
@@ -1230,6 +1377,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeplanservice/routePlan/minStopStations",
 			ServerAddress:  "ts-route-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-plan-service",
@@ -1238,6 +1386,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/seatservice/seats/left_tickets",
 			ServerAddress:  "ts-seat-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-plan-service",
@@ -1246,6 +1395,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/trainservice/trains/byName/*",
 			ServerAddress:  "ts-train-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-travel-plan-service",
@@ -1254,6 +1404,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeplanservice/routePlan/quickestRoute",
 			ServerAddress:  "ts-route-plan-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"ts-notification-service": {
@@ -1264,6 +1415,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-notification-service",
@@ -1272,6 +1424,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-notification-service",
@@ -1280,6 +1433,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"loadgenerator": {
@@ -1290,6 +1444,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "loadgenerator",
@@ -1298,6 +1453,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "loadgenerator",
@@ -1306,6 +1462,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "loadgenerator",
@@ -1314,6 +1471,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "loadgenerator",
@@ -1322,6 +1480,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "loadgenerator",
@@ -1330,6 +1489,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "loadgenerator",
@@ -1338,6 +1498,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "loadgenerator",
@@ -1346,6 +1507,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "loadgenerator",
@@ -1354,6 +1516,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "loadgenerator",
@@ -1362,6 +1525,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "loadgenerator",
@@ -1370,6 +1534,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "ts-rabbitmq",
 			ServerPort:     "5672",
+			SpanName:       "",
 		},
 	},
 	"ts-rebook-service": {
@@ -1380,6 +1545,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderOtherService/orderOther/*",
 			ServerAddress:  "ts-order-other-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"ts-security-service": {
@@ -1390,6 +1556,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderOtherService/orderOther/security/*/*",
 			ServerAddress:  "ts-order-other-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-security-service",
@@ -1398,6 +1565,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderservice/order/security/*/*",
 			ServerAddress:  "ts-order-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-security-service",
@@ -1406,6 +1574,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-security-service",
@@ -1414,6 +1583,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-consign-price-service": {
@@ -1424,6 +1594,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-consign-price-service",
@@ -1432,6 +1603,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-order-service": {
@@ -1442,6 +1614,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-order-service",
@@ -1450,6 +1623,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-cancel-service": {
@@ -1460,6 +1634,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/inside_pay_service/inside_payment/drawback/*/*",
 			ServerAddress:  "ts-inside-payment-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-cancel-service",
@@ -1468,6 +1643,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/userservice/users/id/*",
 			ServerAddress:  "ts-user-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-cancel-service",
@@ -1476,6 +1652,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderservice/order",
 			ServerAddress:  "ts-order-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-cancel-service",
@@ -1484,6 +1661,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/inside_pay_service/inside_payment/drawback/*/*",
 			ServerAddress:  "ts-inside-payment-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-cancel-service",
@@ -1492,6 +1670,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/orderservice/order/*",
 			ServerAddress:  "ts-order-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"ts-food-delivery-service": {
@@ -1502,6 +1681,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-food-delivery-service",
@@ -1510,6 +1690,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-route-plan-service": {
@@ -1520,6 +1701,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/trips/routes",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1528,6 +1710,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/trips/left",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1536,6 +1719,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/trip_detail",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1544,6 +1728,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/trips/left",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1552,6 +1737,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/trip_detail",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1560,6 +1746,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/trips/left",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1568,6 +1755,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/trip_detail",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1576,6 +1764,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeservice/routes/*",
 			ServerAddress:  "ts-route-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1584,6 +1773,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/trips/routes",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1592,6 +1782,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/trip_detail",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1600,6 +1791,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/trips/routes",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1608,6 +1800,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/routeservice/routes/*/*",
 			ServerAddress:  "ts-route-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1616,6 +1809,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/routes/*",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1624,6 +1818,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/routes/*",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1632,6 +1827,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travel2service/trips/left",
 			ServerAddress:  "ts-travel2-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-route-plan-service",
@@ -1640,6 +1836,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "/api/v1/travelservice/trips/left",
 			ServerAddress:  "ts-travel-service",
 			ServerPort:     "8080",
+			SpanName:       "",
 		},
 	},
 	"ts-train-food-service": {
@@ -1650,6 +1847,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-train-food-service",
@@ -1658,6 +1856,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-order-other-service": {
@@ -1668,6 +1867,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-order-other-service",
@@ -1676,6 +1876,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-user-service": {
@@ -1686,6 +1887,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-user-service",
@@ -1694,6 +1896,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-price-service": {
@@ -1704,6 +1907,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-price-service",
@@ -1712,6 +1916,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 	"ts-payment-service": {
@@ -1722,6 +1927,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 		{
 			ServiceName:    "ts-payment-service",
@@ -1730,6 +1936,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "",
 			ServerAddress:  "mysql",
 			ServerPort:     "3306",
+			SpanName:       "",
 		},
 	},
 }
