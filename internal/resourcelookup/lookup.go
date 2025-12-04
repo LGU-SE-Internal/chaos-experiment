@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/LGU-SE-Internal/chaos-experiment/client"
@@ -257,6 +258,7 @@ func getSpanNamesBetweenServices(sourceService, targetService string) []string {
 
 // GetAllDNSEndpoints returns all app+domain pairs for DNS chaos sorted by app name
 // This function uses the current system from systemconfig
+// Note: DNS chaos does NOT work for gRPC-only connections, so we filter those out
 func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 	currentSystem := systemconfig.GetCurrentSystem()
 	
@@ -270,37 +272,51 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 	services := serviceendpoints.GetAllServices()
 	result := make([]AppDNSPair, 0)
 
+	// Structure to track domain info with HTTP flag
+	type domainInfo struct {
+		spanNames map[string]bool
+		hasHTTP   bool
+	}
+
 	// For each service, get its endpoints
 	for _, serviceName := range services {
 		endpoints := serviceendpoints.GetEndpointsByService(serviceName)
-		// Map from domain to span names
-		domainSpanNames := make(map[string]map[string]bool)
+		// Map from domain to info
+		domainMap := make(map[string]*domainInfo)
 
 		for _, endpoint := range endpoints {
 			// Only include valid server addresses that are not the service itself
 			if endpoint.ServerAddress != "" &&
 				endpoint.ServerAddress != serviceName {
-				if domainSpanNames[endpoint.ServerAddress] == nil {
-					domainSpanNames[endpoint.ServerAddress] = make(map[string]bool)
+				if domainMap[endpoint.ServerAddress] == nil {
+					domainMap[endpoint.ServerAddress] = &domainInfo{spanNames: make(map[string]bool)}
 				}
 				if endpoint.SpanName != "" {
-					domainSpanNames[endpoint.ServerAddress][endpoint.SpanName] = true
+					domainMap[endpoint.ServerAddress].spanNames[endpoint.SpanName] = true
+				}
+				// Check if this is an HTTP endpoint (not gRPC)
+				if endpoint.Route != "" && !isGRPCRoute(endpoint.Route) {
+					domainMap[endpoint.ServerAddress].hasHTTP = true
 				}
 			}
 		}
 
-		// Convert to AppDNSPairs with span names
-		for domain, spanNameSet := range domainSpanNames {
-			spanNames := make([]string, 0, len(spanNameSet))
-			for spanName := range spanNameSet {
-				spanNames = append(spanNames, spanName)
+		// Convert to AppDNSPairs with span names, filtering out gRPC-only connections
+		for domain, info := range domainMap {
+			// Only include if there's at least one HTTP endpoint
+			// DNS chaos doesn't work for gRPC-only connections
+			if info.hasHTTP {
+				spanNames := make([]string, 0, len(info.spanNames))
+				for spanName := range info.spanNames {
+					spanNames = append(spanNames, spanName)
+				}
+				sort.Strings(spanNames)
+				result = append(result, AppDNSPair{
+					AppName:   serviceName,
+					Domain:    domain,
+					SpanNames: spanNames,
+				})
 			}
-			sort.Strings(spanNames)
-			result = append(result, AppDNSPair{
-				AppName:   serviceName,
-				Domain:    domain,
-				SpanNames: spanNames,
-			})
 		}
 	}
 
@@ -319,8 +335,31 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 	return result, nil
 }
 
+// isGRPCRoute checks if a route is a gRPC route pattern
+func isGRPCRoute(route string) bool {
+	// gRPC routes typically look like:
+	// - /oteldemo.CartService/AddItem
+	// - /flagd.evaluation.v1.Service/EventStream
+	// - /package.Service/Method
+	if route == "" {
+		return false
+	}
+	// gRPC routes start with / and contain a service/method pattern with dots
+	if len(route) > 1 && route[0] == '/' {
+		// Check for gRPC service patterns (contains dots and slash after initial slash)
+		// Examples: /oteldemo.CartService/AddItem, /flagd.evaluation.v1.Service/ResolveBoolean
+		routeBody := route[1:]
+		// gRPC routes have format: /package.Service/Method
+		if strings.Contains(routeBody, ".") && strings.Contains(routeBody, "/") {
+			return true
+		}
+	}
+	return false
+}
+
 // GetAllDatabaseOperations returns all app+database operations pairs sorted by app name
 // This function uses the current system from systemconfig
+// Note: DB chaos only supports MySQL, so we filter to only return MySQL operations
 func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
 	currentSystem := systemconfig.GetCurrentSystem()
 	
@@ -338,12 +377,15 @@ func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
 	for _, serviceName := range services {
 		operations := databaseoperations.GetOperationsByService(serviceName)
 		for _, op := range operations {
-			result = append(result, AppDatabasePair{
-				AppName:       serviceName,
-				DBName:        op.DBName,
-				TableName:     op.DBTable,
-				OperationType: op.Operation,
-			})
+			// Only include MySQL operations (DB chaos only supports MySQL)
+			if op.DBSystem == "mysql" {
+				result = append(result, AppDatabasePair{
+					AppName:       serviceName,
+					DBName:        op.DBName,
+					TableName:     op.DBTable,
+					OperationType: op.Operation,
+				})
+			}
 		}
 	}
 

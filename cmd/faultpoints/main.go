@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
@@ -402,6 +403,7 @@ func getNetworkPairsForCurrentSystem() ([]resourcelookup.AppNetworkPair, error) 
 
 func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 	// Build DNS pairs from service endpoints (similar to network pairs)
+	// Note: DNS chaos does NOT work for gRPC-only connections, so we filter those out
 	var services []string
 	switch systemconfig.GetCurrentSystem() {
 	case systemconfig.SystemTrainTicket:
@@ -412,8 +414,13 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 		return resourcelookup.GetAllDNSEndpoints()
 	}
 
-	// Build unique source->domain pairs
-	pairMap := make(map[string]map[string][]string) // source -> domain -> spanNames
+	// Build unique source->domain pairs, tracking if any HTTP endpoints exist
+	// Structure: source -> domain -> {spanNames, hasHTTP}
+	type domainInfo struct {
+		spanNames []string
+		hasHTTP   bool
+	}
+	pairMap := make(map[string]map[string]*domainInfo) // source -> domain -> info
 
 	for _, serviceName := range services {
 		var endpoints interface{}
@@ -429,14 +436,17 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 			for _, ep := range eps {
 				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
 					if pairMap[serviceName] == nil {
-						pairMap[serviceName] = make(map[string][]string)
+						pairMap[serviceName] = make(map[string]*domainInfo)
+					}
+					if pairMap[serviceName][ep.ServerAddress] == nil {
+						pairMap[serviceName][ep.ServerAddress] = &domainInfo{spanNames: []string{}}
 					}
 					if ep.SpanName != "" {
-						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
-					} else {
-						if pairMap[serviceName][ep.ServerAddress] == nil {
-							pairMap[serviceName][ep.ServerAddress] = []string{}
-						}
+						pairMap[serviceName][ep.ServerAddress].spanNames = appendUnique(pairMap[serviceName][ep.ServerAddress].spanNames, ep.SpanName)
+					}
+					// TrainTicket endpoints with Route are HTTP, not gRPC
+					if ep.Route != "" && !isGRPCRoute(ep.Route) {
+						pairMap[serviceName][ep.ServerAddress].hasHTTP = true
 					}
 				}
 			}
@@ -444,32 +454,61 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 			for _, ep := range eps {
 				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
 					if pairMap[serviceName] == nil {
-						pairMap[serviceName] = make(map[string][]string)
+						pairMap[serviceName] = make(map[string]*domainInfo)
+					}
+					if pairMap[serviceName][ep.ServerAddress] == nil {
+						pairMap[serviceName][ep.ServerAddress] = &domainInfo{spanNames: []string{}}
 					}
 					if ep.SpanName != "" {
-						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
-					} else {
-						if pairMap[serviceName][ep.ServerAddress] == nil {
-							pairMap[serviceName][ep.ServerAddress] = []string{}
-						}
+						pairMap[serviceName][ep.ServerAddress].spanNames = appendUnique(pairMap[serviceName][ep.ServerAddress].spanNames, ep.SpanName)
+					}
+					// Check if this is an HTTP endpoint (not gRPC)
+					if ep.Route != "" && !isGRPCRoute(ep.Route) {
+						pairMap[serviceName][ep.ServerAddress].hasHTTP = true
 					}
 				}
 			}
 		}
 	}
 
-	// Convert to result
+	// Convert to result, filtering out gRPC-only connections
 	result := make([]resourcelookup.AppDNSPair, 0)
 	for appName, domains := range pairMap {
-		for domain, spanNames := range domains {
-			result = append(result, resourcelookup.AppDNSPair{
-				AppName:   appName,
-				Domain:    domain,
-				SpanNames: spanNames,
-			})
+		for domain, info := range domains {
+			// Only include if there's at least one HTTP endpoint
+			// DNS chaos doesn't work for gRPC-only connections
+			if info.hasHTTP {
+				result = append(result, resourcelookup.AppDNSPair{
+					AppName:   appName,
+					Domain:    domain,
+					SpanNames: info.spanNames,
+				})
+			}
 		}
 	}
 	return result, nil
+}
+
+// isGRPCRoute checks if a route is a gRPC route pattern
+func isGRPCRoute(route string) bool {
+	// gRPC routes typically look like:
+	// - /oteldemo.CartService/AddItem
+	// - /flagd.evaluation.v1.Service/EventStream
+	// - /package.Service/Method
+	if route == "" {
+		return false
+	}
+	// gRPC routes start with / and contain a service/method pattern with dots
+	if len(route) > 1 && route[0] == '/' {
+		// Check for gRPC service patterns (contains dots and slash after initial slash)
+		// Examples: /oteldemo.CartService/AddItem, /flagd.evaluation.v1.Service/ResolveBoolean
+		routeBody := route[1:]
+		// gRPC routes have format: /package.Service/Method
+		if strings.Contains(routeBody, ".") && strings.Contains(routeBody, "/") {
+			return true
+		}
+	}
+	return false
 }
 
 func getJVMMethodsForCurrentSystem() ([]resourcelookup.AppMethodPair, error) {
@@ -510,6 +549,7 @@ func getJVMMethodsForCurrentSystem() ([]resourcelookup.AppMethodPair, error) {
 }
 
 func getDatabaseOperationsForCurrentSystem() ([]resourcelookup.AppDatabasePair, error) {
+	// Note: DB chaos only supports MySQL, so we filter to only return MySQL operations
 	var services []string
 	switch systemconfig.GetCurrentSystem() {
 	case systemconfig.SystemTrainTicket:
@@ -526,22 +566,28 @@ func getDatabaseOperationsForCurrentSystem() ([]resourcelookup.AppDatabasePair, 
 		case systemconfig.SystemTrainTicket:
 			ops := tsdb.GetOperationsByService(serviceName)
 			for _, op := range ops {
-				result = append(result, resourcelookup.AppDatabasePair{
-					AppName:       serviceName,
-					DBName:        op.DBName,
-					TableName:     op.DBTable,
-					OperationType: op.Operation,
-				})
+				// Only include MySQL operations (DB chaos only supports MySQL)
+				if op.DBSystem == "mysql" {
+					result = append(result, resourcelookup.AppDatabasePair{
+						AppName:       serviceName,
+						DBName:        op.DBName,
+						TableName:     op.DBTable,
+						OperationType: op.Operation,
+					})
+				}
 			}
 		case systemconfig.SystemOtelDemo:
 			ops := oteldemodb.GetOperationsByService(serviceName)
 			for _, op := range ops {
-				result = append(result, resourcelookup.AppDatabasePair{
-					AppName:       serviceName,
-					DBName:        op.DBName,
-					TableName:     op.DBTable,
-					OperationType: op.Operation,
-				})
+				// Only include MySQL operations (DB chaos only supports MySQL)
+				if op.DBSystem == "mysql" {
+					result = append(result, resourcelookup.AppDatabasePair{
+						AppName:       serviceName,
+						DBName:        op.DBName,
+						TableName:     op.DBTable,
+						OperationType: op.Operation,
+					})
+				}
 			}
 		}
 	}
