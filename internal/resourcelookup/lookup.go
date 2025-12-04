@@ -8,6 +8,7 @@ import (
 
 	"github.com/LGU-SE-Internal/chaos-experiment/client"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/databaseoperations"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/grpcoperations"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/javaclassmethods"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/networkdependencies"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
@@ -257,6 +258,8 @@ func getSpanNamesBetweenServices(sourceService, targetService string) []string {
 
 // GetAllDNSEndpoints returns all app+domain pairs for DNS chaos sorted by app name
 // This function uses the current system from systemconfig
+// Note: DNS chaos does NOT work for gRPC-only connections, so we filter those out
+// We use grpcoperations data to identify gRPC-only service pairs
 func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 	currentSystem := systemconfig.GetCurrentSystem()
 	
@@ -265,6 +268,10 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 			return result, nil
 		}
 	}
+
+	// Build a set of gRPC-only service pairs (source -> target)
+	// This uses the grpcoperations data to identify which service pairs only use gRPC
+	grpcOnlyPairs := buildGRPCOnlyPairs()
 
 	// Get all service names
 	services := serviceendpoints.GetAllServices()
@@ -289,8 +296,15 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 			}
 		}
 
-		// Convert to AppDNSPairs with span names
+		// Convert to AppDNSPairs with span names, filtering out gRPC-only connections
 		for domain, spanNameSet := range domainSpanNames {
+			// Check if this service pair is gRPC-only
+			pairKey := serviceName + "->" + domain
+			if grpcOnlyPairs[pairKey] {
+				// Skip gRPC-only connections - DNS chaos doesn't work for them
+				continue
+			}
+			
 			spanNames := make([]string, 0, len(spanNameSet))
 			for spanName := range spanNameSet {
 				spanNames = append(spanNames, spanName)
@@ -319,8 +333,52 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 	return result, nil
 }
 
+// buildGRPCOnlyPairs builds a set of service pairs that only communicate via gRPC
+// Returns a map where key is "source->target" and value is true if gRPC-only
+func buildGRPCOnlyPairs() map[string]bool {
+	grpcOnlyPairs := make(map[string]bool)
+	
+	// Get all gRPC client operations (these represent outgoing gRPC calls)
+	grpcOps := grpcoperations.GetClientOperations()
+	
+	// Track which service pairs have gRPC connections
+	grpcPairs := make(map[string]bool)
+	for _, op := range grpcOps {
+		pairKey := op.ServiceName + "->" + op.ServerAddress
+		grpcPairs[pairKey] = true
+	}
+	
+	// Get all service endpoints to check which pairs also have HTTP
+	services := serviceendpoints.GetAllServices()
+	httpPairs := make(map[string]bool)
+	
+	for _, serviceName := range services {
+		endpoints := serviceendpoints.GetEndpointsByService(serviceName)
+		for _, endpoint := range endpoints {
+			// HTTP endpoints have non-empty Route that doesn't look like gRPC
+			// (simple heuristic: HTTP routes don't start with /package.Service/)
+			if endpoint.ServerAddress != "" && endpoint.ServerAddress != serviceName {
+				if endpoint.Route != "" && !grpcoperations.IsGRPCRoutePattern(endpoint.Route) {
+					pairKey := serviceName + "->" + endpoint.ServerAddress
+					httpPairs[pairKey] = true
+				}
+			}
+		}
+	}
+	
+	// A pair is gRPC-only if it has gRPC but no HTTP
+	for pair := range grpcPairs {
+		if !httpPairs[pair] {
+			grpcOnlyPairs[pair] = true
+		}
+	}
+	
+	return grpcOnlyPairs
+}
+
 // GetAllDatabaseOperations returns all app+database operations pairs sorted by app name
 // This function uses the current system from systemconfig
+// Note: DB chaos only supports MySQL, so we filter to only return MySQL operations
 func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
 	currentSystem := systemconfig.GetCurrentSystem()
 	
@@ -338,12 +396,15 @@ func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
 	for _, serviceName := range services {
 		operations := databaseoperations.GetOperationsByService(serviceName)
 		for _, op := range operations {
-			result = append(result, AppDatabasePair{
-				AppName:       serviceName,
-				DBName:        op.DBName,
-				TableName:     op.DBTable,
-				OperationType: op.Operation,
-			})
+			// Only include MySQL operations (DB chaos only supports MySQL)
+			if op.DBSystem == "mysql" {
+				result = append(result, AppDatabasePair{
+					AppName:       serviceName,
+					DBName:        op.DBName,
+					TableName:     op.DBTable,
+					OperationType: op.Operation,
+				})
+			}
 		}
 	}
 
