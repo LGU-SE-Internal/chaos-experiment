@@ -11,13 +11,6 @@ import (
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/javaclassmethods"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
-
-	oteldemodb "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/databaseoperations"
-	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
-	oteldemojvm "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/javaclassmethods"
-	tsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/databaseoperations"
-	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
-	tsjvm "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/javaclassmethods"
 )
 
 func main() {
@@ -110,8 +103,8 @@ func printUsage() {
 }
 
 func listNetworkServices() {
-	// Use system-aware service list
-	services := getAllServicesForCurrentSystem()
+	// Use system-aware service list via the routing layer
+	services := serviceendpoints.GetAllServices()
 
 	if len(services) == 0 {
 		fmt.Printf("No services with network dependencies found for system: %s\n", systemconfig.GetCurrentSystem())
@@ -130,7 +123,7 @@ func listNetworkServices() {
 
 func listServiceDependencies(serviceName string) {
 	// Get all endpoints for the service and extract unique target services
-	endpoints := getEndpointsByServiceForCurrentSystem(serviceName)
+	endpoints := serviceendpoints.GetEndpointsByService(serviceName)
 
 	// Extract unique dependencies
 	depMap := make(map[string]bool)
@@ -162,7 +155,7 @@ func listServiceDependencies(serviceName string) {
 
 func listAllDependencies() {
 	// Get all services and build dependency pairs from endpoints
-	services := getAllServicesForCurrentSystem()
+	services := serviceendpoints.GetAllServices()
 
 	type depPair struct {
 		Source string
@@ -171,7 +164,7 @@ func listAllDependencies() {
 	pairMap := make(map[depPair]bool)
 
 	for _, service := range services {
-		endpoints := getEndpointsByServiceForCurrentSystem(service)
+		endpoints := serviceendpoints.GetEndpointsByService(service)
 		for _, ep := range endpoints {
 			if ep.ServerAddress != "" && ep.ServerAddress != service {
 				pairMap[depPair{Source: service, Target: ep.ServerAddress}] = true
@@ -211,7 +204,7 @@ func listAllDependencies() {
 }
 
 func listJVMMethods(serviceName string) {
-	methods := getJVMMethodsByServiceForCurrentSystem(serviceName)
+	methods := javaclassmethods.GetClassMethodsByService(serviceName)
 
 	if len(methods) == 0 {
 		fmt.Printf("No JVM methods found for service: %s (system: %s)\n", serviceName, systemconfig.GetCurrentSystem())
@@ -234,7 +227,7 @@ func listJVMMethods(serviceName string) {
 }
 
 func listJVMServices() {
-	services := getAllJVMServicesForCurrentSystem()
+	services := javaclassmethods.GetAllServices()
 
 	if len(services) == 0 {
 		fmt.Printf("No JVM services found (system: %s)\n", systemconfig.GetCurrentSystem())
@@ -252,7 +245,7 @@ func listJVMServices() {
 }
 
 func listServiceEndpoints(serviceName string) {
-	endpoints := getEndpointsByServiceForCurrentSystem(serviceName)
+	endpoints := serviceendpoints.GetEndpointsByService(serviceName)
 
 	if len(endpoints) == 0 {
 		fmt.Printf("No endpoints found for service: %s (system: %s)\n", serviceName, systemconfig.GetCurrentSystem())
@@ -299,7 +292,7 @@ func listServiceEndpoints(serviceName string) {
 // New functions for database operations
 
 func listDatabaseServices() {
-	services := getAllDatabaseServicesForCurrentSystem()
+	services := databaseoperations.GetAllDatabaseServices()
 
 	if len(services) == 0 {
 		fmt.Printf("No services with database operations found (system: %s)\n", systemconfig.GetCurrentSystem())
@@ -317,7 +310,7 @@ func listDatabaseServices() {
 }
 
 func listDatabaseOperations(serviceName string) {
-	operations := getDatabaseOperationsByServiceForCurrentSystem(serviceName)
+	operations := databaseoperations.GetOperationsByService(serviceName)
 
 	if len(operations) == 0 {
 		fmt.Printf("No database operations found for service: %s (system: %s)\n", serviceName, systemconfig.GetCurrentSystem())
@@ -340,12 +333,12 @@ func listDatabaseOperations(serviceName string) {
 }
 
 func listDatabaseTables() {
-	services := getAllDatabaseServicesForCurrentSystem()
+	services := databaseoperations.GetAllDatabaseServices()
 
 	// Extract unique table names
 	tableMap := make(map[string]bool)
 	for _, service := range services {
-		ops := getDatabaseOperationsByServiceForCurrentSystem(service)
+		ops := databaseoperations.GetOperationsByService(service)
 		for _, op := range ops {
 			if op.DBTable != "" {
 				tableMap[op.DBTable] = true
@@ -374,7 +367,7 @@ func listDatabaseTables() {
 }
 
 func listAllDatabaseOperations() {
-	services := getAllDatabaseServicesForCurrentSystem()
+	services := databaseoperations.GetAllDatabaseServices()
 
 	type dbOpEntry struct {
 		AppName       string
@@ -385,7 +378,7 @@ func listAllDatabaseOperations() {
 
 	var allOps []dbOpEntry
 	for _, service := range services {
-		ops := getDatabaseOperationsByServiceForCurrentSystem(service)
+		ops := databaseoperations.GetOperationsByService(service)
 		for _, op := range ops {
 			allOps = append(allOps, dbOpEntry{
 				AppName:       service,
@@ -417,148 +410,4 @@ func listAllDatabaseOperations() {
 
 	w.Flush()
 	fmt.Printf("Total: %d database operations\n", len(allOps))
-}
-
-// ============================================================================
-// System-aware helper functions for multi-system support
-// ============================================================================
-
-// getAllServicesForCurrentSystem returns all services based on current system
-func getAllServicesForCurrentSystem() []string {
-	system := systemconfig.GetCurrentSystem()
-	switch system {
-	case systemconfig.SystemTrainTicket:
-		return tsendpoints.GetAllServices()
-	case systemconfig.SystemOtelDemo:
-		return oteldemoendpoints.GetAllServices()
-	default:
-		return serviceendpoints.GetAllServices()
-	}
-}
-
-// getEndpointsByServiceForCurrentSystem returns endpoints for a service based on current system
-func getEndpointsByServiceForCurrentSystem(serviceName string) []serviceendpoints.ServiceEndpoint {
-	system := systemconfig.GetCurrentSystem()
-	switch system {
-	case systemconfig.SystemTrainTicket:
-		tsEps := tsendpoints.GetEndpointsByService(serviceName)
-		result := make([]serviceendpoints.ServiceEndpoint, len(tsEps))
-		for i, ep := range tsEps {
-			result[i] = serviceendpoints.ServiceEndpoint{
-				ServiceName:    ep.ServiceName,
-				RequestMethod:  ep.RequestMethod,
-				ResponseStatus: ep.ResponseStatus,
-				Route:          ep.Route,
-				ServerAddress:  ep.ServerAddress,
-				ServerPort:     ep.ServerPort,
-				SpanName:       ep.SpanName,
-			}
-		}
-		return result
-	case systemconfig.SystemOtelDemo:
-		otelEps := oteldemoendpoints.GetEndpointsByService(serviceName)
-		result := make([]serviceendpoints.ServiceEndpoint, len(otelEps))
-		for i, ep := range otelEps {
-			result[i] = serviceendpoints.ServiceEndpoint{
-				ServiceName:    ep.ServiceName,
-				RequestMethod:  ep.RequestMethod,
-				ResponseStatus: ep.ResponseStatus,
-				Route:          ep.Route,
-				ServerAddress:  ep.ServerAddress,
-				ServerPort:     ep.ServerPort,
-				SpanName:       ep.SpanName,
-			}
-		}
-		return result
-	default:
-		return serviceendpoints.GetEndpointsByService(serviceName)
-	}
-}
-
-// getAllJVMServicesForCurrentSystem returns all JVM services based on current system
-func getAllJVMServicesForCurrentSystem() []string {
-	system := systemconfig.GetCurrentSystem()
-	switch system {
-	case systemconfig.SystemTrainTicket:
-		return tsjvm.GetAllServices()
-	case systemconfig.SystemOtelDemo:
-		return oteldemojvm.GetAllServices()
-	default:
-		return javaclassmethods.ListAllServiceNames()
-	}
-}
-
-// getJVMMethodsByServiceForCurrentSystem returns JVM methods for a service based on current system
-func getJVMMethodsByServiceForCurrentSystem(serviceName string) []javaclassmethods.ClassMethodEntry {
-	system := systemconfig.GetCurrentSystem()
-	switch system {
-	case systemconfig.SystemTrainTicket:
-		tsJVMs := tsjvm.GetClassMethodsByService(serviceName)
-		result := make([]javaclassmethods.ClassMethodEntry, len(tsJVMs))
-		for i, m := range tsJVMs {
-			result[i] = javaclassmethods.ClassMethodEntry{
-				ClassName:  m.ClassName,
-				MethodName: m.MethodName,
-			}
-		}
-		return result
-	case systemconfig.SystemOtelDemo:
-		otelJVMs := oteldemojvm.GetClassMethodsByService(serviceName)
-		result := make([]javaclassmethods.ClassMethodEntry, len(otelJVMs))
-		for i, m := range otelJVMs {
-			result[i] = javaclassmethods.ClassMethodEntry{
-				ClassName:  m.ClassName,
-				MethodName: m.MethodName,
-			}
-		}
-		return result
-	default:
-		return javaclassmethods.GetClassMethodsByService(serviceName)
-	}
-}
-
-// getAllDatabaseServicesForCurrentSystem returns all database services based on current system
-func getAllDatabaseServicesForCurrentSystem() []string {
-	system := systemconfig.GetCurrentSystem()
-	switch system {
-	case systemconfig.SystemTrainTicket:
-		return tsdb.GetAllDatabaseServices()
-	case systemconfig.SystemOtelDemo:
-		return oteldemodb.GetAllDatabaseServices()
-	default:
-		return databaseoperations.GetAllDatabaseServices()
-	}
-}
-
-// getDatabaseOperationsByServiceForCurrentSystem returns database operations for a service based on current system
-func getDatabaseOperationsByServiceForCurrentSystem(serviceName string) []databaseoperations.DatabaseOperation {
-	system := systemconfig.GetCurrentSystem()
-	switch system {
-	case systemconfig.SystemTrainTicket:
-		tsOps := tsdb.GetOperationsByService(serviceName)
-		result := make([]databaseoperations.DatabaseOperation, len(tsOps))
-		for i, op := range tsOps {
-			result[i] = databaseoperations.DatabaseOperation{
-				ServiceName: op.ServiceName,
-				DBName:      op.DBName,
-				DBTable:     op.DBTable,
-				Operation:   op.Operation,
-			}
-		}
-		return result
-	case systemconfig.SystemOtelDemo:
-		otelOps := oteldemodb.GetOperationsByService(serviceName)
-		result := make([]databaseoperations.DatabaseOperation, len(otelOps))
-		for i, op := range otelOps {
-			result[i] = databaseoperations.DatabaseOperation{
-				ServiceName: op.ServiceName,
-				DBName:      op.DBName,
-				DBTable:     op.DBTable,
-				Operation:   op.Operation,
-			}
-		}
-		return result
-	default:
-		return databaseoperations.GetOperationsByService(serviceName)
-	}
 }
