@@ -979,6 +979,15 @@ func ConvertDatabaseOperationsToEndpoints(operations []DatabaseOperation) []Serv
 		}
 		seen[key] = true
 
+		// Construct a span name for the database operation
+		spanName := op.Operation
+		if spanName == "" {
+			spanName = "DB Access"
+		}
+		if op.DBTable != "" {
+			spanName = fmt.Sprintf("%s %s", spanName, op.DBTable)
+		}
+
 		endpoint := ServiceEndpoint{
 			ServiceName:    op.ServiceName,
 			RequestMethod:  "", // Database operations don't have HTTP methods
@@ -987,6 +996,7 @@ func ConvertDatabaseOperationsToEndpoints(operations []DatabaseOperation) []Serv
 			ServerAddress:  op.ServerAddress,
 			ServerPort:     op.ServerPort,
 			SpanKind:       "Client", // Database connections are always client-side
+			SpanName:       spanName,
 		}
 		endpoints = append(endpoints, endpoint)
 	}
@@ -1017,6 +1027,9 @@ func ConvertGRPCOperationsToEndpoints(operations []GRPCOperation) []ServiceEndpo
 		// Build the route from RPC service and method
 		route := fmt.Sprintf("/%s/%s", op.RPCService, op.RPCMethod)
 
+		// Construct span name (typically Service/Method for gRPC)
+		spanName := fmt.Sprintf("%s/%s", op.RPCService, op.RPCMethod)
+
 		endpoint := ServiceEndpoint{
 			ServiceName:    op.ServiceName,
 			RequestMethod:  "POST", // gRPC uses POST
@@ -1025,6 +1038,7 @@ func ConvertGRPCOperationsToEndpoints(operations []GRPCOperation) []ServiceEndpo
 			ServerAddress:  op.ServerAddress,
 			ServerPort:     op.ServerPort,
 			SpanKind:       "Client",
+			SpanName:       spanName,
 		}
 		endpoints = append(endpoints, endpoint)
 	}
