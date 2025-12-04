@@ -26,6 +26,17 @@ var DatabaseOperations = map[string][]DatabaseOperation{
 			ServerPort:    "5432",
 		},
 	},
+	"cart": {
+		{
+			ServiceName:   "cart",
+			DBName:        "",
+			DBTable:       "",
+			Operation:     "",
+			DBSystem:      "redis",
+			ServerAddress: "redis",
+			ServerPort:    "6379",
+		},
+	},
 }
 
 // GetOperationsByService returns all database operations for a service

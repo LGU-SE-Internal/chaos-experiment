@@ -41,6 +41,7 @@ type ServiceEndpoint struct {
 	Route            string
 	ServerAddress    string
 	ServerPort       string
+	SpanName         string
 }
 
 // ServiceEndpoints maps service names to their endpoints
@@ -55,6 +56,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			Route:          "{{ .Route }}",
 			ServerAddress:  "{{ .ServerAddress }}",
 			ServerPort:     "{{ .ServerPort }}",
+			SpanName:       "{{ .SpanName }}",
 		},
 		{{- end }}
 	},

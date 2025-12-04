@@ -30,18 +30,21 @@ type AppEndpointPair struct {
 	Method        string `json:"method"`
 	ServerAddress string `json:"server_address"`
 	ServerPort    string `json:"server_port"`
+	SpanName      string `json:"span_name"`
 }
 
 // AppNetworkPair represents a flattened source+target combination for network chaos
 type AppNetworkPair struct {
-	SourceService string `json:"source_service"`
-	TargetService string `json:"target_service"`
+	SourceService string   `json:"source_service"`
+	TargetService string   `json:"target_service"`
+	SpanNames     []string `json:"span_names"` // All span names between source and target services
 }
 
 // AppDNSPair represents a flattened app+domain combination for DNS chaos
 type AppDNSPair struct {
-	AppName string `json:"app_name"`
-	Domain  string `json:"domain"`
+	AppName   string   `json:"app_name"`
+	Domain    string   `json:"domain"`
+	SpanNames []string `json:"span_names"` // All span names for endpoints targeting this domain
 }
 
 // AppDatabasePair represents a flattened app+database+table+operation combination
@@ -170,6 +173,7 @@ func GetAllHTTPEndpoints() ([]AppEndpointPair, error) {
 					Method:        endpoint.RequestMethod,
 					ServerAddress: endpoint.ServerAddress,
 					ServerPort:    endpoint.ServerPort,
+					SpanName:      endpoint.SpanName,
 				})
 			}
 		}
@@ -206,9 +210,12 @@ func GetAllNetworkPairs() ([]AppNetworkPair, error) {
 	result := make([]AppNetworkPair, 0, len(pairs))
 
 	for _, pair := range pairs {
+		// Get all span names between source and target services
+		spanNames := getSpanNamesBetweenServices(pair.SourceService, pair.TargetService)
 		result = append(result, AppNetworkPair{
 			SourceService: pair.SourceService,
 			TargetService: pair.TargetService,
+			SpanNames:     spanNames,
 		})
 	}
 
@@ -225,6 +232,27 @@ func GetAllNetworkPairs() ([]AppNetworkPair, error) {
 	}
 	cachedNetworkPairs[currentSystem] = result
 	return result, nil
+}
+
+// getSpanNamesBetweenServices returns all unique span names for endpoints between two services
+func getSpanNamesBetweenServices(sourceService, targetService string) []string {
+	endpoints := serviceendpoints.GetEndpointsByService(sourceService)
+	spanNameSet := make(map[string]bool)
+
+	for _, endpoint := range endpoints {
+		// Check if this endpoint targets the target service
+		if endpoint.ServerAddress == targetService && endpoint.SpanName != "" {
+			spanNameSet[endpoint.SpanName] = true
+		}
+	}
+
+	// Convert set to sorted slice
+	spanNames := make([]string, 0, len(spanNameSet))
+	for spanName := range spanNameSet {
+		spanNames = append(spanNames, spanName)
+	}
+	sort.Strings(spanNames)
+	return spanNames
 }
 
 // GetAllDNSEndpoints returns all app+domain pairs for DNS chaos sorted by app name
@@ -245,21 +273,33 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 	// For each service, get its endpoints
 	for _, serviceName := range services {
 		endpoints := serviceendpoints.GetEndpointsByService(serviceName)
-		uniqueDomains := make(map[string]bool)
+		// Map from domain to span names
+		domainSpanNames := make(map[string]map[string]bool)
 
 		for _, endpoint := range endpoints {
 			// Only include valid server addresses that are not the service itself
 			if endpoint.ServerAddress != "" &&
 				endpoint.ServerAddress != serviceName {
-				uniqueDomains[endpoint.ServerAddress] = true
+				if domainSpanNames[endpoint.ServerAddress] == nil {
+					domainSpanNames[endpoint.ServerAddress] = make(map[string]bool)
+				}
+				if endpoint.SpanName != "" {
+					domainSpanNames[endpoint.ServerAddress][endpoint.SpanName] = true
+				}
 			}
 		}
 
-		// Convert unique domains to AppDNSPairs
-		for domain := range uniqueDomains {
+		// Convert to AppDNSPairs with span names
+		for domain, spanNameSet := range domainSpanNames {
+			spanNames := make([]string, 0, len(spanNameSet))
+			for spanName := range spanNameSet {
+				spanNames = append(spanNames, spanName)
+			}
+			sort.Strings(spanNames)
 			result = append(result, AppDNSPair{
-				AppName: serviceName,
-				Domain:  domain,
+				AppName:   serviceName,
+				Domain:    domain,
+				SpanNames: spanNames,
 			})
 		}
 	}
