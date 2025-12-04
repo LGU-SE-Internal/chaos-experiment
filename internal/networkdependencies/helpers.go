@@ -1,7 +1,10 @@
 package networkdependencies
 
 import (
+	"sync"
+
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 )
 
 // ServiceDependency represents a dependency between services
@@ -26,12 +29,33 @@ var (
 	GetAllServicePairsFunc = getAllServicePairsImpl
 )
 
-// dependencyGraph is a map of service to its dependent services
-var dependencyGraph map[string][]string
+// dependencyGraphs maps system types to their dependency graphs
+var dependencyGraphs = make(map[systemconfig.SystemType]map[string][]string)
+var graphMu sync.RWMutex
 
-// Initialize the dependency graph from service endpoints
-func init() {
-	buildDependencyGraph()
+// getDependencyGraph returns the dependency graph for the current system, building it if necessary
+func getDependencyGraph() map[string][]string {
+	system := systemconfig.GetCurrentSystem()
+
+	graphMu.RLock()
+	if graph, exists := dependencyGraphs[system]; exists {
+		graphMu.RUnlock()
+		return graph
+	}
+	graphMu.RUnlock()
+
+	// Build the graph for this system
+	graphMu.Lock()
+	defer graphMu.Unlock()
+
+	// Double-check after acquiring write lock
+	if graph, exists := dependencyGraphs[system]; exists {
+		return graph
+	}
+
+	graph := buildDependencyGraphForSystem()
+	dependencyGraphs[system] = graph
+	return graph
 }
 
 // buildDependencyGraph builds a map of service dependencies based on service endpoints
