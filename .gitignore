@@ -1,8 +1,8 @@
 .idea
 .vscode
 
-# Compiled binaries
-internaldata
-clickhouseanalyzer
-javaanalyzer
-faultpoints
+# Compiled binaries (root level only)
+/internaldata
+/clickhouseanalyzer
+/javaanalyzer
+/faultpoints
