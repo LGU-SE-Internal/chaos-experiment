@@ -9,12 +9,15 @@ import (
 
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/databaseoperations"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/javaclassmethods"
-	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 
+	oteldemodb "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/databaseoperations"
 	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
+	oteldemojvm "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/javaclassmethods"
+	tsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/databaseoperations"
 	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
+	tsjvm "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/javaclassmethods"
 )
 
 func main() {
@@ -208,15 +211,14 @@ func listAllDependencies() {
 }
 
 func listJVMMethods(serviceName string) {
-	// Using original implementation as it requires specific format
-	methods := javaclassmethods.GetClassMethodsByService(serviceName)
+	methods := getJVMMethodsByServiceForCurrentSystem(serviceName)
 
 	if len(methods) == 0 {
-		fmt.Printf("No JVM methods found for service: %s\n", serviceName)
+		fmt.Printf("No JVM methods found for service: %s (system: %s)\n", serviceName, systemconfig.GetCurrentSystem())
 		return
 	}
 
-	fmt.Printf("JVM methods for service %s:\n", serviceName)
+	fmt.Printf("JVM methods for service %s (system: %s):\n", serviceName, systemconfig.GetCurrentSystem())
 
 	// Create a tabwriter for aligned output
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -232,17 +234,17 @@ func listJVMMethods(serviceName string) {
 }
 
 func listJVMServices() {
-	services := javaclassmethods.ListAllServiceNames()
+	services := getAllJVMServicesForCurrentSystem()
 
 	if len(services) == 0 {
-		fmt.Println("No JVM services found")
+		fmt.Printf("No JVM services found (system: %s)\n", systemconfig.GetCurrentSystem())
 		return
 	}
 
 	// Sort the services alphabetically
 	sort.Strings(services)
 
-	fmt.Println("JVM services:")
+	fmt.Printf("JVM services (system: %s):\n", systemconfig.GetCurrentSystem())
 	for _, service := range services {
 		fmt.Printf("- %s\n", service)
 	}
@@ -297,17 +299,17 @@ func listServiceEndpoints(serviceName string) {
 // New functions for database operations
 
 func listDatabaseServices() {
-	services := databaseoperations.GetAllDatabaseServices()
+	services := getAllDatabaseServicesForCurrentSystem()
 
 	if len(services) == 0 {
-		fmt.Println("No services with database operations found")
+		fmt.Printf("No services with database operations found (system: %s)\n", systemconfig.GetCurrentSystem())
 		return
 	}
 
 	// Sort the services alphabetically
 	sort.Strings(services)
 
-	fmt.Println("Services with database operations:")
+	fmt.Printf("Services with database operations (system: %s):\n", systemconfig.GetCurrentSystem())
 	for _, service := range services {
 		fmt.Printf("- %s\n", service)
 	}
@@ -315,14 +317,14 @@ func listDatabaseServices() {
 }
 
 func listDatabaseOperations(serviceName string) {
-	operations := databaseoperations.GetOperationsByService(serviceName)
+	operations := getDatabaseOperationsByServiceForCurrentSystem(serviceName)
 
 	if len(operations) == 0 {
-		fmt.Printf("No database operations found for service: %s\n", serviceName)
+		fmt.Printf("No database operations found for service: %s (system: %s)\n", serviceName, systemconfig.GetCurrentSystem())
 		return
 	}
 
-	fmt.Printf("Database operations for service %s:\n", serviceName)
+	fmt.Printf("Database operations for service %s (system: %s):\n", serviceName, systemconfig.GetCurrentSystem())
 
 	// Create a tabwriter for aligned output
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -338,16 +340,17 @@ func listDatabaseOperations(serviceName string) {
 }
 
 func listDatabaseTables() {
-	dbOps, err := resourcelookup.GetAllDatabaseOperations()
-	if err != nil {
-		fmt.Printf("Error retrieving database operations: %v\n", err)
-		return
-	}
+	services := getAllDatabaseServicesForCurrentSystem()
 
 	// Extract unique table names
 	tableMap := make(map[string]bool)
-	for _, op := range dbOps {
-		tableMap[op.TableName] = true
+	for _, service := range services {
+		ops := getDatabaseOperationsByServiceForCurrentSystem(service)
+		for _, op := range ops {
+			if op.DBTable != "" {
+				tableMap[op.DBTable] = true
+			}
+		}
 	}
 
 	tables := make([]string, 0, len(tableMap))
@@ -356,14 +359,14 @@ func listDatabaseTables() {
 	}
 
 	if len(tables) == 0 {
-		fmt.Println("No database tables found")
+		fmt.Printf("No database tables found (system: %s)\n", systemconfig.GetCurrentSystem())
 		return
 	}
 
 	// Sort the tables alphabetically
 	sort.Strings(tables)
 
-	fmt.Println("Database tables:")
+	fmt.Printf("Database tables (system: %s):\n", systemconfig.GetCurrentSystem())
 	for _, table := range tables {
 		fmt.Printf("- %s\n", table)
 	}
@@ -371,23 +374,40 @@ func listDatabaseTables() {
 }
 
 func listAllDatabaseOperations() {
-	dbOps, err := resourcelookup.GetAllDatabaseOperations()
-	if err != nil {
-		fmt.Printf("Error retrieving database operations: %v\n", err)
-		return
+	services := getAllDatabaseServicesForCurrentSystem()
+
+	type dbOpEntry struct {
+		AppName       string
+		DBName        string
+		TableName     string
+		OperationType string
 	}
 
-	if len(dbOps) == 0 {
-		fmt.Println("No database operations found")
+	var allOps []dbOpEntry
+	for _, service := range services {
+		ops := getDatabaseOperationsByServiceForCurrentSystem(service)
+		for _, op := range ops {
+			allOps = append(allOps, dbOpEntry{
+				AppName:       service,
+				DBName:        op.DBName,
+				TableName:     op.DBTable,
+				OperationType: op.Operation,
+			})
+		}
+	}
+
+	if len(allOps) == 0 {
+		fmt.Printf("No database operations found (system: %s)\n", systemconfig.GetCurrentSystem())
 		return
 	}
 
 	// Create a tabwriter for aligned output
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(w, "Database operations (system: %s):\n", systemconfig.GetCurrentSystem())
 	fmt.Fprintln(w, "Service\tDatabase\tTable\tOperation")
 	fmt.Fprintln(w, "-------\t--------\t-----\t---------")
 
-	for _, op := range dbOps {
+	for _, op := range allOps {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 			op.AppName,
 			op.DBName,
@@ -396,7 +416,7 @@ func listAllDatabaseOperations() {
 	}
 
 	w.Flush()
-	fmt.Printf("Total: %d database operations\n", len(dbOps))
+	fmt.Printf("Total: %d database operations\n", len(allOps))
 }
 
 // ============================================================================
@@ -452,5 +472,93 @@ func getEndpointsByServiceForCurrentSystem(serviceName string) []serviceendpoint
 		return result
 	default:
 		return serviceendpoints.GetEndpointsByService(serviceName)
+	}
+}
+
+// getAllJVMServicesForCurrentSystem returns all JVM services based on current system
+func getAllJVMServicesForCurrentSystem() []string {
+	system := systemconfig.GetCurrentSystem()
+	switch system {
+	case systemconfig.SystemTrainTicket:
+		return tsjvm.GetAllServices()
+	case systemconfig.SystemOtelDemo:
+		return oteldemojvm.GetAllServices()
+	default:
+		return javaclassmethods.ListAllServiceNames()
+	}
+}
+
+// getJVMMethodsByServiceForCurrentSystem returns JVM methods for a service based on current system
+func getJVMMethodsByServiceForCurrentSystem(serviceName string) []javaclassmethods.ClassMethodEntry {
+	system := systemconfig.GetCurrentSystem()
+	switch system {
+	case systemconfig.SystemTrainTicket:
+		tsJVMs := tsjvm.GetClassMethodsByService(serviceName)
+		result := make([]javaclassmethods.ClassMethodEntry, len(tsJVMs))
+		for i, m := range tsJVMs {
+			result[i] = javaclassmethods.ClassMethodEntry{
+				ClassName:  m.ClassName,
+				MethodName: m.MethodName,
+			}
+		}
+		return result
+	case systemconfig.SystemOtelDemo:
+		otelJVMs := oteldemojvm.GetClassMethodsByService(serviceName)
+		result := make([]javaclassmethods.ClassMethodEntry, len(otelJVMs))
+		for i, m := range otelJVMs {
+			result[i] = javaclassmethods.ClassMethodEntry{
+				ClassName:  m.ClassName,
+				MethodName: m.MethodName,
+			}
+		}
+		return result
+	default:
+		return javaclassmethods.GetClassMethodsByService(serviceName)
+	}
+}
+
+// getAllDatabaseServicesForCurrentSystem returns all database services based on current system
+func getAllDatabaseServicesForCurrentSystem() []string {
+	system := systemconfig.GetCurrentSystem()
+	switch system {
+	case systemconfig.SystemTrainTicket:
+		return tsdb.GetAllDatabaseServices()
+	case systemconfig.SystemOtelDemo:
+		return oteldemodb.GetAllDatabaseServices()
+	default:
+		return databaseoperations.GetAllDatabaseServices()
+	}
+}
+
+// getDatabaseOperationsByServiceForCurrentSystem returns database operations for a service based on current system
+func getDatabaseOperationsByServiceForCurrentSystem(serviceName string) []databaseoperations.DatabaseOperation {
+	system := systemconfig.GetCurrentSystem()
+	switch system {
+	case systemconfig.SystemTrainTicket:
+		tsOps := tsdb.GetOperationsByService(serviceName)
+		result := make([]databaseoperations.DatabaseOperation, len(tsOps))
+		for i, op := range tsOps {
+			result[i] = databaseoperations.DatabaseOperation{
+				ServiceName: op.ServiceName,
+				DBName:      op.DBName,
+				DBTable:     op.DBTable,
+				Operation:   op.Operation,
+			}
+		}
+		return result
+	case systemconfig.SystemOtelDemo:
+		otelOps := oteldemodb.GetOperationsByService(serviceName)
+		result := make([]databaseoperations.DatabaseOperation, len(otelOps))
+		for i, op := range otelOps {
+			result[i] = databaseoperations.DatabaseOperation{
+				ServiceName: op.ServiceName,
+				DBName:      op.DBName,
+				DBTable:     op.DBTable,
+				Operation:   op.Operation,
+			}
+		}
+		return result
+	default:
+		return databaseoperations.GetOperationsByService(serviceName)
 	}
 }
