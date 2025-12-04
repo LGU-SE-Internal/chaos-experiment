@@ -107,12 +107,21 @@ func GetGroundtruthFromDNSEndpointIdx(namespace string, endpointIdx int) (Ground
 		return Groundtruth{}, fmt.Errorf("failed to get containers and pods: %w", err)
 	}
 
+	// For DNS chaos, use all span names between the source service and target domain
+	// If no span names available, fall back to service names
+	var spanNames []string
+	if len(endpointPair.SpanNames) > 0 {
+		spanNames = endpointPair.SpanNames
+	} else {
+		spanNames = []string{sourceService, targetDomain}
+	}
+
 	// Create and populate the groundtruth
 	gt := Groundtruth{
 		Service:   []string{sourceService, targetDomain},
 		Pod:       pods,
 		Container: containers,
-		Span:      []string{sourceService, targetDomain},
+		Span:      spanNames,
 	}
 
 	return gt, nil
@@ -140,12 +149,20 @@ func getHTTPGroundtruth(namespace string, endpointIdx int) (Groundtruth, error) 
 		return Groundtruth{}, fmt.Errorf("failed to get containers and pods: %w", err)
 	}
 
+	// Use the actual span name if available, otherwise use service names as fallback
+	var spanNames []string
+	if endpointPair.SpanName != "" {
+		spanNames = []string{endpointPair.SpanName}
+	} else {
+		spanNames = []string{sourceService, targetService}
+	}
+
 	// Create and populate the groundtruth
 	gt := Groundtruth{
 		Service:   []string{sourceService, targetService},
 		Pod:       pods,
 		Container: containers,
-		Span:      []string{sourceService, targetService},
+		Span:      spanNames,
 	}
 
 	return gt, nil
@@ -173,12 +190,21 @@ func GetGroundtruthFromNetworkPairIdx(namespace string, networkPairIdx int) (Gro
 		return Groundtruth{}, fmt.Errorf("failed to get containers and pods: %w", err)
 	}
 
+	// For network faults, use all span names between the two services
+	// If no span names available, fall back to service names
+	var spanNames []string
+	if len(pair.SpanNames) > 0 {
+		spanNames = pair.SpanNames
+	} else {
+		spanNames = []string{sourceService, targetService}
+	}
+
 	// Create and populate the groundtruth
 	gt := Groundtruth{
 		Service:   []string{sourceService, targetService},
 		Pod:       pods,
 		Container: containers,
-		Span:      []string{sourceService, targetService},
+		Span:      spanNames,
 	}
 
 	return gt, nil

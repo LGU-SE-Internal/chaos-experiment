@@ -1,7 +1,10 @@
 package networkdependencies
 
 import (
+	"sync"
+
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 )
 
 // ServiceDependency represents a dependency between services
@@ -26,19 +29,42 @@ var (
 	GetAllServicePairsFunc = getAllServicePairsImpl
 )
 
-// dependencyGraph is a map of service to its dependent services
-var dependencyGraph map[string][]string
+// dependencyGraphs maps system types to their dependency graphs
+var dependencyGraphs = make(map[systemconfig.SystemType]map[string][]string)
+var graphMu sync.RWMutex
 
-// Initialize the dependency graph from service endpoints
-func init() {
-	buildDependencyGraph()
+// getDependencyGraph returns the dependency graph for the current system, building it if necessary
+func getDependencyGraph() map[string][]string {
+	system := systemconfig.GetCurrentSystem()
+
+	graphMu.RLock()
+	if graph, exists := dependencyGraphs[system]; exists {
+		graphMu.RUnlock()
+		return graph
+	}
+	graphMu.RUnlock()
+
+	// Build the graph for this system
+	graphMu.Lock()
+	defer graphMu.Unlock()
+
+	// Double-check after acquiring write lock
+	if graph, exists := dependencyGraphs[system]; exists {
+		return graph
+	}
+
+	graph := buildDependencyGraphForSystem()
+	dependencyGraphs[system] = graph
+	return graph
 }
 
-// buildDependencyGraph builds a map of service dependencies based on service endpoints
-func buildDependencyGraph() {
-	dependencyGraph = make(map[string][]string)
+// buildDependencyGraphForSystem builds a map of service dependencies based on service endpoints.
+// It uses the serviceendpoints package which routes to the appropriate system-specific data
+// based on the currently configured system in systemconfig.
+func buildDependencyGraphForSystem() map[string][]string {
+	graph := make(map[string][]string)
 
-	// Get all service names
+	// Get all service names from the current system
 	allServices := serviceendpoints.GetAllServices()
 
 	// For each service, find all targets it communicates with
@@ -48,35 +74,37 @@ func buildDependencyGraph() {
 		// Track services this service depends on
 		for _, endpoint := range endpoints {
 			// Add this dependency to the graph if not already present
-			addDependency(service, endpoint.ServerAddress)
+			addDependencyToGraph(graph, service, endpoint.ServerAddress)
 
 			// Also add the reverse dependency for bidirectional relationships
-			addDependency(endpoint.ServerAddress, service)
+			addDependencyToGraph(graph, endpoint.ServerAddress, service)
 		}
 	}
+
+	return graph
 }
 
-// addDependency adds a target service to the dependency list of a source service
-func addDependency(sourceService, targetService string) {
+// addDependencyToGraph adds a target service to the dependency list of a source service in the given graph
+func addDependencyToGraph(graph map[string][]string, sourceService, targetService string) {
 	// Skip if source and target are the same
 	if sourceService == targetService {
 		return
 	}
 
 	// Initialize the slice if it doesn't exist
-	if _, exists := dependencyGraph[sourceService]; !exists {
-		dependencyGraph[sourceService] = []string{}
+	if _, exists := graph[sourceService]; !exists {
+		graph[sourceService] = []string{}
 	}
 
 	// Check if target already exists in the dependency list
-	for _, existing := range dependencyGraph[sourceService] {
+	for _, existing := range graph[sourceService] {
 		if existing == targetService {
 			return
 		}
 	}
 
 	// Add the target to the dependency list
-	dependencyGraph[sourceService] = append(dependencyGraph[sourceService], targetService)
+	graph[sourceService] = append(graph[sourceService], targetService)
 }
 
 // GetDependenciesForService returns all services that a given service communicates with
@@ -86,7 +114,8 @@ func GetDependenciesForService(serviceName string) []string {
 
 // getDependenciesForServiceImpl is the actual implementation of GetDependenciesForService
 func getDependenciesForServiceImpl(serviceName string) []string {
-	if dependencies, exists := dependencyGraph[serviceName]; exists {
+	graph := getDependencyGraph()
+	if dependencies, exists := graph[serviceName]; exists {
 		return dependencies
 	}
 	return []string{}
@@ -99,9 +128,10 @@ func GetAllServicePairs() []ServiceDependency {
 
 // getAllServicePairsImpl is the actual implementation of GetAllServicePairs
 func getAllServicePairsImpl() []ServiceDependency {
+	graph := getDependencyGraph()
 	var pairs []ServiceDependency
 
-	for source, targets := range dependencyGraph {
+	for source, targets := range graph {
 		for _, target := range targets {
 			pairs = append(pairs, ServiceDependency{
 				SourceService:     source,
@@ -152,10 +182,11 @@ func ListAllServiceNames() []string {
 
 // listAllServiceNamesImpl is the actual implementation of ListAllServiceNames
 func listAllServiceNamesImpl() []string {
+	graph := getDependencyGraph()
 	serviceNames := []string{}
 
-	for service := range dependencyGraph {
-		if len(dependencyGraph[service]) > 0 {
+	for service := range graph {
+		if len(graph[service]) > 0 {
 			serviceNames = append(serviceNames, service)
 		}
 	}
