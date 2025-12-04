@@ -102,3 +102,28 @@ func convertOtelDemoOperations(otelOps []oteldemogrpc.GRPCOperation) []GRPCOpera
 	}
 	return result
 }
+
+// IsGRPCRoutePattern checks if a route looks like a gRPC route pattern
+// gRPC routes typically follow the format: /package.Service/Method
+// Examples: /oteldemo.CartService/AddItem, /flagd.evaluation.v1.Service/EventStream
+func IsGRPCRoutePattern(route string) bool {
+	if route == "" || len(route) < 3 {
+		return false
+	}
+	// gRPC routes start with / and contain package.Service/Method pattern
+	if route[0] != '/' {
+		return false
+	}
+	// Look for patterns like /oteldemo.CartService/AddItem
+	// These have a dot in the first segment (before second slash)
+	hasDot := false
+	for i := 1; i < len(route); i++ {
+		if route[i] == '/' {
+			break
+		}
+		if route[i] == '.' {
+			hasDot = true
+		}
+	}
+	return hasDot
+}

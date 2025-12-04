@@ -358,7 +358,7 @@ func buildGRPCOnlyPairs() map[string]bool {
 			// HTTP endpoints have non-empty Route that doesn't look like gRPC
 			// (simple heuristic: HTTP routes don't start with /package.Service/)
 			if endpoint.ServerAddress != "" && endpoint.ServerAddress != serviceName {
-				if endpoint.Route != "" && !isGRPCRoutePattern(endpoint.Route) {
+				if endpoint.Route != "" && !grpcoperations.IsGRPCRoutePattern(endpoint.Route) {
 					pairKey := serviceName + "->" + endpoint.ServerAddress
 					httpPairs[pairKey] = true
 				}
@@ -374,35 +374,6 @@ func buildGRPCOnlyPairs() map[string]bool {
 	}
 	
 	return grpcOnlyPairs
-}
-
-// isGRPCRoutePattern checks if a route looks like a gRPC route pattern
-// gRPC routes typically follow the format: /package.Service/Method
-func isGRPCRoutePattern(route string) bool {
-	if route == "" || len(route) < 3 {
-		return false
-	}
-	// gRPC routes start with / and contain package.Service/Method pattern
-	// Simple check: contains a dot followed by an identifier, then a slash
-	if route[0] != '/' {
-		return false
-	}
-	// Look for patterns like /oteldemo.CartService/AddItem
-	// These have a dot in the first segment (before second slash)
-	firstSlash := 0
-	secondSlash := -1
-	hasDot := false
-	for i := 1; i < len(route); i++ {
-		if route[i] == '/' {
-			secondSlash = i
-			break
-		}
-		if route[i] == '.' {
-			hasDot = true
-		}
-	}
-	// gRPC routes have a dot between the first and second slash
-	return hasDot && secondSlash > firstSlash
 }
 
 // GetAllDatabaseOperations returns all app+database operations pairs sorted by app name

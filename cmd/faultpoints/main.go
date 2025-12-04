@@ -6,6 +6,7 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/grpcoperations"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 
@@ -513,7 +514,7 @@ func buildGRPCOnlyPairsForFaultpoints() map[string]bool {
 		for _, endpoint := range endpoints {
 			// HTTP endpoints have non-empty Route that doesn't look like gRPC
 			if endpoint.ServerAddress != "" && endpoint.ServerAddress != serviceName {
-				if endpoint.Route != "" && !isGRPCRoutePatternSimple(endpoint.Route) {
+				if endpoint.Route != "" && !grpcoperations.IsGRPCRoutePattern(endpoint.Route) {
 					pairKey := serviceName + "->" + endpoint.ServerAddress
 					httpPairs[pairKey] = true
 				}
@@ -529,29 +530,6 @@ func buildGRPCOnlyPairsForFaultpoints() map[string]bool {
 	}
 	
 	return grpcOnlyPairs
-}
-
-// isGRPCRoutePatternSimple checks if a route looks like a gRPC route pattern
-// gRPC routes typically follow the format: /package.Service/Method
-func isGRPCRoutePatternSimple(route string) bool {
-	if route == "" || len(route) < 3 {
-		return false
-	}
-	if route[0] != '/' {
-		return false
-	}
-	// Look for patterns like /oteldemo.CartService/AddItem
-	// These have a dot in the first segment (before second slash)
-	hasDot := false
-	for i := 1; i < len(route); i++ {
-		if route[i] == '/' {
-			break
-		}
-		if route[i] == '.' {
-			hasDot = true
-		}
-	}
-	return hasDot
 }
 
 func getJVMMethodsForCurrentSystem() ([]resourcelookup.AppMethodPair, error) {
