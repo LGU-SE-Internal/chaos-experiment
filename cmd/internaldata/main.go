@@ -105,33 +105,18 @@ func printUsage() {
 }
 
 func listNetworkServices() {
-	networkPairs, err := resourcelookup.GetAllNetworkPairs()
-	if err != nil {
-		fmt.Printf("Error retrieving network services: %v\n", err)
-		return
-	}
-
-	// Extract unique service names
-	serviceMap := make(map[string]bool)
-	for _, pair := range networkPairs {
-		serviceMap[pair.SourceService] = true
-		serviceMap[pair.TargetService] = true
-	}
-
-	services := make([]string, 0, len(serviceMap))
-	for service := range serviceMap {
-		services = append(services, service)
-	}
+	// Use system-aware service list
+	services := serviceendpoints.GetAllServicesSystemAware()
 
 	if len(services) == 0 {
-		fmt.Println("No services with network dependencies found")
+		fmt.Printf("No services with network dependencies found for system: %s\n", systemconfig.GetCurrentSystem())
 		return
 	}
 
 	// Sort the services alphabetically
 	sort.Strings(services)
 
-	fmt.Println("Services with network dependencies:")
+	fmt.Printf("Services with network dependencies (system: %s):\n", systemconfig.GetCurrentSystem())
 	for _, service := range services {
 		fmt.Printf("- %s\n", service)
 	}
@@ -233,10 +218,10 @@ func listJVMServices() {
 }
 
 func listServiceEndpoints(serviceName string) {
-	endpoints := serviceendpoints.GetEndpointsByService(serviceName)
+	endpoints := serviceendpoints.GetEndpointsByServiceSystemAware(serviceName)
 
 	if len(endpoints) == 0 {
-		fmt.Printf("No endpoints found for service: %s\n", serviceName)
+		fmt.Printf("No endpoints found for service: %s (system: %s)\n", serviceName, systemconfig.GetCurrentSystem())
 		return
 	}
 
