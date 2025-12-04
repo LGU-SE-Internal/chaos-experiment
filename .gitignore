@@ -1,2 +1,7 @@
 .idea
 .vscode
+
+# Compiled binaries
+internaldata
+clickhouseanalyzer
+javaanalyzer
