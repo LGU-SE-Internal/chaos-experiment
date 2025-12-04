@@ -784,8 +784,8 @@ func QueryOtelDemoHTTPClientTraces(db *sql.DB) ([]ServiceEndpoint, error) {
 			endpoint.SpanName = spanName.String
 		}
 
-		// Map empty server address to service based on route
-		if endpoint.ServerAddress == "" {
+		// Map empty server address or IP to service based on route
+		if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
 			mapOtelDemoRouteToService(&endpoint)
 		}
 
@@ -897,8 +897,8 @@ func QueryOtelDemoGRPCOperations(db *sql.DB) ([]GRPCOperation, error) {
 			operation.GRPCStatusCode = grpcStatus.String
 		}
 
-		// Map empty server address to service based on RPC service
-		if operation.ServerAddress == "" {
+		// Map empty server address or IP to service based on RPC service
+		if operation.ServerAddress == "" || isIPAddress(operation.ServerAddress) {
 			mapOtelDemoGRPCToService(&operation)
 		}
 
@@ -1136,9 +1136,11 @@ func mapOtelDemoRouteToService(endpoint *ServiceEndpoint) {
 		}
 	}
 
-	// Default to frontend-proxy
-	endpoint.ServerAddress = "frontend-proxy"
-	endpoint.ServerPort = "8080"
+	// Default to frontend-proxy only if address is empty (don't overwrite IP if no match)
+	if endpoint.ServerAddress == "" {
+		endpoint.ServerAddress = "frontend-proxy"
+		endpoint.ServerPort = "8080"
+	}
 }
 
 // mapOtelDemoGRPCToService maps gRPC services to server addresses for OTel Demo
@@ -1166,9 +1168,7 @@ func mapOtelDemoGRPCToService(operation *GRPCOperation) {
 		return
 	}
 
-	// Default - keep empty or use service name
-	operation.ServerAddress = ""
-	operation.ServerPort = ""
+	// Do not clear existing address (e.g. IP) if no match found
 }
 
 // mapOtelDemoDatabaseToService maps database systems to server addresses for OTel Demo
