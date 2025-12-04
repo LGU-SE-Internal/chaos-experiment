@@ -9,10 +9,12 @@ import (
 
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/databaseoperations"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/javaclassmethods"
-	"github.com/LGU-SE-Internal/chaos-experiment/internal/networkdependencies"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
+
+	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
+	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
 )
 
 func main() {
@@ -106,7 +108,7 @@ func printUsage() {
 
 func listNetworkServices() {
 	// Use system-aware service list
-	services := serviceendpoints.GetAllServicesSystemAware()
+	services := getAllServicesForCurrentSystem()
 
 	if len(services) == 0 {
 		fmt.Printf("No services with network dependencies found for system: %s\n", systemconfig.GetCurrentSystem())
@@ -124,29 +126,31 @@ func listNetworkServices() {
 }
 
 func listServiceDependencies(serviceName string) {
-	networkPairs, err := resourcelookup.GetAllNetworkPairs()
-	if err != nil {
-		fmt.Printf("Error retrieving network dependencies: %v\n", err)
-		return
-	}
+	// Get all endpoints for the service and extract unique target services
+	endpoints := getEndpointsByServiceForCurrentSystem(serviceName)
 
-	// Filter dependencies for the given service
-	var dependencies []string
-	for _, pair := range networkPairs {
-		if pair.SourceService == serviceName {
-			dependencies = append(dependencies, pair.TargetService)
+	// Extract unique dependencies
+	depMap := make(map[string]bool)
+	for _, ep := range endpoints {
+		if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
+			depMap[ep.ServerAddress] = true
 		}
 	}
 
+	dependencies := make([]string, 0, len(depMap))
+	for dep := range depMap {
+		dependencies = append(dependencies, dep)
+	}
+
 	if len(dependencies) == 0 {
-		fmt.Printf("No dependencies found for service: %s\n", serviceName)
+		fmt.Printf("No dependencies found for service: %s (system: %s)\n", serviceName, systemconfig.GetCurrentSystem())
 		return
 	}
 
 	// Sort the dependencies alphabetically
 	sort.Strings(dependencies)
 
-	fmt.Printf("Dependencies for service %s:\n", serviceName)
+	fmt.Printf("Dependencies for service %s (system: %s):\n", serviceName, systemconfig.GetCurrentSystem())
 	for i, dep := range dependencies {
 		fmt.Printf("%d. %s\n", i+1, dep)
 	}
@@ -154,21 +158,49 @@ func listServiceDependencies(serviceName string) {
 }
 
 func listAllDependencies() {
-	// Using original implementation as it requires ConnectionDetails which isn't in resourcelookup
-	pairs := networkdependencies.GetAllServicePairs()
+	// Get all services and build dependency pairs from endpoints
+	services := getAllServicesForCurrentSystem()
 
-	if len(pairs) == 0 {
-		fmt.Println("No service dependencies found")
+	type depPair struct {
+		Source string
+		Target string
+	}
+	pairMap := make(map[depPair]bool)
+
+	for _, service := range services {
+		endpoints := getEndpointsByServiceForCurrentSystem(service)
+		for _, ep := range endpoints {
+			if ep.ServerAddress != "" && ep.ServerAddress != service {
+				pairMap[depPair{Source: service, Target: ep.ServerAddress}] = true
+			}
+		}
+	}
+
+	if len(pairMap) == 0 {
+		fmt.Printf("No service dependencies found (system: %s)\n", systemconfig.GetCurrentSystem())
 		return
 	}
 
+	// Convert to slice and sort
+	pairs := make([]depPair, 0, len(pairMap))
+	for pair := range pairMap {
+		pairs = append(pairs, pair)
+	}
+	sort.Slice(pairs, func(i, j int) bool {
+		if pairs[i].Source != pairs[j].Source {
+			return pairs[i].Source < pairs[j].Source
+		}
+		return pairs[i].Target < pairs[j].Target
+	})
+
 	// Create a tabwriter for aligned output
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(w, "Service dependencies (system: %s):\n", systemconfig.GetCurrentSystem())
 	fmt.Fprintln(w, "Source Service\tTarget Service\tConnection Type")
 	fmt.Fprintln(w, "-------------\t-------------\t--------------")
 
 	for _, pair := range pairs {
-		fmt.Fprintf(w, "%s\t%s\t%s\n", pair.SourceService, pair.TargetService, pair.ConnectionDetails)
+		fmt.Fprintf(w, "%s\t%s\t%s\n", pair.Source, pair.Target, "HTTP/gRPC Communication")
 	}
 
 	w.Flush()
@@ -218,7 +250,7 @@ func listJVMServices() {
 }
 
 func listServiceEndpoints(serviceName string) {
-	endpoints := serviceendpoints.GetEndpointsByServiceSystemAware(serviceName)
+	endpoints := getEndpointsByServiceForCurrentSystem(serviceName)
 
 	if len(endpoints) == 0 {
 		fmt.Printf("No endpoints found for service: %s (system: %s)\n", serviceName, systemconfig.GetCurrentSystem())
@@ -365,4 +397,60 @@ func listAllDatabaseOperations() {
 
 	w.Flush()
 	fmt.Printf("Total: %d database operations\n", len(dbOps))
+}
+
+// ============================================================================
+// System-aware helper functions for multi-system support
+// ============================================================================
+
+// getAllServicesForCurrentSystem returns all services based on current system
+func getAllServicesForCurrentSystem() []string {
+	system := systemconfig.GetCurrentSystem()
+	switch system {
+	case systemconfig.SystemTrainTicket:
+		return tsendpoints.GetAllServices()
+	case systemconfig.SystemOtelDemo:
+		return oteldemoendpoints.GetAllServices()
+	default:
+		return serviceendpoints.GetAllServices()
+	}
+}
+
+// getEndpointsByServiceForCurrentSystem returns endpoints for a service based on current system
+func getEndpointsByServiceForCurrentSystem(serviceName string) []serviceendpoints.ServiceEndpoint {
+	system := systemconfig.GetCurrentSystem()
+	switch system {
+	case systemconfig.SystemTrainTicket:
+		tsEps := tsendpoints.GetEndpointsByService(serviceName)
+		result := make([]serviceendpoints.ServiceEndpoint, len(tsEps))
+		for i, ep := range tsEps {
+			result[i] = serviceendpoints.ServiceEndpoint{
+				ServiceName:    ep.ServiceName,
+				RequestMethod:  ep.RequestMethod,
+				ResponseStatus: ep.ResponseStatus,
+				Route:          ep.Route,
+				ServerAddress:  ep.ServerAddress,
+				ServerPort:     ep.ServerPort,
+				SpanName:       ep.SpanName,
+			}
+		}
+		return result
+	case systemconfig.SystemOtelDemo:
+		otelEps := oteldemoendpoints.GetEndpointsByService(serviceName)
+		result := make([]serviceendpoints.ServiceEndpoint, len(otelEps))
+		for i, ep := range otelEps {
+			result[i] = serviceendpoints.ServiceEndpoint{
+				ServiceName:    ep.ServiceName,
+				RequestMethod:  ep.RequestMethod,
+				ResponseStatus: ep.ResponseStatus,
+				Route:          ep.Route,
+				ServerAddress:  ep.ServerAddress,
+				ServerPort:     ep.ServerPort,
+				SpanName:       ep.SpanName,
+			}
+		}
+		return result
+	default:
+		return serviceendpoints.GetEndpointsByService(serviceName)
+	}
 }
