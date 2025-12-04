@@ -58,7 +58,9 @@ func getDependencyGraph() map[string][]string {
 	return graph
 }
 
-// buildDependencyGraphForSystem builds a map of service dependencies based on service endpoints for current system
+// buildDependencyGraphForSystem builds a map of service dependencies based on service endpoints.
+// It uses the serviceendpoints package which routes to the appropriate system-specific data
+// based on the currently configured system in systemconfig.
 func buildDependencyGraphForSystem() map[string][]string {
 	graph := make(map[string][]string)
 
