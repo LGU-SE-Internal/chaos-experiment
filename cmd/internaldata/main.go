@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"sort"
@@ -11,49 +12,67 @@ import (
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/networkdependencies"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	// Define global flags
+	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket) or 'otel-demo' (OpenTelemetry Demo)")
+	flag.Parse()
+
+	// Set the system type
+	systemType, err := systemconfig.ParseSystemType(*system)
+	if err != nil {
+		fmt.Printf("Invalid system: %s. Must be 'ts' or 'otel-demo'\n", *system)
+		os.Exit(1)
+	}
+	if err := systemconfig.SetCurrentSystem(systemType); err != nil {
+		fmt.Printf("Error setting system type: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Get remaining args after flags
+	args := flag.Args()
+	if len(args) < 1 {
 		printUsage()
 		return
 	}
 
-	command := os.Args[1]
+	command := args[0]
 
 	switch command {
 	case "list-services":
 		listNetworkServices()
 	case "list-dependencies":
-		if len(os.Args) < 3 {
+		if len(args) < 2 {
 			fmt.Println("Please provide a service name")
 			return
 		}
-		listServiceDependencies(os.Args[2])
+		listServiceDependencies(args[1])
 	case "list-all-dependencies":
 		listAllDependencies()
 	case "list-jvm-methods":
-		if len(os.Args) < 3 {
+		if len(args) < 2 {
 			fmt.Println("Please provide a service name")
 			return
 		}
-		listJVMMethods(os.Args[2])
+		listJVMMethods(args[1])
 	case "list-jvm-services":
 		listJVMServices()
 	case "list-endpoints":
-		if len(os.Args) < 3 {
+		if len(args) < 2 {
 			fmt.Println("Please provide a service name")
 			return
 		}
-		listServiceEndpoints(os.Args[2])
+		listServiceEndpoints(args[1])
 	case "list-db-services":
 		listDatabaseServices()
 	case "list-db-operations":
-		if len(os.Args) < 3 {
+		if len(args) < 2 {
 			fmt.Println("Please provide a service name")
 			return
 		}
-		listDatabaseOperations(os.Args[2])
+		listDatabaseOperations(args[1])
 	case "list-db-tables":
 		listDatabaseTables()
 	case "list-all-db-operations":
@@ -65,16 +84,24 @@ func main() {
 
 func printUsage() {
 	fmt.Println("Usage:")
-	fmt.Println("  cli list-services                - List all services with network dependencies")
-	fmt.Println("  cli list-dependencies <service>  - List dependencies for a specific service")
-	fmt.Println("  cli list-all-dependencies        - List all service dependencies")
-	fmt.Println("  cli list-jvm-methods <service>   - List JVM methods for a specific service")
-	fmt.Println("  cli list-jvm-services            - List all Java services")
-	fmt.Println("  cli list-endpoints <service>     - List endpoints for a specific service")
-	fmt.Println("  cli list-db-services             - List all services with database operations")
-	fmt.Println("  cli list-db-operations <service> - List database operations for a specific service")
-	fmt.Println("  cli list-db-tables               - List all database tables")
-	fmt.Println("  cli list-all-db-operations       - List all database operations")
+	fmt.Println("  cli [--system ts|otel-demo] <command> [args]")
+	fmt.Println()
+	fmt.Println("Flags:")
+	fmt.Println("  --system <system>                - Target system: 'ts' (TrainTicket) or 'otel-demo' (OpenTelemetry Demo)")
+	fmt.Println()
+	fmt.Println("Commands:")
+	fmt.Println("  list-services                    - List all services with network dependencies")
+	fmt.Println("  list-dependencies <service>      - List dependencies for a specific service")
+	fmt.Println("  list-all-dependencies            - List all service dependencies")
+	fmt.Println("  list-jvm-methods <service>       - List JVM methods for a specific service")
+	fmt.Println("  list-jvm-services                - List all Java services")
+	fmt.Println("  list-endpoints <service>         - List endpoints for a specific service (with SpanName)")
+	fmt.Println("  list-db-services                 - List all services with database operations")
+	fmt.Println("  list-db-operations <service>     - List database operations for a specific service")
+	fmt.Println("  list-db-tables                   - List all database tables")
+	fmt.Println("  list-all-db-operations           - List all database operations")
+	fmt.Println()
+	fmt.Printf("Current system: %s\n", systemconfig.GetCurrentSystem())
 }
 
 func listNetworkServices() {
@@ -213,12 +240,12 @@ func listServiceEndpoints(serviceName string) {
 		return
 	}
 
-	fmt.Printf("Endpoints for service %s:\n", serviceName)
+	fmt.Printf("Endpoints for service %s (system: %s):\n", serviceName, systemconfig.GetCurrentSystem())
 
 	// Create a tabwriter for aligned output
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Method\tRoute\tTarget Address\tTarget Port\tResponse Status")
-	fmt.Fprintln(w, "------\t-----\t-------------\t-----------\t--------------")
+	fmt.Fprintln(w, "Method\tRoute\tTarget Address\tTarget Port\tResponse Status\tSpanName")
+	fmt.Fprintln(w, "------\t-----\t-------------\t-----------\t--------------\t--------")
 
 	for _, endpoint := range endpoints {
 		method := endpoint.RequestMethod
@@ -233,12 +260,17 @@ func listServiceEndpoints(serviceName string) {
 		if status == "" {
 			status = "N/A"
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+		spanName := endpoint.SpanName
+		if spanName == "" {
+			spanName = "N/A"
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 			method,
 			route,
 			endpoint.ServerAddress,
 			endpoint.ServerPort,
-			status)
+			status,
+			spanName)
 	}
 
 	w.Flush()
