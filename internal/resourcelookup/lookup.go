@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/LGU-SE-Internal/chaos-experiment/client"
@@ -295,7 +294,7 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 					domainMap[endpoint.ServerAddress].spanNames[endpoint.SpanName] = true
 				}
 				// Check if this is an HTTP endpoint (not gRPC)
-				if endpoint.Route != "" && !isGRPCRoute(endpoint.Route) {
+				if endpoint.Route != "" && !utils.IsGRPCRoute(endpoint.Route) {
 					domainMap[endpoint.ServerAddress].hasHTTP = true
 				}
 			}
@@ -333,28 +332,6 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 	}
 	cachedDNSEndpoints[currentSystem] = result
 	return result, nil
-}
-
-// isGRPCRoute checks if a route is a gRPC route pattern
-func isGRPCRoute(route string) bool {
-	// gRPC routes typically look like:
-	// - /oteldemo.CartService/AddItem
-	// - /flagd.evaluation.v1.Service/EventStream
-	// - /package.Service/Method
-	if route == "" {
-		return false
-	}
-	// gRPC routes start with / and contain a service/method pattern with dots
-	if len(route) > 1 && route[0] == '/' {
-		// Check for gRPC service patterns (contains dots and slash after initial slash)
-		// Examples: /oteldemo.CartService/AddItem, /flagd.evaluation.v1.Service/ResolveBoolean
-		routeBody := route[1:]
-		// gRPC routes have format: /package.Service/Method
-		if strings.Contains(routeBody, ".") && strings.Contains(routeBody, "/") {
-			return true
-		}
-	}
-	return false
 }
 
 // GetAllDatabaseOperations returns all app+database operations pairs sorted by app name

@@ -4,11 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"text/tabwriter"
 
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
+	"github.com/LGU-SE-Internal/chaos-experiment/utils"
 
 	oteldemodb "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/databaseoperations"
 	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
@@ -445,7 +445,7 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 						pairMap[serviceName][ep.ServerAddress].spanNames = appendUnique(pairMap[serviceName][ep.ServerAddress].spanNames, ep.SpanName)
 					}
 					// TrainTicket endpoints with Route are HTTP, not gRPC
-					if ep.Route != "" && !isGRPCRoute(ep.Route) {
+					if ep.Route != "" && !utils.IsGRPCRoute(ep.Route) {
 						pairMap[serviceName][ep.ServerAddress].hasHTTP = true
 					}
 				}
@@ -463,7 +463,7 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 						pairMap[serviceName][ep.ServerAddress].spanNames = appendUnique(pairMap[serviceName][ep.ServerAddress].spanNames, ep.SpanName)
 					}
 					// Check if this is an HTTP endpoint (not gRPC)
-					if ep.Route != "" && !isGRPCRoute(ep.Route) {
+					if ep.Route != "" && !utils.IsGRPCRoute(ep.Route) {
 						pairMap[serviceName][ep.ServerAddress].hasHTTP = true
 					}
 				}
@@ -487,28 +487,6 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 		}
 	}
 	return result, nil
-}
-
-// isGRPCRoute checks if a route is a gRPC route pattern
-func isGRPCRoute(route string) bool {
-	// gRPC routes typically look like:
-	// - /oteldemo.CartService/AddItem
-	// - /flagd.evaluation.v1.Service/EventStream
-	// - /package.Service/Method
-	if route == "" {
-		return false
-	}
-	// gRPC routes start with / and contain a service/method pattern with dots
-	if len(route) > 1 && route[0] == '/' {
-		// Check for gRPC service patterns (contains dots and slash after initial slash)
-		// Examples: /oteldemo.CartService/AddItem, /flagd.evaluation.v1.Service/ResolveBoolean
-		routeBody := route[1:]
-		// gRPC routes have format: /package.Service/Method
-		if strings.Contains(routeBody, ".") && strings.Contains(routeBody, "/") {
-			return true
-		}
-	}
-	return false
 }
 
 func getJVMMethodsForCurrentSystem() ([]resourcelookup.AppMethodPair, error) {
