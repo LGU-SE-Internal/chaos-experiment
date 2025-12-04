@@ -8,10 +8,10 @@ import (
 
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
-	"github.com/LGU-SE-Internal/chaos-experiment/utils"
 
 	oteldemodb "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/databaseoperations"
 	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
+	oteldemogrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/grpcoperations"
 	oteldemojvm "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/javaclassmethods"
 	tsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/databaseoperations"
 	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
@@ -404,6 +404,7 @@ func getNetworkPairsForCurrentSystem() ([]resourcelookup.AppNetworkPair, error) 
 func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 	// Build DNS pairs from service endpoints (similar to network pairs)
 	// Note: DNS chaos does NOT work for gRPC-only connections, so we filter those out
+	// We use grpcoperations data to identify which service pairs only use gRPC
 	var services []string
 	switch systemconfig.GetCurrentSystem() {
 	case systemconfig.SystemTrainTicket:
@@ -414,13 +415,11 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 		return resourcelookup.GetAllDNSEndpoints()
 	}
 
-	// Build unique source->domain pairs, tracking if any HTTP endpoints exist
-	// Structure: source -> domain -> {spanNames, hasHTTP}
-	type domainInfo struct {
-		spanNames []string
-		hasHTTP   bool
-	}
-	pairMap := make(map[string]map[string]*domainInfo) // source -> domain -> info
+	// Build gRPC-only pairs set using grpcoperations data
+	grpcOnlyPairs := buildGRPCOnlyPairsForFaultpoints()
+
+	// Build unique source->domain pairs
+	pairMap := make(map[string]map[string][]string) // source -> domain -> spanNames
 
 	for _, serviceName := range services {
 		var endpoints interface{}
@@ -436,17 +435,14 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 			for _, ep := range eps {
 				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
 					if pairMap[serviceName] == nil {
-						pairMap[serviceName] = make(map[string]*domainInfo)
-					}
-					if pairMap[serviceName][ep.ServerAddress] == nil {
-						pairMap[serviceName][ep.ServerAddress] = &domainInfo{spanNames: []string{}}
+						pairMap[serviceName] = make(map[string][]string)
 					}
 					if ep.SpanName != "" {
-						pairMap[serviceName][ep.ServerAddress].spanNames = appendUnique(pairMap[serviceName][ep.ServerAddress].spanNames, ep.SpanName)
-					}
-					// TrainTicket endpoints with Route are HTTP, not gRPC
-					if ep.Route != "" && !utils.IsGRPCRoute(ep.Route) {
-						pairMap[serviceName][ep.ServerAddress].hasHTTP = true
+						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
+					} else {
+						if pairMap[serviceName][ep.ServerAddress] == nil {
+							pairMap[serviceName][ep.ServerAddress] = []string{}
+						}
 					}
 				}
 			}
@@ -454,17 +450,14 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 			for _, ep := range eps {
 				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
 					if pairMap[serviceName] == nil {
-						pairMap[serviceName] = make(map[string]*domainInfo)
-					}
-					if pairMap[serviceName][ep.ServerAddress] == nil {
-						pairMap[serviceName][ep.ServerAddress] = &domainInfo{spanNames: []string{}}
+						pairMap[serviceName] = make(map[string][]string)
 					}
 					if ep.SpanName != "" {
-						pairMap[serviceName][ep.ServerAddress].spanNames = appendUnique(pairMap[serviceName][ep.ServerAddress].spanNames, ep.SpanName)
-					}
-					// Check if this is an HTTP endpoint (not gRPC)
-					if ep.Route != "" && !utils.IsGRPCRoute(ep.Route) {
-						pairMap[serviceName][ep.ServerAddress].hasHTTP = true
+						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
+					} else {
+						if pairMap[serviceName][ep.ServerAddress] == nil {
+							pairMap[serviceName][ep.ServerAddress] = []string{}
+						}
 					}
 				}
 			}
@@ -474,19 +467,91 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 	// Convert to result, filtering out gRPC-only connections
 	result := make([]resourcelookup.AppDNSPair, 0)
 	for appName, domains := range pairMap {
-		for domain, info := range domains {
-			// Only include if there's at least one HTTP endpoint
-			// DNS chaos doesn't work for gRPC-only connections
-			if info.hasHTTP {
-				result = append(result, resourcelookup.AppDNSPair{
-					AppName:   appName,
-					Domain:    domain,
-					SpanNames: info.spanNames,
-				})
+		for domain, spanNames := range domains {
+			// Check if this service pair is gRPC-only
+			pairKey := appName + "->" + domain
+			if grpcOnlyPairs[pairKey] {
+				// Skip gRPC-only connections - DNS chaos doesn't work for them
+				continue
 			}
+			result = append(result, resourcelookup.AppDNSPair{
+				AppName:   appName,
+				Domain:    domain,
+				SpanNames: spanNames,
+			})
 		}
 	}
 	return result, nil
+}
+
+// buildGRPCOnlyPairsForFaultpoints builds a set of service pairs that only communicate via gRPC
+// Returns a map where key is "source->target" and value is true if gRPC-only
+func buildGRPCOnlyPairsForFaultpoints() map[string]bool {
+	grpcOnlyPairs := make(map[string]bool)
+	
+	// Only OtelDemo has gRPC operations
+	if systemconfig.GetCurrentSystem() != systemconfig.SystemOtelDemo {
+		return grpcOnlyPairs
+	}
+	
+	// Get all gRPC client operations (these represent outgoing gRPC calls)
+	grpcOps := oteldemogrpc.GetClientOperations()
+	
+	// Track which service pairs have gRPC connections
+	grpcPairs := make(map[string]bool)
+	for _, op := range grpcOps {
+		pairKey := op.ServiceName + "->" + op.ServerAddress
+		grpcPairs[pairKey] = true
+	}
+	
+	// Get all service endpoints to check which pairs also have HTTP
+	services := oteldemoendpoints.GetAllServices()
+	httpPairs := make(map[string]bool)
+	
+	for _, serviceName := range services {
+		endpoints := oteldemoendpoints.GetEndpointsByService(serviceName)
+		for _, endpoint := range endpoints {
+			// HTTP endpoints have non-empty Route that doesn't look like gRPC
+			if endpoint.ServerAddress != "" && endpoint.ServerAddress != serviceName {
+				if endpoint.Route != "" && !isGRPCRoutePatternSimple(endpoint.Route) {
+					pairKey := serviceName + "->" + endpoint.ServerAddress
+					httpPairs[pairKey] = true
+				}
+			}
+		}
+	}
+	
+	// A pair is gRPC-only if it has gRPC but no HTTP
+	for pair := range grpcPairs {
+		if !httpPairs[pair] {
+			grpcOnlyPairs[pair] = true
+		}
+	}
+	
+	return grpcOnlyPairs
+}
+
+// isGRPCRoutePatternSimple checks if a route looks like a gRPC route pattern
+// gRPC routes typically follow the format: /package.Service/Method
+func isGRPCRoutePatternSimple(route string) bool {
+	if route == "" || len(route) < 3 {
+		return false
+	}
+	if route[0] != '/' {
+		return false
+	}
+	// Look for patterns like /oteldemo.CartService/AddItem
+	// These have a dot in the first segment (before second slash)
+	hasDot := false
+	for i := 1; i < len(route); i++ {
+		if route[i] == '/' {
+			break
+		}
+		if route[i] == '.' {
+			hasDot = true
+		}
+	}
+	return hasDot
 }
 
 func getJVMMethodsForCurrentSystem() ([]resourcelookup.AppMethodPair, error) {

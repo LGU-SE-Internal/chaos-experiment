@@ -25,20 +25,3 @@ func ExtractNsPrefix(namespace string) (string, error) {
 
 	return match[1], nil
 }
-
-// gRPC route pattern: /package.Service/Method
-// Examples:
-// - /oteldemo.CartService/AddItem
-// - /flagd.evaluation.v1.Service/EventStream
-// - /package.v1.Service/Method
-var grpcRoutePattern = regexp.MustCompile(`^/[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+/[a-zA-Z][a-zA-Z0-9_]*$`)
-
-// IsGRPCRoute checks if a route is a gRPC route pattern
-// gRPC routes typically follow the format: /package.Service/Method
-// Examples: /oteldemo.CartService/AddItem, /flagd.evaluation.v1.Service/ResolveBoolean
-func IsGRPCRoute(route string) bool {
-	if route == "" {
-		return false
-	}
-	return grpcRoutePattern.MatchString(route)
-}

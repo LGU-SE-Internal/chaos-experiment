@@ -8,6 +8,7 @@ import (
 
 	"github.com/LGU-SE-Internal/chaos-experiment/client"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/databaseoperations"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/grpcoperations"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/javaclassmethods"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/networkdependencies"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
@@ -258,6 +259,7 @@ func getSpanNamesBetweenServices(sourceService, targetService string) []string {
 // GetAllDNSEndpoints returns all app+domain pairs for DNS chaos sorted by app name
 // This function uses the current system from systemconfig
 // Note: DNS chaos does NOT work for gRPC-only connections, so we filter those out
+// We use grpcoperations data to identify gRPC-only service pairs
 func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 	currentSystem := systemconfig.GetCurrentSystem()
 	
@@ -267,55 +269,52 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 		}
 	}
 
+	// Build a set of gRPC-only service pairs (source -> target)
+	// This uses the grpcoperations data to identify which service pairs only use gRPC
+	grpcOnlyPairs := buildGRPCOnlyPairs()
+
 	// Get all service names
 	services := serviceendpoints.GetAllServices()
 	result := make([]AppDNSPair, 0)
 
-	// Structure to track domain info with HTTP flag
-	type domainInfo struct {
-		spanNames map[string]bool
-		hasHTTP   bool
-	}
-
 	// For each service, get its endpoints
 	for _, serviceName := range services {
 		endpoints := serviceendpoints.GetEndpointsByService(serviceName)
-		// Map from domain to info
-		domainMap := make(map[string]*domainInfo)
+		// Map from domain to span names
+		domainSpanNames := make(map[string]map[string]bool)
 
 		for _, endpoint := range endpoints {
 			// Only include valid server addresses that are not the service itself
 			if endpoint.ServerAddress != "" &&
 				endpoint.ServerAddress != serviceName {
-				if domainMap[endpoint.ServerAddress] == nil {
-					domainMap[endpoint.ServerAddress] = &domainInfo{spanNames: make(map[string]bool)}
+				if domainSpanNames[endpoint.ServerAddress] == nil {
+					domainSpanNames[endpoint.ServerAddress] = make(map[string]bool)
 				}
 				if endpoint.SpanName != "" {
-					domainMap[endpoint.ServerAddress].spanNames[endpoint.SpanName] = true
-				}
-				// Check if this is an HTTP endpoint (not gRPC)
-				if endpoint.Route != "" && !utils.IsGRPCRoute(endpoint.Route) {
-					domainMap[endpoint.ServerAddress].hasHTTP = true
+					domainSpanNames[endpoint.ServerAddress][endpoint.SpanName] = true
 				}
 			}
 		}
 
 		// Convert to AppDNSPairs with span names, filtering out gRPC-only connections
-		for domain, info := range domainMap {
-			// Only include if there's at least one HTTP endpoint
-			// DNS chaos doesn't work for gRPC-only connections
-			if info.hasHTTP {
-				spanNames := make([]string, 0, len(info.spanNames))
-				for spanName := range info.spanNames {
-					spanNames = append(spanNames, spanName)
-				}
-				sort.Strings(spanNames)
-				result = append(result, AppDNSPair{
-					AppName:   serviceName,
-					Domain:    domain,
-					SpanNames: spanNames,
-				})
+		for domain, spanNameSet := range domainSpanNames {
+			// Check if this service pair is gRPC-only
+			pairKey := serviceName + "->" + domain
+			if grpcOnlyPairs[pairKey] {
+				// Skip gRPC-only connections - DNS chaos doesn't work for them
+				continue
 			}
+			
+			spanNames := make([]string, 0, len(spanNameSet))
+			for spanName := range spanNameSet {
+				spanNames = append(spanNames, spanName)
+			}
+			sort.Strings(spanNames)
+			result = append(result, AppDNSPair{
+				AppName:   serviceName,
+				Domain:    domain,
+				SpanNames: spanNames,
+			})
 		}
 	}
 
@@ -332,6 +331,78 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 	}
 	cachedDNSEndpoints[currentSystem] = result
 	return result, nil
+}
+
+// buildGRPCOnlyPairs builds a set of service pairs that only communicate via gRPC
+// Returns a map where key is "source->target" and value is true if gRPC-only
+func buildGRPCOnlyPairs() map[string]bool {
+	grpcOnlyPairs := make(map[string]bool)
+	
+	// Get all gRPC client operations (these represent outgoing gRPC calls)
+	grpcOps := grpcoperations.GetClientOperations()
+	
+	// Track which service pairs have gRPC connections
+	grpcPairs := make(map[string]bool)
+	for _, op := range grpcOps {
+		pairKey := op.ServiceName + "->" + op.ServerAddress
+		grpcPairs[pairKey] = true
+	}
+	
+	// Get all service endpoints to check which pairs also have HTTP
+	services := serviceendpoints.GetAllServices()
+	httpPairs := make(map[string]bool)
+	
+	for _, serviceName := range services {
+		endpoints := serviceendpoints.GetEndpointsByService(serviceName)
+		for _, endpoint := range endpoints {
+			// HTTP endpoints have non-empty Route that doesn't look like gRPC
+			// (simple heuristic: HTTP routes don't start with /package.Service/)
+			if endpoint.ServerAddress != "" && endpoint.ServerAddress != serviceName {
+				if endpoint.Route != "" && !isGRPCRoutePattern(endpoint.Route) {
+					pairKey := serviceName + "->" + endpoint.ServerAddress
+					httpPairs[pairKey] = true
+				}
+			}
+		}
+	}
+	
+	// A pair is gRPC-only if it has gRPC but no HTTP
+	for pair := range grpcPairs {
+		if !httpPairs[pair] {
+			grpcOnlyPairs[pair] = true
+		}
+	}
+	
+	return grpcOnlyPairs
+}
+
+// isGRPCRoutePattern checks if a route looks like a gRPC route pattern
+// gRPC routes typically follow the format: /package.Service/Method
+func isGRPCRoutePattern(route string) bool {
+	if route == "" || len(route) < 3 {
+		return false
+	}
+	// gRPC routes start with / and contain package.Service/Method pattern
+	// Simple check: contains a dot followed by an identifier, then a slash
+	if route[0] != '/' {
+		return false
+	}
+	// Look for patterns like /oteldemo.CartService/AddItem
+	// These have a dot in the first segment (before second slash)
+	firstSlash := 0
+	secondSlash := -1
+	hasDot := false
+	for i := 1; i < len(route); i++ {
+		if route[i] == '/' {
+			secondSlash = i
+			break
+		}
+		if route[i] == '.' {
+			hasDot = true
+		}
+	}
+	// gRPC routes have a dot between the first and second slash
+	return hasDot && secondSlash > firstSlash
 }
 
 // GetAllDatabaseOperations returns all app+database operations pairs sorted by app name
