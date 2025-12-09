@@ -27,10 +27,28 @@ func TestSetCurrentSystem(t *testing.T) {
 			expectedSys: SystemOtelDemo,
 		},
 		{
+			name:        "set MediaMicroservices system",
+			system:      SystemMediaMicroservices,
+			wantErr:     false,
+			expectedSys: SystemMediaMicroservices,
+		},
+		{
+			name:        "set HotelReservation system",
+			system:      SystemHotelReservation,
+			wantErr:     false,
+			expectedSys: SystemHotelReservation,
+		},
+		{
+			name:        "set SocialNetwork system",
+			system:      SystemSocialNetwork,
+			wantErr:     false,
+			expectedSys: SystemSocialNetwork,
+		},
+		{
 			name:        "set invalid system",
 			system:      "invalid-system",
 			wantErr:     true,
-			expectedSys: SystemOtelDemo, // Should remain unchanged from previous test
+			expectedSys: SystemSocialNetwork, // Should remain unchanged from previous test
 		},
 	}
 
@@ -89,6 +107,45 @@ func TestIsOtelDemo(t *testing.T) {
 	}
 }
 
+func TestIsMediaMicroservices(t *testing.T) {
+	_ = SetCurrentSystem(SystemTrainTicket)
+
+	if IsMediaMicroservices() {
+		t.Error("IsMediaMicroservices() should return false when system is TrainTicket")
+	}
+
+	_ = SetCurrentSystem(SystemMediaMicroservices)
+	if !IsMediaMicroservices() {
+		t.Error("IsMediaMicroservices() should return true when system is MediaMicroservices")
+	}
+}
+
+func TestIsHotelReservation(t *testing.T) {
+	_ = SetCurrentSystem(SystemTrainTicket)
+
+	if IsHotelReservation() {
+		t.Error("IsHotelReservation() should return false when system is TrainTicket")
+	}
+
+	_ = SetCurrentSystem(SystemHotelReservation)
+	if !IsHotelReservation() {
+		t.Error("IsHotelReservation() should return true when system is HotelReservation")
+	}
+}
+
+func TestIsSocialNetwork(t *testing.T) {
+	_ = SetCurrentSystem(SystemTrainTicket)
+
+	if IsSocialNetwork() {
+		t.Error("IsSocialNetwork() should return false when system is TrainTicket")
+	}
+
+	_ = SetCurrentSystem(SystemSocialNetwork)
+	if !IsSocialNetwork() {
+		t.Error("IsSocialNetwork() should return true when system is SocialNetwork")
+	}
+}
+
 func TestSystemTypeString(t *testing.T) {
 	if SystemTrainTicket.String() != "ts" {
 		t.Errorf("SystemTrainTicket.String() = %v, want %v", SystemTrainTicket.String(), "ts")
@@ -97,12 +154,24 @@ func TestSystemTypeString(t *testing.T) {
 	if SystemOtelDemo.String() != "otel-demo" {
 		t.Errorf("SystemOtelDemo.String() = %v, want %v", SystemOtelDemo.String(), "otel-demo")
 	}
+
+	if SystemMediaMicroservices.String() != "media" {
+		t.Errorf("SystemMediaMicroservices.String() = %v, want %v", SystemMediaMicroservices.String(), "media")
+	}
+
+	if SystemHotelReservation.String() != "hs" {
+		t.Errorf("SystemHotelReservation.String() = %v, want %v", SystemHotelReservation.String(), "hs")
+	}
+
+	if SystemSocialNetwork.String() != "sn" {
+		t.Errorf("SystemSocialNetwork.String() = %v, want %v", SystemSocialNetwork.String(), "sn")
+	}
 }
 
 func TestGetAllSystemTypes(t *testing.T) {
 	types := GetAllSystemTypes()
-	if len(types) != 2 {
-		t.Errorf("GetAllSystemTypes() returned %d types, want 2", len(types))
+	if len(types) != 5 {
+		t.Errorf("GetAllSystemTypes() returned %d types, want 5", len(types))
 	}
 
 	found := make(map[SystemType]bool)
@@ -115,6 +184,15 @@ func TestGetAllSystemTypes(t *testing.T) {
 	}
 	if !found[SystemOtelDemo] {
 		t.Error("GetAllSystemTypes() should include SystemOtelDemo")
+	}
+	if !found[SystemMediaMicroservices] {
+		t.Error("GetAllSystemTypes() should include SystemMediaMicroservices")
+	}
+	if !found[SystemHotelReservation] {
+		t.Error("GetAllSystemTypes() should include SystemHotelReservation")
+	}
+	if !found[SystemSocialNetwork] {
+		t.Error("GetAllSystemTypes() should include SystemSocialNetwork")
 	}
 }
 
@@ -135,6 +213,24 @@ func TestParseSystemType(t *testing.T) {
 			name:    "parse otel-demo",
 			input:   "otel-demo",
 			want:    SystemOtelDemo,
+			wantErr: false,
+		},
+		{
+			name:    "parse media",
+			input:   "media",
+			want:    SystemMediaMicroservices,
+			wantErr: false,
+		},
+		{
+			name:    "parse hs",
+			input:   "hs",
+			want:    SystemHotelReservation,
+			wantErr: false,
+		},
+		{
+			name:    "parse sn",
+			input:   "sn",
+			want:    SystemSocialNetwork,
 			wantErr: false,
 		},
 		{

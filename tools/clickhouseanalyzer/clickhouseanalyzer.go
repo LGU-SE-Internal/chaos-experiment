@@ -436,6 +436,99 @@ WHERE
     );
 `
 
+// Create materialized view SQL for DeathStarBench systems (media, hs, sn)
+// These systems use ResourceAttributes['k8s.namespace.name'] for filtering
+func createDeathStarBenchMaterializedViewSQL(namespace string, viewName string) string {
+	return fmt.Sprintf(`
+CREATE MATERIALIZED VIEW IF NOT EXISTS %s 
+ENGINE = ReplacingMergeTree(version)
+PARTITION BY toYYYYMM(Timestamp)
+PRIMARY KEY (masked_route, ServiceName, db_name)
+ORDER BY (
+    masked_route,
+    ServiceName,
+    db_name,
+    SpanKind,
+    request_method,
+    response_status_code,
+    server_address,
+    server_port,
+    db_operation,
+    db_sql_table,
+    rpc_system,
+    rpc_service,
+    rpc_method,
+    grpc_status_code
+)
+SETTINGS allow_nullable_key = 1
+POPULATE
+AS 
+SELECT 
+    ResourceAttributes['service.name'] AS ServiceName,
+    4294967295 - toUnixTimestamp(Timestamp) AS version,
+    Timestamp,
+    SpanKind,
+    SpanAttributes['client.address'] AS client_address,
+    SpanAttributes['http.request.method'] AS http_request_method,
+    SpanAttributes['http.response.status_code'] AS http_response_status_code,
+    SpanAttributes['http.route'] AS http_route,
+    SpanAttributes['http.method'] AS http_method,
+    SpanAttributes['url.full'] AS url_full,
+    SpanAttributes['http.status_code'] AS http_status_code,
+    SpanAttributes['http.target'] AS http_target,
+    
+    CASE 
+        WHEN SpanAttributes['http.request.method'] IS NOT NULL AND SpanAttributes['http.request.method'] != '' 
+            THEN SpanAttributes['http.request.method']
+        WHEN SpanAttributes['http.method'] IS NOT NULL AND SpanAttributes['http.method'] != '' 
+            THEN SpanAttributes['http.method']
+        ELSE ''
+    END AS request_method,
+    
+    CASE 
+        WHEN SpanAttributes['http.response.status_code'] IS NOT NULL AND SpanAttributes['http.response.status_code'] != '' 
+            THEN SpanAttributes['http.response.status_code']
+        WHEN SpanAttributes['http.status_code'] IS NOT NULL AND SpanAttributes['http.status_code'] != '' 
+            THEN SpanAttributes['http.status_code']
+        ELSE ''
+    END AS response_status_code,
+    
+    -- No path normalization for DeathStarBench systems
+    CASE
+        WHEN SpanAttributes['http.route'] IS NOT NULL AND SpanAttributes['http.route'] != ''
+            THEN SpanAttributes['http.route']
+        WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
+            THEN SpanAttributes['http.target']
+        WHEN SpanAttributes['url.full'] IS NOT NULL AND SpanAttributes['url.full'] != ''
+            THEN replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1')
+        ELSE ''
+    END AS masked_route,
+    
+    SpanAttributes['server.address'] AS server_address,
+    SpanAttributes['server.port'] AS server_port,
+    SpanAttributes['db.connection_string'] AS db_connection_string,
+    SpanAttributes['db.name'] AS db_name,
+    SpanAttributes['db.operation'] AS db_operation,
+    SpanAttributes['db.sql.table'] AS db_sql_table, 
+    SpanAttributes['db.statement'] AS db_statement,
+    SpanAttributes['db.system'] AS db_system,
+    SpanAttributes['db.user'] AS db_user,
+    SpanAttributes['rpc.system'] AS rpc_system,
+    SpanAttributes['rpc.service'] AS rpc_service,
+    SpanAttributes['rpc.method'] AS rpc_method,
+    SpanAttributes['rpc.grpc.status_code'] AS grpc_status_code,
+    SpanName AS span_name
+FROM otel_traces
+WHERE 
+    ResourceAttributes['k8s.namespace.name'] = '%s'
+    AND SpanKind IN ('Server', 'Client')
+    AND mapExists(
+        (k, v) -> (k IS NOT NULL AND k != '') AND (v IS NOT NULL AND v != ''),
+        SpanAttributes
+    );
+`, viewName, namespace)
+}
+
 // Client query
 const clientTracesQuery = `
 SELECT DISTINCT
@@ -548,6 +641,83 @@ WHERE db_system != ''
 ORDER BY ServiceName, db_name
 `
 
+// deathStarBenchHTTPClientTracesQuery generates a query for HTTP client traces for DeathStarBench systems
+func deathStarBenchHTTPClientTracesQuery(viewName string) string {
+	return fmt.Sprintf(`
+SELECT DISTINCT
+    ServiceName,
+    request_method,
+    response_status_code,
+    masked_route,
+    server_address,
+    server_port,
+    span_name
+FROM %s
+FINAL
+WHERE SpanKind = 'Client'
+  AND request_method != ''
+  AND masked_route != ''
+ORDER BY ServiceName, masked_route
+`, viewName)
+}
+
+// deathStarBenchHTTPServerTracesQuery generates a query for HTTP server traces for DeathStarBench systems
+func deathStarBenchHTTPServerTracesQuery(viewName string) string {
+	return fmt.Sprintf(`
+SELECT DISTINCT
+    ServiceName,
+    request_method,
+    response_status_code,
+    masked_route,
+    server_address,
+    server_port,
+    client_address,
+    span_name
+FROM %s
+FINAL
+WHERE SpanKind = 'Server'
+  AND request_method != ''
+  AND masked_route != ''
+ORDER BY ServiceName, masked_route
+`, viewName)
+}
+
+// deathStarBenchGRPCOperationsQuery generates a query for gRPC operations for DeathStarBench systems
+func deathStarBenchGRPCOperationsQuery(viewName string) string {
+	return fmt.Sprintf(`
+SELECT DISTINCT
+    ServiceName,
+    rpc_system,
+    rpc_service,
+    rpc_method,
+    grpc_status_code,
+    server_address,
+    server_port,
+    SpanKind
+FROM %s
+FINAL
+WHERE rpc_system != ''
+  AND rpc_service != ''
+ORDER BY ServiceName, rpc_service, rpc_method
+`, viewName)
+}
+
+// deathStarBenchDatabaseOperationsQuery generates a query for database operations for DeathStarBench systems
+func deathStarBenchDatabaseOperationsQuery(viewName string) string {
+	return fmt.Sprintf(`
+SELECT DISTINCT
+    ServiceName,
+    db_name,
+    db_sql_table,
+    db_operation,
+    db_system
+FROM %s
+FINAL
+WHERE db_system != ''
+ORDER BY ServiceName, db_name
+`, viewName)
+}
+
 // ConnectToDB establishes a connection to ClickHouse
 func ConnectToDB(config ClickHouseConfig) (*sql.DB, error) {
 	dsn := fmt.Sprintf("clickhouse://%s:%d/%s?username=%s&password=%s",
@@ -588,6 +758,21 @@ func CreateOtelDemoMaterializedView(db *sql.DB) error {
 
 	if _, err := db.ExecContext(ctx, createOtelDemoMaterializedViewSQL); err != nil {
 		return fmt.Errorf("error creating OTel Demo materialized view: %w", err)
+	}
+
+	return nil
+}
+
+// CreateDeathStarBenchMaterializedView creates the materialized view for DeathStarBench systems
+// namespace: the k8s namespace (media, hs, sn)
+// viewName: the name of the materialized view to create
+func CreateDeathStarBenchMaterializedView(db *sql.DB, namespace string, viewName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	sql := createDeathStarBenchMaterializedViewSQL(namespace, viewName)
+	if _, err := db.ExecContext(ctx, sql); err != nil {
+		return fmt.Errorf("error creating DeathStarBench materialized view for namespace %s: %w", namespace, err)
 	}
 
 	return nil
@@ -953,6 +1138,212 @@ func QueryOtelDemoDatabaseOperations(db *sql.DB) ([]DatabaseOperation, error) {
 
 		// Map database system to server address and port
 		mapOtelDemoDatabaseToService(&operation)
+
+		results = append(results, operation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return results, nil
+}
+
+// QueryDeathStarBenchHTTPClientTraces retrieves HTTP client traces for DeathStarBench systems
+func QueryDeathStarBenchHTTPClientTraces(db *sql.DB, viewName string) ([]ServiceEndpoint, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	query := deathStarBenchHTTPClientTracesQuery(viewName)
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("error querying DeathStarBench HTTP client traces: %w", err)
+	}
+	defer rows.Close()
+
+	var results []ServiceEndpoint
+	for rows.Next() {
+		var endpoint ServiceEndpoint
+		var serverAddr, serverPort, spanName sql.NullString
+
+		if err := rows.Scan(
+			&endpoint.ServiceName,
+			&endpoint.RequestMethod,
+			&endpoint.ResponseStatus,
+			&endpoint.Route,
+			&serverAddr,
+			&serverPort,
+			&spanName,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		endpoint.SpanKind = "Client"
+
+		if serverAddr.Valid {
+			endpoint.ServerAddress = serverAddr.String
+		}
+		if serverPort.Valid {
+			endpoint.ServerPort = serverPort.String
+		}
+		if spanName.Valid {
+			endpoint.SpanName = spanName.String
+		}
+
+		results = append(results, endpoint)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return results, nil
+}
+
+// QueryDeathStarBenchHTTPServerTraces retrieves HTTP server traces for DeathStarBench systems
+func QueryDeathStarBenchHTTPServerTraces(db *sql.DB, viewName string) ([]ServiceEndpoint, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	query := deathStarBenchHTTPServerTracesQuery(viewName)
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("error querying DeathStarBench HTTP server traces: %w", err)
+	}
+	defer rows.Close()
+
+	var results []ServiceEndpoint
+	for rows.Next() {
+		var endpoint ServiceEndpoint
+		var serverAddr, serverPort, clientAddr, spanName sql.NullString
+
+		if err := rows.Scan(
+			&endpoint.ServiceName,
+			&endpoint.RequestMethod,
+			&endpoint.ResponseStatus,
+			&endpoint.Route,
+			&serverAddr,
+			&serverPort,
+			&clientAddr,
+			&spanName,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		endpoint.SpanKind = "Server"
+
+		if clientAddr.Valid && clientAddr.String != "" {
+			endpoint.ServerAddress = clientAddr.String
+			endpoint.ServerPort = ""
+		} else if serverAddr.Valid {
+			endpoint.ServerAddress = serverAddr.String
+		}
+		if serverPort.Valid {
+			endpoint.ServerPort = serverPort.String
+		}
+		if spanName.Valid {
+			endpoint.SpanName = spanName.String
+		}
+
+		results = append(results, endpoint)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return results, nil
+}
+
+// QueryDeathStarBenchGRPCOperations retrieves gRPC operations for DeathStarBench systems
+func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string) ([]GRPCOperation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	query := deathStarBenchGRPCOperationsQuery(viewName)
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("error querying DeathStarBench gRPC operations: %w", err)
+	}
+	defer rows.Close()
+
+	var results []GRPCOperation
+	for rows.Next() {
+		var operation GRPCOperation
+		var serverAddr, serverPort, grpcStatus sql.NullString
+
+		if err := rows.Scan(
+			&operation.ServiceName,
+			&operation.RPCSystem,
+			&operation.RPCService,
+			&operation.RPCMethod,
+			&grpcStatus,
+			&serverAddr,
+			&serverPort,
+			&operation.SpanKind,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		if serverAddr.Valid {
+			operation.ServerAddress = serverAddr.String
+		}
+		if serverPort.Valid {
+			operation.ServerPort = serverPort.String
+		}
+		if grpcStatus.Valid {
+			operation.GRPCStatusCode = grpcStatus.String
+		}
+
+		results = append(results, operation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return results, nil
+}
+
+// QueryDeathStarBenchDatabaseOperations retrieves database operations for DeathStarBench systems
+func QueryDeathStarBenchDatabaseOperations(db *sql.DB, viewName string) ([]DatabaseOperation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	query := deathStarBenchDatabaseOperationsQuery(viewName)
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("error querying DeathStarBench database operations: %w", err)
+	}
+	defer rows.Close()
+
+	var results []DatabaseOperation
+	for rows.Next() {
+		var operation DatabaseOperation
+		var dbName, dbTable, dbOperation, dbSystem sql.NullString
+
+		if err := rows.Scan(
+			&operation.ServiceName,
+			&dbName,
+			&dbTable,
+			&dbOperation,
+			&dbSystem,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		if dbName.Valid {
+			operation.DBName = dbName.String
+		}
+		if dbTable.Valid {
+			operation.DBTable = dbTable.String
+		}
+		if dbOperation.Valid {
+			operation.Operation = dbOperation.String
+		}
+		if dbSystem.Valid {
+			operation.DBSystem = dbSystem.String
+		}
 
 		results = append(results, operation)
 	}

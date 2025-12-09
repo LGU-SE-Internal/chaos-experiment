@@ -16,6 +16,12 @@ const (
 	SystemTrainTicket SystemType = "ts"
 	// SystemOtelDemo represents the OpenTelemetry Demo system
 	SystemOtelDemo SystemType = "otel-demo"
+	// SystemMediaMicroservices represents the Media Microservices system
+	SystemMediaMicroservices SystemType = "media"
+	// SystemHotelReservation represents the Hotel Reservation system
+	SystemHotelReservation SystemType = "hs"
+	// SystemSocialNetwork represents the Social Network system
+	SystemSocialNetwork SystemType = "sn"
 )
 
 var (
@@ -27,8 +33,11 @@ var (
 
 	// validSystems contains all valid system types
 	validSystems = map[SystemType]bool{
-		SystemTrainTicket: true,
-		SystemOtelDemo:    true,
+		SystemTrainTicket:        true,
+		SystemOtelDemo:           true,
+		SystemMediaMicroservices: true,
+		SystemHotelReservation:   true,
+		SystemSocialNetwork:      true,
 	}
 )
 
@@ -39,7 +48,7 @@ func SetCurrentSystem(system SystemType) error {
 	defer mu.Unlock()
 
 	if !validSystems[system] {
-		return fmt.Errorf("invalid system type: %s, valid types are: ts, otel-demo", system)
+		return fmt.Errorf("invalid system type: %s, valid types are: ts, otel-demo, media, hs, sn", system)
 	}
 
 	currentSystem = system
@@ -63,6 +72,21 @@ func IsOtelDemo() bool {
 	return GetCurrentSystem() == SystemOtelDemo
 }
 
+// IsMediaMicroservices returns true if the current system is Media Microservices.
+func IsMediaMicroservices() bool {
+	return GetCurrentSystem() == SystemMediaMicroservices
+}
+
+// IsHotelReservation returns true if the current system is Hotel Reservation.
+func IsHotelReservation() bool {
+	return GetCurrentSystem() == SystemHotelReservation
+}
+
+// IsSocialNetwork returns true if the current system is Social Network.
+func IsSocialNetwork() bool {
+	return GetCurrentSystem() == SystemSocialNetwork
+}
+
 // String returns the string representation of the SystemType.
 func (s SystemType) String() string {
 	return string(s)
@@ -70,14 +94,14 @@ func (s SystemType) String() string {
 
 // GetAllSystemTypes returns all valid system types.
 func GetAllSystemTypes() []SystemType {
-	return []SystemType{SystemTrainTicket, SystemOtelDemo}
+	return []SystemType{SystemTrainTicket, SystemOtelDemo, SystemMediaMicroservices, SystemHotelReservation, SystemSocialNetwork}
 }
 
 // ParseSystemType parses a string into a SystemType.
 func ParseSystemType(s string) (SystemType, error) {
 	st := SystemType(s)
 	if !validSystems[st] {
-		return "", fmt.Errorf("invalid system type: %s, valid types are: ts, otel-demo", s)
+		return "", fmt.Errorf("invalid system type: %s, valid types are: ts, otel-demo, media, hs, sn", s)
 	}
 	return st, nil
 }
