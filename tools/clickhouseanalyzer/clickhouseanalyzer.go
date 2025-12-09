@@ -1345,6 +1345,9 @@ func QueryDeathStarBenchDatabaseOperations(db *sql.DB, viewName string) ([]Datab
 			operation.DBSystem = dbSystem.String
 		}
 
+		// Map database system to server address and port
+		mapDeathStarBenchDatabaseToService(&operation)
+
 		results = append(results, operation)
 	}
 
@@ -1591,6 +1594,33 @@ func mapOtelDemoDatabaseToService(operation *DatabaseOperation) {
 	default:
 		operation.ServerAddress = ""
 		operation.ServerPort = ""
+	}
+}
+
+// mapDeathStarBenchDatabaseToService maps database systems to server addresses for DeathStarBench systems
+// DeathStarBench applications typically use MongoDB, memcached, and Redis
+func mapDeathStarBenchDatabaseToService(operation *DatabaseOperation) {
+	switch operation.DBSystem {
+	case "mongodb":
+		operation.ServerAddress = "mongodb"
+		operation.ServerPort = "27017"
+	case "memcached":
+		operation.ServerAddress = "memcached"
+		operation.ServerPort = "11211"
+	case "redis":
+		operation.ServerAddress = "redis"
+		operation.ServerPort = "6379"
+	case "mysql":
+		operation.ServerAddress = "mysql"
+		operation.ServerPort = "3306"
+	case "postgresql":
+		operation.ServerAddress = "postgresql"
+		operation.ServerPort = "5432"
+	default:
+		// Keep the existing values if any, or leave empty
+		if operation.ServerAddress == "" {
+			operation.ServerAddress = operation.DBSystem
+		}
 	}
 }
 
