@@ -23,62 +23,118 @@ import (
 
 var (
 	k8sClientInstance client.Client
+	k8sConfigInstance *rest.Config
 	once              sync.Once
+	mu                sync.RWMutex
 )
 
+// InitWithConfig initializes the Kubernetes client with an external config.
+// This is the recommended way when using this library - let the caller provide the config.
+// This must be called before any other functions if you want to use a custom config.
+func InitWithConfig(config *rest.Config) error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if k8sClientInstance != nil {
+		logrus.Warn("Kubernetes client already initialized, reinitializing with new config")
+	}
+
+	k8sConfigInstance = config
+	scheme := runtime.NewScheme()
+
+	// Register Chaos Mesh CRD scheme
+	if err := chaosmeshv1alpha1.AddToScheme(scheme); err != nil {
+		return fmt.Errorf("failed to add Chaos Mesh v1alpha1 scheme: %v", err)
+	}
+
+	// Register CoreV1 scheme
+	if err := corev1.AddToScheme(scheme); err != nil {
+		return fmt.Errorf("failed to add CoreV1 scheme: %v", err)
+	}
+
+	// Create Kubernetes client
+	k8sClient, err := client.New(config, client.Options{Scheme: scheme})
+	if err != nil {
+		return fmt.Errorf("failed to create Kubernetes client: %v", err)
+	}
+
+	k8sClientInstance = k8sClient
+	logrus.Info("Kubernetes client initialized with external config")
+	return nil
+}
+
+// InitWithClient initializes with an existing Kubernetes client.
+// Useful when the caller already has a configured client.
+func InitWithClient(k8sClient client.Client) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if k8sClientInstance != nil {
+		logrus.Warn("Kubernetes client already initialized, replacing with provided client")
+	}
+
+	k8sClientInstance = k8sClient
+	logrus.Info("Kubernetes client initialized with external client")
+}
+
 // GetK8sConfig returns Kubernetes configuration
-// Priority: 1. InClusterConfig (Pod with ServiceAccount)
-//  2. Local kubeconfig (local development)
+// It automatically detects whether running in-cluster or out-of-cluster
+// Only used internally when InitWithConfig is not called
 func GetK8sConfig() *rest.Config {
-	// 1. Try InClusterConfig first (automatically used in Pod with ServiceAccount)
+	mu.RLock()
+	if k8sConfigInstance != nil {
+		mu.RUnlock()
+		return k8sConfigInstance
+	}
+	mu.RUnlock()
+
+	// Try in-cluster config first (for pods running inside K8s)
 	config, err := rest.InClusterConfig()
 	if err == nil {
-		logrus.Info("Successfully loaded In-Cluster Kubernetes configuration from ServiceAccount")
+		logrus.Info("Using in-cluster Kubernetes config (ServiceAccount)")
+		mu.Lock()
+		k8sConfigInstance = config
+		mu.Unlock()
 		return config
 	}
 
-	logrus.Warnf("Failed to load InClusterConfig: %v, falling back to kubeconfig file", err)
-
-	// 2. Fallback to local kubeconfig (local development)
+	// Fall back to kubeconfig file (for local development)
+	logrus.Warn("In-cluster config not found, trying kubeconfig file")
 	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
-	if _, err := os.Stat(kubeconfig); err != nil {
-		logrus.Fatalf("kubeconfig not found at %s and InClusterConfig failed: %v", kubeconfig, err)
-	}
-
 	config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
-		logrus.Fatalf("Failed to load kubeconfig from %s: %v", kubeconfig, err)
+		logrus.Fatalf("Failed to load Kubernetes config: %v", err)
 	}
 
+	logrus.Info("Using kubeconfig from ~/.kube/config")
+	mu.Lock()
+	k8sConfigInstance = config
+	mu.Unlock()
 	return config
 }
 
-// NewK8sClient initializes a new Kubernetes client using singleton pattern
+// NewK8sClient returns the Kubernetes client.
+// If InitWithConfig or InitWithClient was called, it uses that client.
+// Otherwise, it initializes a new client automatically (not recommended for library usage).
 func NewK8sClient() client.Client {
+	mu.RLock()
+	if k8sClientInstance != nil {
+		mu.RUnlock()
+		return k8sClientInstance
+	}
+	mu.RUnlock()
+
+	// Auto-initialize (fallback for backward compatibility)
 	once.Do(func() {
+		logrus.Warn("Auto-initializing Kubernetes client. Consider calling InitWithConfig() explicitly.")
 		cfg := GetK8sConfig()
-		scheme := runtime.NewScheme()
-
-		// Register Chaos Mesh CRD scheme
-		err := chaosmeshv1alpha1.AddToScheme(scheme)
-		if err != nil {
-			logrus.Fatalf("Failed to add Chaos Mesh v1alpha1 scheme: %v", err)
+		if err := InitWithConfig(cfg); err != nil {
+			logrus.Fatalf("Failed to auto-initialize Kubernetes client: %v", err)
 		}
-
-		// Register CoreV1 scheme
-		err = corev1.AddToScheme(scheme)
-		if err != nil {
-			logrus.Fatalf("Failed to add CoreV1 scheme: %v", err)
-		}
-
-		// Create Kubernetes client
-		k8sClient, err := client.New(cfg, client.Options{Scheme: scheme})
-		if err != nil {
-			logrus.Fatalf("Failed to create Kubernetes client: %v", err)
-		}
-		k8sClientInstance = k8sClient
 	})
 
+	mu.RLock()
+	defer mu.RUnlock()
 	return k8sClientInstance
 }
 
