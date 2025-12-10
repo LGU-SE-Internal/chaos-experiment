@@ -27,12 +27,29 @@ var (
 )
 
 // GetK8sConfig returns Kubernetes configuration
+// Priority: 1. InClusterConfig (Pod with ServiceAccount)
+//  2. Local kubeconfig (local development)
 func GetK8sConfig() *rest.Config {
-	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		panic(err.Error())
+	// 1. Try InClusterConfig first (automatically used in Pod with ServiceAccount)
+	config, err := rest.InClusterConfig()
+	if err == nil {
+		logrus.Info("Successfully loaded In-Cluster Kubernetes configuration from ServiceAccount")
+		return config
 	}
+
+	logrus.Warnf("Failed to load InClusterConfig: %v, falling back to kubeconfig file", err)
+
+	// 2. Fallback to local kubeconfig (local development)
+	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
+	if _, err := os.Stat(kubeconfig); err != nil {
+		logrus.Fatalf("kubeconfig not found at %s and InClusterConfig failed: %v", kubeconfig, err)
+	}
+
+	config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		logrus.Fatalf("Failed to load kubeconfig from %s: %v", kubeconfig, err)
+	}
+
 	return config
 }
 
