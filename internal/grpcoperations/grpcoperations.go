@@ -6,7 +6,10 @@ package grpcoperations
 import (
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 
+	hsgrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/grpcoperations"
+	mediagrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/media/grpcoperations"
 	oteldemogrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/grpcoperations"
+	sngrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/grpcoperations"
 )
 
 // GRPCOperation represents a gRPC operation from ClickHouse analysis
@@ -28,6 +31,15 @@ func GetOperationsByService(serviceName string) []GRPCOperation {
 	case systemconfig.SystemOtelDemo:
 		otelOps := oteldemogrpc.GetOperationsByService(serviceName)
 		return convertOtelDemoOperations(otelOps)
+	case systemconfig.SystemMediaMicroservices:
+		mediaOps := mediagrpc.GetOperationsByService(serviceName)
+		return convertMediaOperations(mediaOps)
+	case systemconfig.SystemHotelReservation:
+		hsOps := hsgrpc.GetOperationsByService(serviceName)
+		return convertHSOperations(hsOps)
+	case systemconfig.SystemSocialNetwork:
+		snOps := sngrpc.GetOperationsByService(serviceName)
+		return convertSNOperations(snOps)
 	default:
 		// TrainTicket doesn't have gRPC operations
 		return []GRPCOperation{}
@@ -40,6 +52,12 @@ func GetAllGRPCServices() []string {
 	switch system {
 	case systemconfig.SystemOtelDemo:
 		return oteldemogrpc.GetAllGRPCServices()
+	case systemconfig.SystemMediaMicroservices:
+		return mediagrpc.GetAllGRPCServices()
+	case systemconfig.SystemHotelReservation:
+		return hsgrpc.GetAllGRPCServices()
+	case systemconfig.SystemSocialNetwork:
+		return sngrpc.GetAllGRPCServices()
 	default:
 		// TrainTicket doesn't have gRPC operations
 		return []string{}
@@ -53,6 +71,15 @@ func GetClientOperations() []GRPCOperation {
 	case systemconfig.SystemOtelDemo:
 		otelOps := oteldemogrpc.GetClientOperations()
 		return convertOtelDemoOperations(otelOps)
+	case systemconfig.SystemMediaMicroservices:
+		mediaOps := mediagrpc.GetClientOperations()
+		return convertMediaOperations(mediaOps)
+	case systemconfig.SystemHotelReservation:
+		hsOps := hsgrpc.GetClientOperations()
+		return convertHSOperations(hsOps)
+	case systemconfig.SystemSocialNetwork:
+		snOps := sngrpc.GetClientOperations()
+		return convertSNOperations(snOps)
 	default:
 		// TrainTicket doesn't have gRPC operations
 		return []GRPCOperation{}
@@ -66,6 +93,15 @@ func GetServerOperations() []GRPCOperation {
 	case systemconfig.SystemOtelDemo:
 		otelOps := oteldemogrpc.GetServerOperations()
 		return convertOtelDemoOperations(otelOps)
+	case systemconfig.SystemMediaMicroservices:
+		mediaOps := mediagrpc.GetServerOperations()
+		return convertMediaOperations(mediaOps)
+	case systemconfig.SystemHotelReservation:
+		hsOps := hsgrpc.GetServerOperations()
+		return convertHSOperations(hsOps)
+	case systemconfig.SystemSocialNetwork:
+		snOps := sngrpc.GetServerOperations()
+		return convertSNOperations(snOps)
 	default:
 		// TrainTicket doesn't have gRPC operations
 		return []GRPCOperation{}
@@ -79,6 +115,15 @@ func GetOperationsByRPCService(rpcService string) []GRPCOperation {
 	case systemconfig.SystemOtelDemo:
 		otelOps := oteldemogrpc.GetOperationsByRPCService(rpcService)
 		return convertOtelDemoOperations(otelOps)
+	case systemconfig.SystemMediaMicroservices:
+		mediaOps := mediagrpc.GetOperationsByRPCService(rpcService)
+		return convertMediaOperations(mediaOps)
+	case systemconfig.SystemHotelReservation:
+		hsOps := hsgrpc.GetOperationsByRPCService(rpcService)
+		return convertHSOperations(hsOps)
+	case systemconfig.SystemSocialNetwork:
+		snOps := sngrpc.GetOperationsByRPCService(rpcService)
+		return convertSNOperations(snOps)
 	default:
 		// TrainTicket doesn't have gRPC operations
 		return []GRPCOperation{}
@@ -89,6 +134,60 @@ func GetOperationsByRPCService(rpcService string) []GRPCOperation {
 func convertOtelDemoOperations(otelOps []oteldemogrpc.GRPCOperation) []GRPCOperation {
 	result := make([]GRPCOperation, len(otelOps))
 	for i, op := range otelOps {
+		result[i] = GRPCOperation{
+			ServiceName:    op.ServiceName,
+			RPCSystem:      op.RPCSystem,
+			RPCService:     op.RPCService,
+			RPCMethod:      op.RPCMethod,
+			GRPCStatusCode: op.GRPCStatusCode,
+			ServerAddress:  op.ServerAddress,
+			ServerPort:     op.ServerPort,
+			SpanKind:       op.SpanKind,
+		}
+	}
+	return result
+}
+
+// convertMediaOperations converts media-specific operations to the common type
+func convertMediaOperations(mediaOps []mediagrpc.GRPCOperation) []GRPCOperation {
+	result := make([]GRPCOperation, len(mediaOps))
+	for i, op := range mediaOps {
+		result[i] = GRPCOperation{
+			ServiceName:    op.ServiceName,
+			RPCSystem:      op.RPCSystem,
+			RPCService:     op.RPCService,
+			RPCMethod:      op.RPCMethod,
+			GRPCStatusCode: op.GRPCStatusCode,
+			ServerAddress:  op.ServerAddress,
+			ServerPort:     op.ServerPort,
+			SpanKind:       op.SpanKind,
+		}
+	}
+	return result
+}
+
+// convertHSOperations converts hs-specific operations to the common type
+func convertHSOperations(hsOps []hsgrpc.GRPCOperation) []GRPCOperation {
+	result := make([]GRPCOperation, len(hsOps))
+	for i, op := range hsOps {
+		result[i] = GRPCOperation{
+			ServiceName:    op.ServiceName,
+			RPCSystem:      op.RPCSystem,
+			RPCService:     op.RPCService,
+			RPCMethod:      op.RPCMethod,
+			GRPCStatusCode: op.GRPCStatusCode,
+			ServerAddress:  op.ServerAddress,
+			ServerPort:     op.ServerPort,
+			SpanKind:       op.SpanKind,
+		}
+	}
+	return result
+}
+
+// convertSNOperations converts sn-specific operations to the common type
+func convertSNOperations(snOps []sngrpc.GRPCOperation) []GRPCOperation {
+	result := make([]GRPCOperation, len(snOps))
+	for i, op := range snOps {
 		result[i] = GRPCOperation{
 			ServiceName:    op.ServiceName,
 			RPCSystem:      op.RPCSystem,

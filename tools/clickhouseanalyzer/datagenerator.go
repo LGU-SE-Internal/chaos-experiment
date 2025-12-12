@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -63,6 +64,13 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 {{- end }}
 }
 
+// AllServices contains all unique service names (callers and callees)
+var AllServices = []string{
+{{- range .AllServices }}
+	"{{ . }}",
+{{- end }}
+}
+
 // GetEndpointsByService returns all endpoints for a service
 func GetEndpointsByService(serviceName string) []ServiceEndpoint {
 	if endpoints, exists := ServiceEndpoints[serviceName]; exists {
@@ -73,11 +81,7 @@ func GetEndpointsByService(serviceName string) []ServiceEndpoint {
 
 // GetAllServices returns a list of all available service names
 func GetAllServices() []string {
-	services := make([]string, 0, len(ServiceEndpoints))
-	for service := range ServiceEndpoints {
-		services = append(services, service)
-	}
-	return services
+	return AllServices
 }
 `
 
@@ -294,6 +298,26 @@ func GenerateServiceEndpointsFile(endpoints []ServiceEndpoint, outputFilePath st
 		})
 	}
 
+	// Collect all unique services (both callers and callees)
+	allServicesMap := make(map[string]bool)
+	for _, endpoint := range endpoints {
+		// Add the caller service
+		if endpoint.ServiceName != "" {
+			allServicesMap[endpoint.ServiceName] = true
+		}
+		// Add the callee service (ServerAddress)
+		if endpoint.ServerAddress != "" {
+			allServicesMap[endpoint.ServerAddress] = true
+		}
+	}
+
+	// Convert to sorted slice
+	var allServices []string
+	for service := range allServicesMap {
+		allServices = append(allServices, service)
+	}
+	sort.Strings(allServices)
+
 	// Get package name from the output path
 	packageName := getPackageNameFromPath(outputFilePath)
 
@@ -302,10 +326,12 @@ func GenerateServiceEndpointsFile(endpoints []ServiceEndpoint, outputFilePath st
 		PackageName string
 		SystemType  string
 		Services    []ServiceEndpoints
+		AllServices []string
 	}{
 		PackageName: packageName,
 		SystemType:  string(systemconfig.GetCurrentSystem()),
 		Services:    services,
+		AllServices: allServices,
 	}
 
 	// Ensure output directory exists

@@ -10,10 +10,16 @@ import (
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 
+	hsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/databaseoperations"
+	hsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/serviceendpoints"
+	mediadb "github.com/LGU-SE-Internal/chaos-experiment/internal/media/databaseoperations"
+	mediaendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/media/serviceendpoints"
 	oteldemodb "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/databaseoperations"
 	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
 	oteldemogrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/grpcoperations"
 	oteldemojvm "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/javaclassmethods"
+	sndb "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/databaseoperations"
+	snendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/serviceendpoints"
 	tsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/databaseoperations"
 	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
 	tsjvm "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/javaclassmethods"
@@ -21,13 +27,13 @@ import (
 
 func main() {
 	// Define global flags
-	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket) or 'otel-demo' (OpenTelemetry Demo)")
+	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), or 'sn' (SocialNetwork)")
 	flag.Parse()
 
 	// Set the system type
 	systemType, err := systemconfig.ParseSystemType(*system)
 	if err != nil {
-		fmt.Printf("Invalid system: %s. Must be 'ts' or 'otel-demo'\n", *system)
+		fmt.Printf("Invalid system: %s. Must be 'ts', 'otel-demo', 'media', 'hs', or 'sn'\n", *system)
 		os.Exit(1)
 	}
 	if err := systemconfig.SetCurrentSystem(systemType); err != nil {
@@ -71,10 +77,10 @@ func printUsage() {
 	fmt.Println("Fault Injection Points Viewer")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  faultpoints [--system ts|otel-demo] <command>")
+	fmt.Println("  faultpoints [--system ts|otel-demo|media|hs|sn] <command>")
 	fmt.Println()
 	fmt.Println("Flags:")
-	fmt.Println("  --system <system>  - Target system: 'ts' (TrainTicket) or 'otel-demo' (OpenTelemetry Demo)")
+	fmt.Println("  --system <system>  - Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), or 'sn' (SocialNetwork)")
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  list-http          - List all HTTP fault injection points")
@@ -284,6 +290,12 @@ func getHTTPEndpointsForCurrentSystem() ([]resourcelookup.AppEndpointPair, error
 		services = tsendpoints.GetAllServices()
 	case systemconfig.SystemOtelDemo:
 		services = oteldemoendpoints.GetAllServices()
+	case systemconfig.SystemMediaMicroservices:
+		services = mediaendpoints.GetAllServices()
+	case systemconfig.SystemHotelReservation:
+		services = hsendpoints.GetAllServices()
+	case systemconfig.SystemSocialNetwork:
+		services = snendpoints.GetAllServices()
 	default:
 		return resourcelookup.GetAllHTTPEndpoints()
 	}
@@ -296,6 +308,12 @@ func getHTTPEndpointsForCurrentSystem() ([]resourcelookup.AppEndpointPair, error
 			endpoints = tsendpoints.GetEndpointsByService(serviceName)
 		case systemconfig.SystemOtelDemo:
 			endpoints = oteldemoendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemMediaMicroservices:
+			endpoints = mediaendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemHotelReservation:
+			endpoints = hsendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemSocialNetwork:
+			endpoints = snendpoints.GetEndpointsByService(serviceName)
 		}
 
 		switch eps := endpoints.(type) {
@@ -325,6 +343,45 @@ func getHTTPEndpointsForCurrentSystem() ([]resourcelookup.AppEndpointPair, error
 					})
 				}
 			}
+		case []mediaendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.Route != "" {
+					result = append(result, resourcelookup.AppEndpointPair{
+						AppName:       serviceName,
+						Route:         ep.Route,
+						Method:        ep.RequestMethod,
+						ServerAddress: ep.ServerAddress,
+						ServerPort:    ep.ServerPort,
+						SpanName:      ep.SpanName,
+					})
+				}
+			}
+		case []hsendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.Route != "" {
+					result = append(result, resourcelookup.AppEndpointPair{
+						AppName:       serviceName,
+						Route:         ep.Route,
+						Method:        ep.RequestMethod,
+						ServerAddress: ep.ServerAddress,
+						ServerPort:    ep.ServerPort,
+						SpanName:      ep.SpanName,
+					})
+				}
+			}
+		case []snendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.Route != "" {
+					result = append(result, resourcelookup.AppEndpointPair{
+						AppName:       serviceName,
+						Route:         ep.Route,
+						Method:        ep.RequestMethod,
+						ServerAddress: ep.ServerAddress,
+						ServerPort:    ep.ServerPort,
+						SpanName:      ep.SpanName,
+					})
+				}
+			}
 		}
 	}
 	return result, nil
@@ -338,6 +395,12 @@ func getNetworkPairsForCurrentSystem() ([]resourcelookup.AppNetworkPair, error) 
 		services = tsendpoints.GetAllServices()
 	case systemconfig.SystemOtelDemo:
 		services = oteldemoendpoints.GetAllServices()
+	case systemconfig.SystemMediaMicroservices:
+		services = mediaendpoints.GetAllServices()
+	case systemconfig.SystemHotelReservation:
+		services = hsendpoints.GetAllServices()
+	case systemconfig.SystemSocialNetwork:
+		services = snendpoints.GetAllServices()
 	default:
 		return resourcelookup.GetAllNetworkPairs()
 	}
@@ -352,6 +415,12 @@ func getNetworkPairsForCurrentSystem() ([]resourcelookup.AppNetworkPair, error) 
 			endpoints = tsendpoints.GetEndpointsByService(serviceName)
 		case systemconfig.SystemOtelDemo:
 			endpoints = oteldemoendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemMediaMicroservices:
+			endpoints = mediaendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemHotelReservation:
+			endpoints = hsendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemSocialNetwork:
+			endpoints = snendpoints.GetEndpointsByService(serviceName)
 		}
 
 		switch eps := endpoints.(type) {
@@ -371,6 +440,51 @@ func getNetworkPairsForCurrentSystem() ([]resourcelookup.AppNetworkPair, error) 
 				}
 			}
 		case []oteldemoendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
+					if pairMap[serviceName] == nil {
+						pairMap[serviceName] = make(map[string][]string)
+					}
+					if ep.SpanName != "" {
+						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
+					} else {
+						if pairMap[serviceName][ep.ServerAddress] == nil {
+							pairMap[serviceName][ep.ServerAddress] = []string{}
+						}
+					}
+				}
+			}
+		case []mediaendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
+					if pairMap[serviceName] == nil {
+						pairMap[serviceName] = make(map[string][]string)
+					}
+					if ep.SpanName != "" {
+						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
+					} else {
+						if pairMap[serviceName][ep.ServerAddress] == nil {
+							pairMap[serviceName][ep.ServerAddress] = []string{}
+						}
+					}
+				}
+			}
+		case []hsendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
+					if pairMap[serviceName] == nil {
+						pairMap[serviceName] = make(map[string][]string)
+					}
+					if ep.SpanName != "" {
+						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
+					} else {
+						if pairMap[serviceName][ep.ServerAddress] == nil {
+							pairMap[serviceName][ep.ServerAddress] = []string{}
+						}
+					}
+				}
+			}
+		case []snendpoints.ServiceEndpoint:
 			for _, ep := range eps {
 				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
 					if pairMap[serviceName] == nil {
@@ -412,6 +526,12 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 		services = tsendpoints.GetAllServices()
 	case systemconfig.SystemOtelDemo:
 		services = oteldemoendpoints.GetAllServices()
+	case systemconfig.SystemMediaMicroservices:
+		services = mediaendpoints.GetAllServices()
+	case systemconfig.SystemHotelReservation:
+		services = hsendpoints.GetAllServices()
+	case systemconfig.SystemSocialNetwork:
+		services = snendpoints.GetAllServices()
 	default:
 		return resourcelookup.GetAllDNSEndpoints()
 	}
@@ -429,6 +549,12 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 			endpoints = tsendpoints.GetEndpointsByService(serviceName)
 		case systemconfig.SystemOtelDemo:
 			endpoints = oteldemoendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemMediaMicroservices:
+			endpoints = mediaendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemHotelReservation:
+			endpoints = hsendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemSocialNetwork:
+			endpoints = snendpoints.GetEndpointsByService(serviceName)
 		}
 
 		switch eps := endpoints.(type) {
@@ -448,6 +574,51 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 				}
 			}
 		case []oteldemoendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
+					if pairMap[serviceName] == nil {
+						pairMap[serviceName] = make(map[string][]string)
+					}
+					if ep.SpanName != "" {
+						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
+					} else {
+						if pairMap[serviceName][ep.ServerAddress] == nil {
+							pairMap[serviceName][ep.ServerAddress] = []string{}
+						}
+					}
+				}
+			}
+		case []mediaendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
+					if pairMap[serviceName] == nil {
+						pairMap[serviceName] = make(map[string][]string)
+					}
+					if ep.SpanName != "" {
+						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
+					} else {
+						if pairMap[serviceName][ep.ServerAddress] == nil {
+							pairMap[serviceName][ep.ServerAddress] = []string{}
+						}
+					}
+				}
+			}
+		case []hsendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
+					if pairMap[serviceName] == nil {
+						pairMap[serviceName] = make(map[string][]string)
+					}
+					if ep.SpanName != "" {
+						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
+					} else {
+						if pairMap[serviceName][ep.ServerAddress] == nil {
+							pairMap[serviceName][ep.ServerAddress] = []string{}
+						}
+					}
+				}
+			}
+		case []snendpoints.ServiceEndpoint:
 			for _, ep := range eps {
 				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
 					if pairMap[serviceName] == nil {
@@ -539,8 +710,11 @@ func getJVMMethodsForCurrentSystem() ([]resourcelookup.AppMethodPair, error) {
 		services = tsjvm.GetAllServices()
 	case systemconfig.SystemOtelDemo:
 		services = oteldemojvm.GetAllServices()
+	case systemconfig.SystemMediaMicroservices, systemconfig.SystemHotelReservation, systemconfig.SystemSocialNetwork:
+		// DeathStarBench systems don't use JVM - return empty list
+		return []resourcelookup.AppMethodPair{}, nil
 	default:
-		return resourcelookup.GetAllJVMMethods()
+		return []resourcelookup.AppMethodPair{}, nil
 	}
 
 	result := make([]resourcelookup.AppMethodPair, 0)
@@ -577,6 +751,12 @@ func getDatabaseOperationsForCurrentSystem() ([]resourcelookup.AppDatabasePair, 
 		services = tsdb.GetAllDatabaseServices()
 	case systemconfig.SystemOtelDemo:
 		services = oteldemodb.GetAllDatabaseServices()
+	case systemconfig.SystemMediaMicroservices:
+		services = mediadb.GetAllDatabaseServices()
+	case systemconfig.SystemHotelReservation:
+		services = hsdb.GetAllDatabaseServices()
+	case systemconfig.SystemSocialNetwork:
+		services = sndb.GetAllDatabaseServices()
 	default:
 		return resourcelookup.GetAllDatabaseOperations()
 	}
@@ -599,6 +779,45 @@ func getDatabaseOperationsForCurrentSystem() ([]resourcelookup.AppDatabasePair, 
 			}
 		case systemconfig.SystemOtelDemo:
 			ops := oteldemodb.GetOperationsByService(serviceName)
+			for _, op := range ops {
+				// Only include MySQL operations (DB chaos only supports MySQL)
+				if op.DBSystem == "mysql" {
+					result = append(result, resourcelookup.AppDatabasePair{
+						AppName:       serviceName,
+						DBName:        op.DBName,
+						TableName:     op.DBTable,
+						OperationType: op.Operation,
+					})
+				}
+			}
+		case systemconfig.SystemMediaMicroservices:
+			ops := mediadb.GetOperationsByService(serviceName)
+			for _, op := range ops {
+				// Only include MySQL operations (DB chaos only supports MySQL)
+				if op.DBSystem == "mysql" {
+					result = append(result, resourcelookup.AppDatabasePair{
+						AppName:       serviceName,
+						DBName:        op.DBName,
+						TableName:     op.DBTable,
+						OperationType: op.Operation,
+					})
+				}
+			}
+		case systemconfig.SystemHotelReservation:
+			ops := hsdb.GetOperationsByService(serviceName)
+			for _, op := range ops {
+				// Only include MySQL operations (DB chaos only supports MySQL)
+				if op.DBSystem == "mysql" {
+					result = append(result, resourcelookup.AppDatabasePair{
+						AppName:       serviceName,
+						DBName:        op.DBName,
+						TableName:     op.DBTable,
+						OperationType: op.Operation,
+					})
+				}
+			}
+		case systemconfig.SystemSocialNetwork:
+			ops := sndb.GetOperationsByService(serviceName)
 			for _, op := range ops {
 				// Only include MySQL operations (DB chaos only supports MySQL)
 				if op.DBSystem == "mysql" {
