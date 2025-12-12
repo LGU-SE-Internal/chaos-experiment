@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -1805,8 +1806,18 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		"/":                  {"nginx-web-server", "8080"},
 	}
 
-	// Check route first
-	for pattern, service := range serviceMap {
+	// Sort patterns by length (longest first) to ensure more specific patterns match first
+	patterns := make([]string, 0, len(serviceMap))
+	for pattern := range serviceMap {
+		patterns = append(patterns, pattern)
+	}
+	sort.Slice(patterns, func(i, j int) bool {
+		return len(patterns[i]) > len(patterns[j])
+	})
+
+	// Check route first with sorted patterns
+	for _, pattern := range patterns {
+		service := serviceMap[pattern]
 		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
 			endpoint.ServerAddress = service.service
 			endpoint.ServerPort = service.port
@@ -1910,8 +1921,18 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 		"/":              {"nginx-thrift", "8080"},
 	}
 
-	// Check route first
-	for pattern, service := range serviceMap {
+	// Sort patterns by length (longest first) to ensure more specific patterns match first
+	patterns := make([]string, 0, len(serviceMap))
+	for pattern := range serviceMap {
+		patterns = append(patterns, pattern)
+	}
+	sort.Slice(patterns, func(i, j int) bool {
+		return len(patterns[i]) > len(patterns[j])
+	})
+
+	// Check route first with sorted patterns
+	for _, pattern := range patterns {
+		service := serviceMap[pattern]
 		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
 			endpoint.ServerAddress = service.service
 			endpoint.ServerPort = service.port
@@ -1985,8 +2006,18 @@ func mapHotelReservationRouteToService(endpoint *ServiceEndpoint) {
 		"user.User":      {"user", "8086"},
 	}
 
-	// Check route first
-	for pattern, service := range serviceMap {
+	// Sort patterns by length (longest first) to ensure more specific patterns match first
+	patterns := make([]string, 0, len(serviceMap))
+	for pattern := range serviceMap {
+		patterns = append(patterns, pattern)
+	}
+	sort.Slice(patterns, func(i, j int) bool {
+		return len(patterns[i]) > len(patterns[j])
+	})
+
+	// Check route first with sorted patterns
+	for _, pattern := range patterns {
+		service := serviceMap[pattern]
 		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
 			endpoint.ServerAddress = service.service
 			endpoint.ServerPort = service.port
