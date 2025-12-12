@@ -493,14 +493,14 @@ SELECT
         ELSE ''
     END AS response_status_code,
     
-    -- No path normalization for DeathStarBench systems
+    -- Path normalization for DeathStarBench systems - replace IDs with wildcards
     CASE
         WHEN SpanAttributes['http.route'] IS NOT NULL AND SpanAttributes['http.route'] != ''
-            THEN SpanAttributes['http.route']
+            THEN replaceRegexpAll(SpanAttributes['http.route'], '/[0-9a-f-]{8,}', '/*')
         WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
-            THEN SpanAttributes['http.target']
+            THEN replaceRegexpAll(SpanAttributes['http.target'], '/[0-9a-f-]{8,}', '/*')
         WHEN SpanAttributes['url.full'] IS NOT NULL AND SpanAttributes['url.full'] != ''
-            THEN replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1')
+            THEN replaceRegexpAll(replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1'), '/[0-9a-f-]{8,}', '/*')
         ELSE ''
     END AS masked_route,
     
@@ -1728,6 +1728,7 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		"CastInfoHandler":      {"cast-info-service", "9090"},
 		"WriteCastInfo":        {"cast-info-service", "9090"},
 		"ReadCastInfo":         {"cast-info-service", "9090"},
+		"/cast-info":          {"cast-info-service", "9090"},
 		// Compose review service
 		"/wrk2-api/review/compose": {"compose-review-service", "9090"},
 		"ComposeReview":            {"compose-review-service", "9090"},
@@ -1736,45 +1737,59 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		"UploadMovieId":            {"compose-review-service", "9090"},
 		"UploadUniqueId":           {"compose-review-service", "9090"},
 		"UploadUserId":             {"compose-review-service", "9090"},
+		"/compose":                 {"compose-review-service", "9090"},
 		// Movie ID service
 		"RegisterMovieId": {"movie-id-service", "9090"},
 		"MovieIdHandler":  {"movie-id-service", "9090"},
+		"/movie-id":       {"movie-id-service", "9090"},
 		// Movie info service
 		"/wrk2-api/movie-info":  {"movie-info-service", "9090"},
 		"MovieInfoHandler":      {"movie-info-service", "9090"},
 		"WriteMovieInfo":        {"movie-info-service", "9090"},
 		"ReadMovieInfo":         {"movie-info-service", "9090"},
+		"/movie-info":           {"movie-info-service", "9090"},
 		// Movie review service
 		"StoreReview":        {"movie-review-service", "9090"},
 		"ReadMovieReviews":   {"movie-review-service", "9090"},
+		"/movie-review":      {"movie-review-service", "9090"},
+		"/review":            {"movie-review-service", "9090"},
 		// Page service
-		"/wrk2-api/page": {"page-service", "9090"},
-		"ReadPage":       {"page-service", "9090"},
+		"/wrk2-api/page":  {"page-service", "9090"},
+		"/wrk2-api/movie/read-page": {"page-service", "9090"},
+		"ReadPage":        {"page-service", "9090"},
+		"/read-page":      {"page-service", "9090"},
 		// Plot service
 		"/wrk2-api/plot":  {"plot-service", "9090"},
 		"PlotHandler":     {"plot-service", "9090"},
 		"WritePlot":       {"plot-service", "9090"},
 		"ReadPlot":        {"plot-service", "9090"},
+		"/plot":           {"plot-service", "9090"},
 		// Rating service
 		"StoreRating": {"rating-service", "9090"},
 		"ReadRatings": {"rating-service", "9090"},
+		"/rating":     {"rating-service", "9090"},
 		// Review storage service
 		"StoreReviewStorage": {"review-storage-service", "9090"},
 		"ReadReviews":        {"review-storage-service", "9090"},
+		"/review-storage":    {"review-storage-service", "9090"},
 		// Text service
 		"TextHandler":  {"text-service", "9090"},
 		"StoreText":    {"text-service", "9090"},
+		"/text":        {"text-service", "9090"},
 		// Unique ID service
 		"UniqueIdHandler": {"unique-id-service", "9090"},
 		"ComposeUniqueId": {"unique-id-service", "9090"},
+		"/unique-id":      {"unique-id-service", "9090"},
 		// User service
 		"/wrk2-api/user":  {"user-service", "9090"},
 		"UserHandler":     {"user-service", "9090"},
 		"RegisterUser":    {"user-service", "9090"},
 		"Login":           {"user-service", "9090"},
+		"/user":           {"user-service", "9090"},
 		// User review service
 		"ReadUserReviews":    {"user-review-service", "9090"},
 		"StoreUserReview":    {"user-review-service", "9090"},
+		"/user-review":       {"user-review-service", "9090"},
 		// Frontend
 		"/wrk2-api/home":     {"nginx-web-server", "8080"},
 		"/":                  {"nginx-web-server", "8080"},
