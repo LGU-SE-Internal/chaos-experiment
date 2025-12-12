@@ -1191,7 +1191,8 @@ func QueryDeathStarBenchHTTPClientTraces(db *sql.DB, viewName string, namespace 
 		}
 
 		// Map empty server address or IP to service based on route/span name
-		if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+		// Also map when server address equals service name (frontend calling itself is incorrect)
+		if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) || endpoint.ServerAddress == endpoint.ServiceName {
 			mapDeathStarBenchRouteToService(&endpoint, namespace)
 		}
 
@@ -1251,7 +1252,8 @@ func QueryDeathStarBenchHTTPServerTraces(db *sql.DB, viewName string, namespace 
 		}
 
 		// Map empty server address or IP to service based on route/span name
-		if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+		// Also map when server address equals service name (frontend calling itself is incorrect)
+		if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) || endpoint.ServerAddress == endpoint.ServiceName {
 			mapDeathStarBenchRouteToService(&endpoint, namespace)
 		}
 
@@ -1306,7 +1308,8 @@ func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string, namespace st
 		}
 
 		// Map empty server address or IP to service based on RPC service/method
-		if operation.ServerAddress == "" || isIPAddress(operation.ServerAddress) {
+		// Also map when server address equals service name (frontend calling itself is incorrect)
+		if operation.ServerAddress == "" || isIPAddress(operation.ServerAddress) || operation.ServerAddress == operation.ServiceName {
 			mapDeathStarBenchGRPCToService(&operation, namespace)
 		}
 
