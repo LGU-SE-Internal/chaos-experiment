@@ -252,7 +252,7 @@ func runDeathStarBenchAnalysis(db *sql.DB, namespace, viewName, outputEndpoints,
 
 	// Query HTTP client traces
 	fmt.Println("Querying HTTP client traces...")
-	clientEndpoints, err := clickhouseanalyzer.QueryDeathStarBenchHTTPClientTraces(db, viewName)
+	clientEndpoints, err := clickhouseanalyzer.QueryDeathStarBenchHTTPClientTraces(db, viewName, namespace)
 	if err != nil {
 		fmt.Printf("Error querying HTTP client traces: %v\n", err)
 		os.Exit(1)
@@ -260,7 +260,7 @@ func runDeathStarBenchAnalysis(db *sql.DB, namespace, viewName, outputEndpoints,
 
 	// Query HTTP server traces
 	fmt.Println("Querying HTTP server traces...")
-	serverEndpoints, err := clickhouseanalyzer.QueryDeathStarBenchHTTPServerTraces(db, viewName)
+	serverEndpoints, err := clickhouseanalyzer.QueryDeathStarBenchHTTPServerTraces(db, viewName, namespace)
 	if err != nil {
 		fmt.Printf("Error querying HTTP server traces: %v\n", err)
 		os.Exit(1)
@@ -268,7 +268,7 @@ func runDeathStarBenchAnalysis(db *sql.DB, namespace, viewName, outputEndpoints,
 
 	// Query gRPC operations
 	fmt.Println("Querying gRPC operations...")
-	grpcOperations, err := clickhouseanalyzer.QueryDeathStarBenchGRPCOperations(db, viewName)
+	grpcOperations, err := clickhouseanalyzer.QueryDeathStarBenchGRPCOperations(db, viewName, namespace)
 	if err != nil {
 		fmt.Printf("Error querying gRPC operations: %v\n", err)
 		os.Exit(1)

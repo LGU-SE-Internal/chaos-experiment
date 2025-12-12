@@ -1150,7 +1150,7 @@ func QueryOtelDemoDatabaseOperations(db *sql.DB) ([]DatabaseOperation, error) {
 }
 
 // QueryDeathStarBenchHTTPClientTraces retrieves HTTP client traces for DeathStarBench systems
-func QueryDeathStarBenchHTTPClientTraces(db *sql.DB, viewName string) ([]ServiceEndpoint, error) {
+func QueryDeathStarBenchHTTPClientTraces(db *sql.DB, viewName string, namespace string) ([]ServiceEndpoint, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -1190,6 +1190,11 @@ func QueryDeathStarBenchHTTPClientTraces(db *sql.DB, viewName string) ([]Service
 			endpoint.SpanName = spanName.String
 		}
 
+		// Map empty server address or IP to service based on route/span name
+		if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+			mapDeathStarBenchRouteToService(&endpoint, namespace)
+		}
+
 		results = append(results, endpoint)
 	}
 
@@ -1201,7 +1206,7 @@ func QueryDeathStarBenchHTTPClientTraces(db *sql.DB, viewName string) ([]Service
 }
 
 // QueryDeathStarBenchHTTPServerTraces retrieves HTTP server traces for DeathStarBench systems
-func QueryDeathStarBenchHTTPServerTraces(db *sql.DB, viewName string) ([]ServiceEndpoint, error) {
+func QueryDeathStarBenchHTTPServerTraces(db *sql.DB, viewName string, namespace string) ([]ServiceEndpoint, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -1245,6 +1250,11 @@ func QueryDeathStarBenchHTTPServerTraces(db *sql.DB, viewName string) ([]Service
 			endpoint.SpanName = spanName.String
 		}
 
+		// Map empty server address or IP to service based on route/span name
+		if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+			mapDeathStarBenchRouteToService(&endpoint, namespace)
+		}
+
 		results = append(results, endpoint)
 	}
 
@@ -1256,7 +1266,7 @@ func QueryDeathStarBenchHTTPServerTraces(db *sql.DB, viewName string) ([]Service
 }
 
 // QueryDeathStarBenchGRPCOperations retrieves gRPC operations for DeathStarBench systems
-func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string) ([]GRPCOperation, error) {
+func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string, namespace string) ([]GRPCOperation, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -1293,6 +1303,11 @@ func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string) ([]GRPCOpera
 		}
 		if grpcStatus.Valid {
 			operation.GRPCStatusCode = grpcStatus.String
+		}
+
+		// Map empty server address or IP to service based on RPC service/method
+		if operation.ServerAddress == "" || isIPAddress(operation.ServerAddress) {
+			mapDeathStarBenchGRPCToService(&operation, namespace)
 		}
 
 		results = append(results, operation)
@@ -1683,6 +1698,260 @@ func mapOtelDemoClientToService(endpoint *ServiceEndpoint) {
 	// If still an IP address or empty, mark as unknown
 	if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
 		endpoint.ServerAddress = "unknown-client"
+	}
+}
+
+// mapDeathStarBenchRouteToService maps routes/span names to services for DeathStarBench systems
+func mapDeathStarBenchRouteToService(endpoint *ServiceEndpoint, namespace string) {
+	switch namespace {
+	case "media":
+		mapMediaMicroservicesRouteToService(endpoint)
+	case "sn":
+		mapSocialNetworkRouteToService(endpoint)
+	}
+}
+
+// mapMediaMicroservicesRouteToService maps routes to services for Media Microservices
+func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
+	route := endpoint.Route
+	spanName := endpoint.SpanName
+
+	// Service mapping based on route patterns and span names
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		// Cast info service
+		"/wrk2-api/cast-info":  {"cast-info-service", "8080"},
+		"CastInfoHandler":      {"cast-info-service", "8080"},
+		"WriteCastInfo":        {"cast-info-service", "8080"},
+		"ReadCastInfo":         {"cast-info-service", "8080"},
+		// Compose review service
+		"/wrk2-api/review/compose": {"compose-review-service", "8080"},
+		"ComposeReview":            {"compose-review-service", "8080"},
+		"UploadText":               {"compose-review-service", "8080"},
+		"UploadRating":             {"compose-review-service", "8080"},
+		"UploadMovieId":            {"compose-review-service", "8080"},
+		"UploadUniqueId":           {"compose-review-service", "8080"},
+		"UploadUserId":             {"compose-review-service", "8080"},
+		// Movie ID service
+		"RegisterMovieId": {"movie-id-service", "8080"},
+		"MovieIdHandler":  {"movie-id-service", "8080"},
+		// Movie info service
+		"/wrk2-api/movie-info":  {"movie-info-service", "8080"},
+		"MovieInfoHandler":      {"movie-info-service", "8080"},
+		"WriteMovieInfo":        {"movie-info-service", "8080"},
+		"ReadMovieInfo":         {"movie-info-service", "8080"},
+		// Movie review service
+		"StoreReview":        {"movie-review-service", "8080"},
+		"ReadMovieReviews":   {"movie-review-service", "8080"},
+		// Page service
+		"/wrk2-api/page": {"page-service", "8080"},
+		"ReadPage":       {"page-service", "8080"},
+		// Plot service
+		"/wrk2-api/plot":  {"plot-service", "8080"},
+		"PlotHandler":     {"plot-service", "8080"},
+		"WritePlot":       {"plot-service", "8080"},
+		"ReadPlot":        {"plot-service", "8080"},
+		// Rating service
+		"StoreRating": {"rating-service", "8080"},
+		"ReadRatings": {"rating-service", "8080"},
+		// Review storage service
+		"StoreReviewStorage": {"review-storage-service", "8080"},
+		"ReadReviews":        {"review-storage-service", "8080"},
+		// Text service
+		"TextHandler":  {"text-service", "8080"},
+		"StoreText":    {"text-service", "8080"},
+		// Unique ID service
+		"UniqueIdHandler": {"unique-id-service", "8080"},
+		"ComposeUniqueId": {"unique-id-service", "8080"},
+		// User service
+		"/wrk2-api/user":  {"user-service", "8080"},
+		"UserHandler":     {"user-service", "8080"},
+		"RegisterUser":    {"user-service", "8080"},
+		"Login":           {"user-service", "8080"},
+		// User review service
+		"ReadUserReviews":    {"user-review-service", "8080"},
+		"StoreUserReview":    {"user-review-service", "8080"},
+		// Frontend
+		"/wrk2-api/home":     {"nginx-web-server", "8080"},
+		"/":                  {"nginx-web-server", "8080"},
+	}
+
+	// Check route first
+	for pattern, service := range serviceMap {
+		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
+			endpoint.ServerAddress = service.service
+			endpoint.ServerPort = service.port
+			return
+		}
+	}
+
+	// Default to nginx-web-server if no match
+	if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+		endpoint.ServerAddress = "nginx-web-server"
+		endpoint.ServerPort = "8080"
+	}
+}
+
+// mapSocialNetworkRouteToService maps routes to services for Social Network
+func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
+	route := endpoint.Route
+	spanName := endpoint.SpanName
+
+	// Service mapping based on route patterns and span names
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		// Compose post service
+		"/wrk2-api/post/compose": {"compose-post-service", "8080"},
+		"ComposePost":            {"compose-post-service", "8080"},
+		"UploadText":             {"compose-post-service", "8080"},
+		"UploadMedia":            {"compose-post-service", "8080"},
+		"UploadUniqueId":         {"compose-post-service", "8080"},
+		"UploadCreator":          {"compose-post-service", "8080"},
+		"UploadUrls":             {"compose-post-service", "8080"},
+		"UploadUserMentions":     {"compose-post-service", "8080"},
+		// Home timeline service
+		"/wrk2-api/home-timeline": {"home-timeline-service", "8080"},
+		"ReadHomeTimeline":        {"home-timeline-service", "8080"},
+		"WriteHomeTimeline":       {"home-timeline-service", "8080"},
+		// Media service
+		"/wrk2-api/media":    {"media-service", "8080"},
+		"MediaHandler":       {"media-service", "8080"},
+		"UploadMediaHandler": {"media-service", "8080"},
+		"StoreMedia":         {"media-service", "8080"},
+		// Post storage service
+		"StorePost":  {"post-storage-service", "8080"},
+		"ReadPost":   {"post-storage-service", "8080"},
+		"ReadPosts":  {"post-storage-service", "8080"},
+		// Social graph service
+		"/wrk2-api/user/follow":     {"social-graph-service", "8080"},
+		"/wrk2-api/user/unfollow":   {"social-graph-service", "8080"},
+		"Follow":                    {"social-graph-service", "8080"},
+		"Unfollow":                  {"social-graph-service", "8080"},
+		"GetFollowers":              {"social-graph-service", "8080"},
+		"GetFollowees":              {"social-graph-service", "8080"},
+		"InsertUser":                {"social-graph-service", "8080"},
+		"FollowWithUsername":        {"social-graph-service", "8080"},
+		"UnfollowWithUsername":      {"social-graph-service", "8080"},
+		// Text service
+		"TextHandler":   {"text-service", "8080"},
+		"ProcessText":   {"text-service", "8080"},
+		// Unique ID service
+		"UniqueIdHandler": {"unique-id-service", "8080"},
+		"ComposeUniqueId": {"unique-id-service", "8080"},
+		// URL shorten service
+		"/wrk2-api/shorten-urls": {"url-shorten-service", "8080"},
+		"UrlHandler":             {"url-shorten-service", "8080"},
+		"ShortenUrls":            {"url-shorten-service", "8080"},
+		"GetExtendedUrls":        {"url-shorten-service", "8080"},
+		// User mention service
+		"UserMentionHandler":   {"user-mention-service", "8080"},
+		"ComposeUserMentions":  {"user-mention-service", "8080"},
+		// User service
+		"/wrk2-api/user/register": {"user-service", "8080"},
+		"/wrk2-api/user/login":    {"user-service", "8080"},
+		"RegisterUser":            {"user-service", "8080"},
+		"RegisterUserWithId":      {"user-service", "8080"},
+		"Login":                   {"user-service", "8080"},
+		"GetUserId":               {"user-service", "8080"},
+		// User timeline service
+		"/wrk2-api/user-timeline": {"user-timeline-service", "8080"},
+		"ReadUserTimeline":        {"user-timeline-service", "8080"},
+		"WriteUserTimeline":       {"user-timeline-service", "8080"},
+		// Frontend
+		"/wrk2-api/home": {"nginx-thrift", "8080"},
+		"/":              {"nginx-thrift", "8080"},
+	}
+
+	// Check route first
+	for pattern, service := range serviceMap {
+		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
+			endpoint.ServerAddress = service.service
+			endpoint.ServerPort = service.port
+			return
+		}
+	}
+
+	// Default to nginx-thrift if no match
+	if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+		endpoint.ServerAddress = "nginx-thrift"
+		endpoint.ServerPort = "8080"
+	}
+}
+
+// mapDeathStarBenchGRPCToService maps gRPC services to server addresses for DeathStarBench systems
+func mapDeathStarBenchGRPCToService(operation *GRPCOperation, namespace string) {
+	rpcService := operation.RPCService
+	rpcMethod := operation.RPCMethod
+
+	switch namespace {
+	case "media":
+		mapMediaMicroservicesGRPCToService(operation, rpcService, rpcMethod)
+	case "sn":
+		mapSocialNetworkGRPCToService(operation, rpcService, rpcMethod)
+	}
+}
+
+// mapMediaMicroservicesGRPCToService maps gRPC services to server addresses for Media Microservices
+func mapMediaMicroservicesGRPCToService(operation *GRPCOperation, rpcService string, rpcMethod string) {
+	// Map based on RPC service name patterns
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		"CastInfoService":      {"cast-info-service", "8080"},
+		"ComposeReviewService": {"compose-review-service", "8080"},
+		"MovieIdService":       {"movie-id-service", "8080"},
+		"MovieInfoService":     {"movie-info-service", "8080"},
+		"MovieReviewService":   {"movie-review-service", "8080"},
+		"PageService":          {"page-service", "8080"},
+		"PlotService":          {"plot-service", "8080"},
+		"RatingService":        {"rating-service", "8080"},
+		"ReviewStorageService": {"review-storage-service", "8080"},
+		"TextService":          {"text-service", "8080"},
+		"UniqueIdService":      {"unique-id-service", "8080"},
+		"UserService":          {"user-service", "8080"},
+		"UserReviewService":    {"user-review-service", "8080"},
+	}
+
+	for pattern, service := range serviceMap {
+		if strings.Contains(rpcService, pattern) {
+			operation.ServerAddress = service.service
+			operation.ServerPort = service.port
+			return
+		}
+	}
+}
+
+// mapSocialNetworkGRPCToService maps gRPC services to server addresses for Social Network
+func mapSocialNetworkGRPCToService(operation *GRPCOperation, rpcService string, rpcMethod string) {
+	// Map based on RPC service name patterns
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		"ComposePostService":   {"compose-post-service", "8080"},
+		"HomeTimelineService":  {"home-timeline-service", "8080"},
+		"MediaService":         {"media-service", "8080"},
+		"PostStorageService":   {"post-storage-service", "8080"},
+		"SocialGraphService":   {"social-graph-service", "8080"},
+		"TextService":          {"text-service", "8080"},
+		"UniqueIdService":      {"unique-id-service", "8080"},
+		"UrlShortenService":    {"url-shorten-service", "8080"},
+		"UserMentionService":   {"user-mention-service", "8080"},
+		"UserService":          {"user-service", "8080"},
+		"UserTimelineService":  {"user-timeline-service", "8080"},
+	}
+
+	for pattern, service := range serviceMap {
+		if strings.Contains(rpcService, pattern) {
+			operation.ServerAddress = service.service
+			operation.ServerPort = service.port
+			return
+		}
 	}
 }
 
