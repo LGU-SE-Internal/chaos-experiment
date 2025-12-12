@@ -14,6 +14,8 @@ import (
 	hsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/serviceendpoints"
 	mediadb "github.com/LGU-SE-Internal/chaos-experiment/internal/media/databaseoperations"
 	mediaendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/media/serviceendpoints"
+	obdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/databaseoperations"
+	obendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/serviceendpoints"
 	oteldemodb "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/databaseoperations"
 	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
 	oteldemogrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/grpcoperations"
@@ -27,13 +29,13 @@ import (
 
 func main() {
 	// Define global flags
-	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), or 'sn' (SocialNetwork)")
+	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), 'sn' (SocialNetwork), or 'ob' (OnlineBoutique)")
 	flag.Parse()
 
 	// Set the system type
 	systemType, err := systemconfig.ParseSystemType(*system)
 	if err != nil {
-		fmt.Printf("Invalid system: %s. Must be 'ts', 'otel-demo', 'media', 'hs', or 'sn'\n", *system)
+		fmt.Printf("Invalid system: %s. Must be 'ts', 'otel-demo', 'media', 'hs', 'sn', or 'ob'\n", *system)
 		os.Exit(1)
 	}
 	if err := systemconfig.SetCurrentSystem(systemType); err != nil {
@@ -77,10 +79,10 @@ func printUsage() {
 	fmt.Println("Fault Injection Points Viewer")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  faultpoints [--system ts|otel-demo|media|hs|sn] <command>")
+	fmt.Println("  faultpoints [--system ts|otel-demo|media|hs|sn|ob] <command>")
 	fmt.Println()
 	fmt.Println("Flags:")
-	fmt.Println("  --system <system>  - Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), or 'sn' (SocialNetwork)")
+	fmt.Println("  --system <system>  - Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), 'sn' (SocialNetwork), or 'ob' (OnlineBoutique)")
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  list-http          - List all HTTP fault injection points")
@@ -296,6 +298,8 @@ func getHTTPEndpointsForCurrentSystem() ([]resourcelookup.AppEndpointPair, error
 		services = hsendpoints.GetAllServices()
 	case systemconfig.SystemSocialNetwork:
 		services = snendpoints.GetAllServices()
+	case systemconfig.SystemOnlineBoutique:
+		services = obendpoints.GetAllServices()
 	default:
 		return resourcelookup.GetAllHTTPEndpoints()
 	}
@@ -314,6 +318,10 @@ func getHTTPEndpointsForCurrentSystem() ([]resourcelookup.AppEndpointPair, error
 			endpoints = hsendpoints.GetEndpointsByService(serviceName)
 		case systemconfig.SystemSocialNetwork:
 			endpoints = snendpoints.GetEndpointsByService(serviceName)
+case systemconfig.SystemOnlineBoutique:
+endpoints = obendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemOnlineBoutique:
+			endpoints = obendpoints.GetEndpointsByService(serviceName)
 		}
 
 		switch eps := endpoints.(type) {
@@ -382,6 +390,19 @@ func getHTTPEndpointsForCurrentSystem() ([]resourcelookup.AppEndpointPair, error
 					})
 				}
 			}
+		case []obendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.Route != "" {
+					result = append(result, resourcelookup.AppEndpointPair{
+						AppName:       serviceName,
+						Route:         ep.Route,
+						Method:        ep.RequestMethod,
+						ServerAddress: ep.ServerAddress,
+						ServerPort:    ep.ServerPort,
+						SpanName:      ep.SpanName,
+					})
+				}
+			}
 		}
 	}
 	return result, nil
@@ -401,6 +422,8 @@ func getNetworkPairsForCurrentSystem() ([]resourcelookup.AppNetworkPair, error) 
 		services = hsendpoints.GetAllServices()
 	case systemconfig.SystemSocialNetwork:
 		services = snendpoints.GetAllServices()
+	case systemconfig.SystemOnlineBoutique:
+		services = obendpoints.GetAllServices()
 	default:
 		return resourcelookup.GetAllNetworkPairs()
 	}
@@ -421,6 +444,10 @@ func getNetworkPairsForCurrentSystem() ([]resourcelookup.AppNetworkPair, error) 
 			endpoints = hsendpoints.GetEndpointsByService(serviceName)
 		case systemconfig.SystemSocialNetwork:
 			endpoints = snendpoints.GetEndpointsByService(serviceName)
+case systemconfig.SystemOnlineBoutique:
+endpoints = obendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemOnlineBoutique:
+			endpoints = obendpoints.GetEndpointsByService(serviceName)
 		}
 
 		switch eps := endpoints.(type) {
@@ -485,6 +512,21 @@ func getNetworkPairsForCurrentSystem() ([]resourcelookup.AppNetworkPair, error) 
 				}
 			}
 		case []snendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
+					if pairMap[serviceName] == nil {
+						pairMap[serviceName] = make(map[string][]string)
+					}
+					if ep.SpanName != "" {
+						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
+					} else {
+						if pairMap[serviceName][ep.ServerAddress] == nil {
+							pairMap[serviceName][ep.ServerAddress] = []string{}
+						}
+					}
+				}
+			}
+		case []obendpoints.ServiceEndpoint:
 			for _, ep := range eps {
 				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
 					if pairMap[serviceName] == nil {
@@ -532,6 +574,8 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 		services = hsendpoints.GetAllServices()
 	case systemconfig.SystemSocialNetwork:
 		services = snendpoints.GetAllServices()
+	case systemconfig.SystemOnlineBoutique:
+		services = obendpoints.GetAllServices()
 	default:
 		return resourcelookup.GetAllDNSEndpoints()
 	}
@@ -555,6 +599,8 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 			endpoints = hsendpoints.GetEndpointsByService(serviceName)
 		case systemconfig.SystemSocialNetwork:
 			endpoints = snendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemOnlineBoutique:
+			endpoints = obendpoints.GetEndpointsByService(serviceName)
 		}
 
 		switch eps := endpoints.(type) {
@@ -619,6 +665,21 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 				}
 			}
 		case []snendpoints.ServiceEndpoint:
+			for _, ep := range eps {
+				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
+					if pairMap[serviceName] == nil {
+						pairMap[serviceName] = make(map[string][]string)
+					}
+					if ep.SpanName != "" {
+						pairMap[serviceName][ep.ServerAddress] = appendUnique(pairMap[serviceName][ep.ServerAddress], ep.SpanName)
+					} else {
+						if pairMap[serviceName][ep.ServerAddress] == nil {
+							pairMap[serviceName][ep.ServerAddress] = []string{}
+						}
+					}
+				}
+			}
+		case []obendpoints.ServiceEndpoint:
 			for _, ep := range eps {
 				if ep.ServerAddress != "" && ep.ServerAddress != serviceName {
 					if pairMap[serviceName] == nil {

@@ -18,7 +18,7 @@ func main() {
 	database := flag.String("database", "default", "ClickHouse database name")
 	username := flag.String("username", "default", "ClickHouse username")
 	password := flag.String("password", "password", "ClickHouse password")
-	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (mediaMicroservices), 'hs' (hotelReservation), or 'sn' (socialNetwork)")
+	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (mediaMicroservices), 'hs' (hotelReservation), 'sn' (socialNetwork), or 'ob' (OnlineBoutique)")
 	outputEndpoints := flag.String("output", "", "Path for the generated endpoints Go file")
 	outputDatabase := flag.String("output-db", "", "Path for the generated database operations Go file")
 	outputGRPC := flag.String("output-grpc", "", "Path for the generated gRPC operations Go file (otel-demo only)")
@@ -28,7 +28,7 @@ func main() {
 	// Validate and set the system type using systemconfig
 	systemType, err := systemconfig.ParseSystemType(*system)
 	if err != nil {
-		fmt.Printf("Invalid system: %s. Must be 'ts', 'otel-demo', 'media', 'hs', or 'sn'\n", *system)
+		fmt.Printf("Invalid system: %s. Must be 'ts', 'otel-demo', 'media', 'hs', 'sn', or 'ob'\n", *system)
 		os.Exit(1)
 	}
 	if err := systemconfig.SetCurrentSystem(systemType); err != nil {
@@ -57,6 +57,8 @@ func main() {
 		systemDir = "hs"
 	case systemconfig.SystemSocialNetwork:
 		systemDir = "sn"
+	case systemconfig.SystemOnlineBoutique:
+		systemDir = "ob"
 	default:
 		systemDir = string(systemType)
 	}
@@ -104,6 +106,8 @@ func main() {
 		runDeathStarBenchAnalysis(db, "hs", "hs_traces_mv", *outputEndpoints, *outputDatabase, *outputGRPC, *skipView)
 	case systemconfig.IsSocialNetwork():
 		runDeathStarBenchAnalysis(db, "sn", "sn_traces_mv", *outputEndpoints, *outputDatabase, *outputGRPC, *skipView)
+	case systemconfig.IsOnlineBoutique():
+		runDeathStarBenchAnalysis(db, "ob", "ob_traces_mv", *outputEndpoints, *outputDatabase, *outputGRPC, *skipView)
 	}
 }
 

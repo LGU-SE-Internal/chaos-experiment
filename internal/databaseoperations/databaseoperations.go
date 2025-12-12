@@ -8,6 +8,7 @@ import (
 	hsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/databaseoperations"
 	mediadb "github.com/LGU-SE-Internal/chaos-experiment/internal/media/databaseoperations"
 	oteldemodb "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/databaseoperations"
+	obdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/databaseoperations"
 	sndb "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/databaseoperations"
 	tsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/databaseoperations"
 )
@@ -42,6 +43,9 @@ func GetOperationsByService(serviceName string) []DatabaseOperation {
 	case systemconfig.SystemSocialNetwork:
 		snOps := sndb.GetOperationsByService(serviceName)
 		return convertSNOperations(snOps)
+	case systemconfig.SystemOnlineBoutique:
+		obOps := obdb.GetOperationsByService(serviceName)
+		return convertOBOperations(obOps)
 	default:
 		// Default to TrainTicket
 		tsOps := tsdb.GetOperationsByService(serviceName)
@@ -205,3 +209,20 @@ func convertSNOperations(snOps []sndb.DatabaseOperation) []DatabaseOperation {
 	}
 	return result
 }
+// convertOBOperations converts ob-specific operations to the common type
+func convertOBOperations(obOps []obdb.DatabaseOperation) []DatabaseOperation {
+result := make([]DatabaseOperation, len(obOps))
+for i, op := range obOps {
+result[i] = DatabaseOperation{
+ServiceName:   op.ServiceName,
+DBName:        op.DBName,
+DBTable:       op.DBTable,
+Operation:     op.Operation,
+DBSystem:      op.DBSystem,
+ServerAddress: op.ServerAddress,
+ServerPort:    op.ServerPort,
+}
+}
+return result
+}
+
