@@ -710,8 +710,11 @@ func getJVMMethodsForCurrentSystem() ([]resourcelookup.AppMethodPair, error) {
 		services = tsjvm.GetAllServices()
 	case systemconfig.SystemOtelDemo:
 		services = oteldemojvm.GetAllServices()
+	case systemconfig.SystemMediaMicroservices, systemconfig.SystemHotelReservation, systemconfig.SystemSocialNetwork:
+		// DeathStarBench systems don't use JVM - return empty list
+		return []resourcelookup.AppMethodPair{}, nil
 	default:
-		return resourcelookup.GetAllJVMMethods()
+		return []resourcelookup.AppMethodPair{}, nil
 	}
 
 	result := make([]resourcelookup.AppMethodPair, 0)

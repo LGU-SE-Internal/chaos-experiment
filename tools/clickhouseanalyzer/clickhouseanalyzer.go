@@ -495,13 +495,14 @@ SELECT
     END AS response_status_code,
     
     -- Path normalization for DeathStarBench systems - replace IDs with wildcards
+    -- Matches: UUIDs (8-4-4-4-12 hex format) and numeric IDs (sequences of digits)
     CASE
         WHEN SpanAttributes['http.route'] IS NOT NULL AND SpanAttributes['http.route'] != ''
-            THEN replaceRegexpAll(SpanAttributes['http.route'], '/[0-9a-f-]{8,}', '/*')
+            THEN replaceRegexpAll(SpanAttributes['http.route'], '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/\\d+', '/*')
         WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
-            THEN replaceRegexpAll(SpanAttributes['http.target'], '/[0-9a-f-]{8,}', '/*')
+            THEN replaceRegexpAll(SpanAttributes['http.target'], '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/\\d+', '/*')
         WHEN SpanAttributes['url.full'] IS NOT NULL AND SpanAttributes['url.full'] != ''
-            THEN replaceRegexpAll(replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1'), '/[0-9a-f-]{8,}', '/*')
+            THEN replaceRegexpAll(replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1'), '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/\\d+', '/*')
         ELSE ''
     END AS masked_route,
     
@@ -1801,9 +1802,8 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		"ReadUserReviews":    {"user-review-service", "9090"},
 		"StoreUserReview":    {"user-review-service", "9090"},
 		"/user-review":       {"user-review-service", "9090"},
-		// Frontend
+		// Frontend - removed overly broad "/" pattern
 		"/wrk2-api/home":     {"nginx-web-server", "8080"},
-		"/":                  {"nginx-web-server", "8080"},
 	}
 
 	// Sort patterns by length (longest first) to ensure more specific patterns match first
@@ -1916,9 +1916,8 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 		"/user-timeline":          {"user-timeline-service", "9090"},
 		// Media frontend
 		"/wrk2-api/media-frontend": {"media-frontend", "8081"},
-		// Frontend
+		// Frontend - removed overly broad "/" pattern
 		"/wrk2-api/home": {"nginx-thrift", "8080"},
-		"/":              {"nginx-thrift", "8080"},
 	}
 
 	// Sort patterns by length (longest first) to ensure more specific patterns match first
@@ -1961,8 +1960,7 @@ func mapHotelReservationRouteToService(endpoint *ServiceEndpoint) {
 		"/attractions":     {"attractions", "8089"},
 		"GetAttractions":   {"attractions", "8089"},
 		"attractions.Attractions": {"attractions", "8089"},
-		// Frontend service
-		"/":                {"frontend", "5000"},
+		// Frontend service - removed overly broad "/" pattern
 		"/hotels":          {"frontend", "5000"},
 		"/recommendations": {"frontend", "5000"},
 		"/user":            {"frontend", "5000"},
@@ -1973,7 +1971,6 @@ func mapHotelReservationRouteToService(endpoint *ServiceEndpoint) {
 		"NearbyGeo":      {"geo", "8083"},
 		"GetGeo":         {"geo", "8083"},
 		"geo.Geo":        {"geo", "8083"},
-		"Nearby":         {"geo", "8083"},
 		// Profile service
 		"/profile":       {"profile", "8081"},
 		"GetProfiles":    {"profile", "8081"},
