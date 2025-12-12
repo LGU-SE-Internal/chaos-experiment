@@ -1885,18 +1885,17 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 // mapDeathStarBenchGRPCToService maps gRPC services to server addresses for DeathStarBench systems
 func mapDeathStarBenchGRPCToService(operation *GRPCOperation, namespace string) {
 	rpcService := operation.RPCService
-	rpcMethod := operation.RPCMethod
 
 	switch namespace {
 	case "media":
-		mapMediaMicroservicesGRPCToService(operation, rpcService, rpcMethod)
+		mapMediaMicroservicesGRPCToService(operation, rpcService)
 	case "sn":
-		mapSocialNetworkGRPCToService(operation, rpcService, rpcMethod)
+		mapSocialNetworkGRPCToService(operation, rpcService)
 	}
 }
 
 // mapMediaMicroservicesGRPCToService maps gRPC services to server addresses for Media Microservices
-func mapMediaMicroservicesGRPCToService(operation *GRPCOperation, rpcService string, rpcMethod string) {
+func mapMediaMicroservicesGRPCToService(operation *GRPCOperation, rpcService string) {
 	// Map based on RPC service name patterns
 	serviceMap := map[string]struct {
 		service string
@@ -1927,7 +1926,7 @@ func mapMediaMicroservicesGRPCToService(operation *GRPCOperation, rpcService str
 }
 
 // mapSocialNetworkGRPCToService maps gRPC services to server addresses for Social Network
-func mapSocialNetworkGRPCToService(operation *GRPCOperation, rpcService string, rpcMethod string) {
+func mapSocialNetworkGRPCToService(operation *GRPCOperation, rpcService string) {
 	// Map based on RPC service name patterns
 	serviceMap := map[string]struct {
 		service string
