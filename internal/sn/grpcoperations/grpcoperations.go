@@ -16,42 +16,6 @@ type GRPCOperation struct {
 
 // GRPCOperations maps service names to their gRPC operations
 var GRPCOperations = map[string][]GRPCOperation{
-	"post-storage-service": {
-		{
-			ServiceName:    "post-storage-service",
-			RPCSystem:      "thrift",
-			RPCService:     "PostStorageService",
-			RPCMethod:      "ReadPosts",
-			GRPCStatusCode: "",
-			ServerAddress:  "",
-			ServerPort:     "",
-			SpanKind:       "Server",
-		},
-	},
-	"social-graph-service": {
-		{
-			ServiceName:    "social-graph-service",
-			RPCSystem:      "thrift",
-			RPCService:     "SocialGraphService",
-			RPCMethod:      "FollowWithUsername",
-			GRPCStatusCode: "",
-			ServerAddress:  "",
-			ServerPort:     "",
-			SpanKind:       "Server",
-		},
-	},
-	"url-shorten-service": {
-		{
-			ServiceName:    "url-shorten-service",
-			RPCSystem:      "thrift",
-			RPCService:     "UrlShortenService",
-			RPCMethod:      "ComposeUrls",
-			GRPCStatusCode: "",
-			ServerAddress:  "",
-			ServerPort:     "",
-			SpanKind:       "Server",
-		},
-	},
 	"user-mention-service": {
 		{
 			ServiceName:    "user-mention-service",
@@ -59,8 +23,8 @@ var GRPCOperations = map[string][]GRPCOperation{
 			RPCService:     "UserMentionService",
 			RPCMethod:      "ComposeUserMentions",
 			GRPCStatusCode: "",
-			ServerAddress:  "",
-			ServerPort:     "",
+			ServerAddress:  "user-mention-service",
+			ServerPort:     "9090",
 			SpanKind:       "Server",
 		},
 	},
@@ -71,8 +35,44 @@ var GRPCOperations = map[string][]GRPCOperation{
 			RPCService:     "UserService",
 			RPCMethod:      "RegisterUserWithId",
 			GRPCStatusCode: "",
-			ServerAddress:  "",
-			ServerPort:     "",
+			ServerAddress:  "user-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+		},
+	},
+	"post-storage-service": {
+		{
+			ServiceName:    "post-storage-service",
+			RPCSystem:      "thrift",
+			RPCService:     "PostStorageService",
+			RPCMethod:      "ReadPosts",
+			GRPCStatusCode: "",
+			ServerAddress:  "post-storage-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+		},
+	},
+	"social-graph-service": {
+		{
+			ServiceName:    "social-graph-service",
+			RPCSystem:      "thrift",
+			RPCService:     "SocialGraphService",
+			RPCMethod:      "FollowWithUsername",
+			GRPCStatusCode: "",
+			ServerAddress:  "social-graph-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+		},
+	},
+	"url-shorten-service": {
+		{
+			ServiceName:    "url-shorten-service",
+			RPCSystem:      "thrift",
+			RPCService:     "UrlShortenService",
+			RPCMethod:      "ComposeUrls",
+			GRPCStatusCode: "",
+			ServerAddress:  "url-shorten-service",
+			ServerPort:     "9090",
 			SpanKind:       "Server",
 		},
 	},
