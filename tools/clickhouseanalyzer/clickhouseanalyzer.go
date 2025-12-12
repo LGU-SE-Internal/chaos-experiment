@@ -1899,40 +1899,50 @@ func mapHotelReservationRouteToService(endpoint *ServiceEndpoint) {
 		// Attractions service
 		"/attractions":     {"attractions", "8089"},
 		"GetAttractions":   {"attractions", "8089"},
+		"attractions.Attractions": {"attractions", "8089"},
 		// Frontend service
 		"/":                {"frontend", "5000"},
 		"/hotels":          {"frontend", "5000"},
 		"/recommendations": {"frontend", "5000"},
 		"/user":            {"frontend", "5000"},
 		"/reservation":     {"frontend", "5000"},
+		"frontend.Frontend": {"frontend", "5000"},
 		// Geo service
 		"/geo":           {"geo", "8083"},
 		"NearbyGeo":      {"geo", "8083"},
 		"GetGeo":         {"geo", "8083"},
+		"geo.Geo":        {"geo", "8083"},
+		"Nearby":         {"geo", "8083"},
 		// Profile service
 		"/profile":       {"profile", "8081"},
 		"GetProfiles":    {"profile", "8081"},
 		"GetProfile":     {"profile", "8081"},
+		"profile.Profile": {"profile", "8081"},
 		// Rate service
 		"/rate":          {"rate", "8084"},
 		"GetRates":       {"rate", "8084"},
 		"GetRate":        {"rate", "8084"},
+		"rate.Rate":      {"rate", "8084"},
 		// Recommendation service
 		"/recommendation": {"recommendation", "8085"},
 		"GetRecommendations": {"recommendation", "8085"},
+		"recommendation.Recommendation": {"recommendation", "8085"},
 		// Reservation service
 		"/reserve":       {"reservation", "8087"},
 		"MakeReservation": {"reservation", "8087"},
 		"CheckAvailability": {"reservation", "8087"},
+		"reservation.Reservation": {"reservation", "8087"},
 		// Search service
 		"/search":        {"search", "8082"},
 		"NearbySearch":   {"search", "8082"},
+		"search.Search":  {"search", "8082"},
 		// User service
 		"/login":         {"user", "8086"},
 		"/register":      {"user", "8086"},
 		"Login":          {"user", "8086"},
 		"Register":       {"user", "8086"},
 		"CheckUser":      {"user", "8086"},
+		"user.User":      {"user", "8086"},
 	}
 
 	// Check route first
@@ -2032,6 +2042,7 @@ func mapHotelReservationGRPCToService(operation *GRPCOperation, rpcService strin
 		service string
 		port    string
 	}{
+		// Standard patterns
 		"AttractionsService":    {"attractions", "8089"},
 		"FrontendService":       {"frontend", "5000"},
 		"GeoService":            {"geo", "8083"},
@@ -2041,6 +2052,16 @@ func mapHotelReservationGRPCToService(operation *GRPCOperation, rpcService strin
 		"ReservationService":    {"reservation", "8087"},
 		"SearchService":         {"search", "8082"},
 		"UserService":           {"user", "8086"},
+		// DeathStarBench hotelReservation gRPC service patterns
+		"attractions.Attractions": {"attractions", "8089"},
+		"frontend.Frontend":       {"frontend", "5000"},
+		"geo.Geo":                 {"geo", "8083"},
+		"profile.Profile":         {"profile", "8081"},
+		"rate.Rate":               {"rate", "8084"},
+		"recommendation.Recommendation": {"recommendation", "8085"},
+		"reservation.Reservation": {"reservation", "8087"},
+		"search.Search":           {"search", "8082"},
+		"user.User":               {"user", "8086"},
 	}
 
 	for pattern, service := range serviceMap {
