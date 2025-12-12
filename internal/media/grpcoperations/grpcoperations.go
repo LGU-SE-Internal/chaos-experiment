@@ -16,6 +16,40 @@ type GRPCOperation struct {
 
 // GRPCOperations maps service names to their gRPC operations
 var GRPCOperations = map[string][]GRPCOperation{
+	"text-service": {
+		{
+			ServiceName:    "text-service",
+			RPCSystem:      "thrift",
+			RPCService:     "TextService",
+			RPCMethod:      "UploadText",
+			GRPCStatusCode: "",
+			ServerAddress:  "text-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+		},
+	},
+	"review-storage-service": {
+		{
+			ServiceName:    "review-storage-service",
+			RPCSystem:      "thrift",
+			RPCService:     "ReviewStorageService",
+			RPCMethod:      "ReadReviews",
+			GRPCStatusCode: "",
+			ServerAddress:  "review-storage-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+		},
+		{
+			ServiceName:    "review-storage-service",
+			RPCSystem:      "thrift",
+			RPCService:     "ReviewStorageService",
+			RPCMethod:      "StoreReview",
+			GRPCStatusCode: "",
+			ServerAddress:  "review-storage-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+		},
+	},
 	"cast-info-service": {
 		{
 			ServiceName:    "cast-info-service",
@@ -200,28 +234,6 @@ var GRPCOperations = map[string][]GRPCOperation{
 			SpanKind:       "Server",
 		},
 	},
-	"review-storage-service": {
-		{
-			ServiceName:    "review-storage-service",
-			RPCSystem:      "thrift",
-			RPCService:     "ReviewStorageService",
-			RPCMethod:      "ReadReviews",
-			GRPCStatusCode: "",
-			ServerAddress:  "review-storage-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-		},
-		{
-			ServiceName:    "review-storage-service",
-			RPCSystem:      "thrift",
-			RPCService:     "ReviewStorageService",
-			RPCMethod:      "StoreReview",
-			GRPCStatusCode: "",
-			ServerAddress:  "review-storage-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-		},
-	},
 	"unique-id-service": {
 		{
 			ServiceName:    "unique-id-service",
@@ -234,30 +246,6 @@ var GRPCOperations = map[string][]GRPCOperation{
 			SpanKind:       "Server",
 		},
 	},
-	"user-service": {
-		{
-			ServiceName:    "user-service",
-			RPCSystem:      "thrift",
-			RPCService:     "UserService",
-			RPCMethod:      "RegisterUser",
-			GRPCStatusCode: "",
-			ServerAddress:  "user-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-		},
-	},
-	"text-service": {
-		{
-			ServiceName:    "text-service",
-			RPCSystem:      "thrift",
-			RPCService:     "TextService",
-			RPCMethod:      "UploadText",
-			GRPCStatusCode: "",
-			ServerAddress:  "text-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-		},
-	},
 	"user-review-service": {
 		{
 			ServiceName:    "user-review-service",
@@ -266,6 +254,18 @@ var GRPCOperations = map[string][]GRPCOperation{
 			RPCMethod:      "UploadUserReview",
 			GRPCStatusCode: "",
 			ServerAddress:  "user-review-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+		},
+	},
+	"user-service": {
+		{
+			ServiceName:    "user-service",
+			RPCSystem:      "thrift",
+			RPCService:     "UserService",
+			RPCMethod:      "RegisterUser",
+			GRPCStatusCode: "",
+			ServerAddress:  "user-service",
 			ServerPort:     "9090",
 			SpanKind:       "Server",
 		},
