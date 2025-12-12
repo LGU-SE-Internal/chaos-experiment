@@ -1708,6 +1708,8 @@ func mapDeathStarBenchRouteToService(endpoint *ServiceEndpoint, namespace string
 		mapMediaMicroservicesRouteToService(endpoint)
 	case "sn":
 		mapSocialNetworkRouteToService(endpoint)
+	case "hs":
+		mapHotelReservationRouteToService(endpoint)
 	}
 }
 
@@ -1722,57 +1724,57 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		port    string
 	}{
 		// Cast info service
-		"/wrk2-api/cast-info":  {"cast-info-service", "8080"},
-		"CastInfoHandler":      {"cast-info-service", "8080"},
-		"WriteCastInfo":        {"cast-info-service", "8080"},
-		"ReadCastInfo":         {"cast-info-service", "8080"},
+		"/wrk2-api/cast-info":  {"cast-info-service", "9090"},
+		"CastInfoHandler":      {"cast-info-service", "9090"},
+		"WriteCastInfo":        {"cast-info-service", "9090"},
+		"ReadCastInfo":         {"cast-info-service", "9090"},
 		// Compose review service
-		"/wrk2-api/review/compose": {"compose-review-service", "8080"},
-		"ComposeReview":            {"compose-review-service", "8080"},
-		"UploadText":               {"compose-review-service", "8080"},
-		"UploadRating":             {"compose-review-service", "8080"},
-		"UploadMovieId":            {"compose-review-service", "8080"},
-		"UploadUniqueId":           {"compose-review-service", "8080"},
-		"UploadUserId":             {"compose-review-service", "8080"},
+		"/wrk2-api/review/compose": {"compose-review-service", "9090"},
+		"ComposeReview":            {"compose-review-service", "9090"},
+		"UploadText":               {"compose-review-service", "9090"},
+		"UploadRating":             {"compose-review-service", "9090"},
+		"UploadMovieId":            {"compose-review-service", "9090"},
+		"UploadUniqueId":           {"compose-review-service", "9090"},
+		"UploadUserId":             {"compose-review-service", "9090"},
 		// Movie ID service
-		"RegisterMovieId": {"movie-id-service", "8080"},
-		"MovieIdHandler":  {"movie-id-service", "8080"},
+		"RegisterMovieId": {"movie-id-service", "9090"},
+		"MovieIdHandler":  {"movie-id-service", "9090"},
 		// Movie info service
-		"/wrk2-api/movie-info":  {"movie-info-service", "8080"},
-		"MovieInfoHandler":      {"movie-info-service", "8080"},
-		"WriteMovieInfo":        {"movie-info-service", "8080"},
-		"ReadMovieInfo":         {"movie-info-service", "8080"},
+		"/wrk2-api/movie-info":  {"movie-info-service", "9090"},
+		"MovieInfoHandler":      {"movie-info-service", "9090"},
+		"WriteMovieInfo":        {"movie-info-service", "9090"},
+		"ReadMovieInfo":         {"movie-info-service", "9090"},
 		// Movie review service
-		"StoreReview":        {"movie-review-service", "8080"},
-		"ReadMovieReviews":   {"movie-review-service", "8080"},
+		"StoreReview":        {"movie-review-service", "9090"},
+		"ReadMovieReviews":   {"movie-review-service", "9090"},
 		// Page service
-		"/wrk2-api/page": {"page-service", "8080"},
-		"ReadPage":       {"page-service", "8080"},
+		"/wrk2-api/page": {"page-service", "9090"},
+		"ReadPage":       {"page-service", "9090"},
 		// Plot service
-		"/wrk2-api/plot":  {"plot-service", "8080"},
-		"PlotHandler":     {"plot-service", "8080"},
-		"WritePlot":       {"plot-service", "8080"},
-		"ReadPlot":        {"plot-service", "8080"},
+		"/wrk2-api/plot":  {"plot-service", "9090"},
+		"PlotHandler":     {"plot-service", "9090"},
+		"WritePlot":       {"plot-service", "9090"},
+		"ReadPlot":        {"plot-service", "9090"},
 		// Rating service
-		"StoreRating": {"rating-service", "8080"},
-		"ReadRatings": {"rating-service", "8080"},
+		"StoreRating": {"rating-service", "9090"},
+		"ReadRatings": {"rating-service", "9090"},
 		// Review storage service
-		"StoreReviewStorage": {"review-storage-service", "8080"},
-		"ReadReviews":        {"review-storage-service", "8080"},
+		"StoreReviewStorage": {"review-storage-service", "9090"},
+		"ReadReviews":        {"review-storage-service", "9090"},
 		// Text service
-		"TextHandler":  {"text-service", "8080"},
-		"StoreText":    {"text-service", "8080"},
+		"TextHandler":  {"text-service", "9090"},
+		"StoreText":    {"text-service", "9090"},
 		// Unique ID service
-		"UniqueIdHandler": {"unique-id-service", "8080"},
-		"ComposeUniqueId": {"unique-id-service", "8080"},
+		"UniqueIdHandler": {"unique-id-service", "9090"},
+		"ComposeUniqueId": {"unique-id-service", "9090"},
 		// User service
-		"/wrk2-api/user":  {"user-service", "8080"},
-		"UserHandler":     {"user-service", "8080"},
-		"RegisterUser":    {"user-service", "8080"},
-		"Login":           {"user-service", "8080"},
+		"/wrk2-api/user":  {"user-service", "9090"},
+		"UserHandler":     {"user-service", "9090"},
+		"RegisterUser":    {"user-service", "9090"},
+		"Login":           {"user-service", "9090"},
 		// User review service
-		"ReadUserReviews":    {"user-review-service", "8080"},
-		"StoreUserReview":    {"user-review-service", "8080"},
+		"ReadUserReviews":    {"user-review-service", "9090"},
+		"StoreUserReview":    {"user-review-service", "9090"},
 		// Frontend
 		"/wrk2-api/home":     {"nginx-web-server", "8080"},
 		"/":                  {"nginx-web-server", "8080"},
@@ -1805,62 +1807,64 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 		port    string
 	}{
 		// Compose post service
-		"/wrk2-api/post/compose": {"compose-post-service", "8080"},
-		"ComposePost":            {"compose-post-service", "8080"},
-		"UploadText":             {"compose-post-service", "8080"},
-		"UploadMedia":            {"compose-post-service", "8080"},
-		"UploadUniqueId":         {"compose-post-service", "8080"},
-		"UploadCreator":          {"compose-post-service", "8080"},
-		"UploadUrls":             {"compose-post-service", "8080"},
-		"UploadUserMentions":     {"compose-post-service", "8080"},
+		"/wrk2-api/post/compose": {"compose-post-service", "9090"},
+		"ComposePost":            {"compose-post-service", "9090"},
+		"UploadText":             {"compose-post-service", "9090"},
+		"UploadMedia":            {"compose-post-service", "9090"},
+		"UploadUniqueId":         {"compose-post-service", "9090"},
+		"UploadCreator":          {"compose-post-service", "9090"},
+		"UploadUrls":             {"compose-post-service", "9090"},
+		"UploadUserMentions":     {"compose-post-service", "9090"},
 		// Home timeline service
-		"/wrk2-api/home-timeline": {"home-timeline-service", "8080"},
-		"ReadHomeTimeline":        {"home-timeline-service", "8080"},
-		"WriteHomeTimeline":       {"home-timeline-service", "8080"},
+		"/wrk2-api/home-timeline": {"home-timeline-service", "9090"},
+		"ReadHomeTimeline":        {"home-timeline-service", "9090"},
+		"WriteHomeTimeline":       {"home-timeline-service", "9090"},
 		// Media service
-		"/wrk2-api/media":    {"media-service", "8080"},
-		"MediaHandler":       {"media-service", "8080"},
-		"UploadMediaHandler": {"media-service", "8080"},
-		"StoreMedia":         {"media-service", "8080"},
+		"/wrk2-api/media":    {"media-service", "9090"},
+		"MediaHandler":       {"media-service", "9090"},
+		"UploadMediaHandler": {"media-service", "9090"},
+		"StoreMedia":         {"media-service", "9090"},
 		// Post storage service
-		"StorePost":  {"post-storage-service", "8080"},
-		"ReadPost":   {"post-storage-service", "8080"},
-		"ReadPosts":  {"post-storage-service", "8080"},
+		"StorePost":  {"post-storage-service", "9090"},
+		"ReadPost":   {"post-storage-service", "9090"},
+		"ReadPosts":  {"post-storage-service", "9090"},
 		// Social graph service
-		"/wrk2-api/user/follow":     {"social-graph-service", "8080"},
-		"/wrk2-api/user/unfollow":   {"social-graph-service", "8080"},
-		"Follow":                    {"social-graph-service", "8080"},
-		"Unfollow":                  {"social-graph-service", "8080"},
-		"GetFollowers":              {"social-graph-service", "8080"},
-		"GetFollowees":              {"social-graph-service", "8080"},
-		"InsertUser":                {"social-graph-service", "8080"},
-		"FollowWithUsername":        {"social-graph-service", "8080"},
-		"UnfollowWithUsername":      {"social-graph-service", "8080"},
+		"/wrk2-api/user/follow":     {"social-graph-service", "9090"},
+		"/wrk2-api/user/unfollow":   {"social-graph-service", "9090"},
+		"Follow":                    {"social-graph-service", "9090"},
+		"Unfollow":                  {"social-graph-service", "9090"},
+		"GetFollowers":              {"social-graph-service", "9090"},
+		"GetFollowees":              {"social-graph-service", "9090"},
+		"InsertUser":                {"social-graph-service", "9090"},
+		"FollowWithUsername":        {"social-graph-service", "9090"},
+		"UnfollowWithUsername":      {"social-graph-service", "9090"},
 		// Text service
-		"TextHandler":   {"text-service", "8080"},
-		"ProcessText":   {"text-service", "8080"},
+		"TextHandler":   {"text-service", "9090"},
+		"ProcessText":   {"text-service", "9090"},
 		// Unique ID service
-		"UniqueIdHandler": {"unique-id-service", "8080"},
-		"ComposeUniqueId": {"unique-id-service", "8080"},
+		"UniqueIdHandler": {"unique-id-service", "9090"},
+		"ComposeUniqueId": {"unique-id-service", "9090"},
 		// URL shorten service
-		"/wrk2-api/shorten-urls": {"url-shorten-service", "8080"},
-		"UrlHandler":             {"url-shorten-service", "8080"},
-		"ShortenUrls":            {"url-shorten-service", "8080"},
-		"GetExtendedUrls":        {"url-shorten-service", "8080"},
+		"/wrk2-api/shorten-urls": {"url-shorten-service", "9090"},
+		"UrlHandler":             {"url-shorten-service", "9090"},
+		"ShortenUrls":            {"url-shorten-service", "9090"},
+		"GetExtendedUrls":        {"url-shorten-service", "9090"},
 		// User mention service
-		"UserMentionHandler":   {"user-mention-service", "8080"},
-		"ComposeUserMentions":  {"user-mention-service", "8080"},
+		"UserMentionHandler":   {"user-mention-service", "9090"},
+		"ComposeUserMentions":  {"user-mention-service", "9090"},
 		// User service
-		"/wrk2-api/user/register": {"user-service", "8080"},
-		"/wrk2-api/user/login":    {"user-service", "8080"},
-		"RegisterUser":            {"user-service", "8080"},
-		"RegisterUserWithId":      {"user-service", "8080"},
-		"Login":                   {"user-service", "8080"},
-		"GetUserId":               {"user-service", "8080"},
+		"/wrk2-api/user/register": {"user-service", "9090"},
+		"/wrk2-api/user/login":    {"user-service", "9090"},
+		"RegisterUser":            {"user-service", "9090"},
+		"RegisterUserWithId":      {"user-service", "9090"},
+		"Login":                   {"user-service", "9090"},
+		"GetUserId":               {"user-service", "9090"},
 		// User timeline service
-		"/wrk2-api/user-timeline": {"user-timeline-service", "8080"},
-		"ReadUserTimeline":        {"user-timeline-service", "8080"},
-		"WriteUserTimeline":       {"user-timeline-service", "8080"},
+		"/wrk2-api/user-timeline": {"user-timeline-service", "9090"},
+		"ReadUserTimeline":        {"user-timeline-service", "9090"},
+		"WriteUserTimeline":       {"user-timeline-service", "9090"},
+		// Media frontend
+		"/wrk2-api/media-frontend": {"media-frontend", "8081"},
 		// Frontend
 		"/wrk2-api/home": {"nginx-thrift", "8080"},
 		"/":              {"nginx-thrift", "8080"},
@@ -1882,6 +1886,71 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 	}
 }
 
+// mapHotelReservationRouteToService maps routes to services for Hotel Reservation
+func mapHotelReservationRouteToService(endpoint *ServiceEndpoint) {
+	route := endpoint.Route
+	spanName := endpoint.SpanName
+
+	// Service mapping based on route patterns and span names
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		// Attractions service
+		"/attractions":     {"attractions", "8089"},
+		"GetAttractions":   {"attractions", "8089"},
+		// Frontend service
+		"/":                {"frontend", "5000"},
+		"/hotels":          {"frontend", "5000"},
+		"/recommendations": {"frontend", "5000"},
+		"/user":            {"frontend", "5000"},
+		"/reservation":     {"frontend", "5000"},
+		// Geo service
+		"/geo":           {"geo", "8083"},
+		"NearbyGeo":      {"geo", "8083"},
+		"GetGeo":         {"geo", "8083"},
+		// Profile service
+		"/profile":       {"profile", "8081"},
+		"GetProfiles":    {"profile", "8081"},
+		"GetProfile":     {"profile", "8081"},
+		// Rate service
+		"/rate":          {"rate", "8084"},
+		"GetRates":       {"rate", "8084"},
+		"GetRate":        {"rate", "8084"},
+		// Recommendation service
+		"/recommendation": {"recommendation", "8085"},
+		"GetRecommendations": {"recommendation", "8085"},
+		// Reservation service
+		"/reserve":       {"reservation", "8087"},
+		"MakeReservation": {"reservation", "8087"},
+		"CheckAvailability": {"reservation", "8087"},
+		// Search service
+		"/search":        {"search", "8082"},
+		"NearbySearch":   {"search", "8082"},
+		// User service
+		"/login":         {"user", "8086"},
+		"/register":      {"user", "8086"},
+		"Login":          {"user", "8086"},
+		"Register":       {"user", "8086"},
+		"CheckUser":      {"user", "8086"},
+	}
+
+	// Check route first
+	for pattern, service := range serviceMap {
+		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
+			endpoint.ServerAddress = service.service
+			endpoint.ServerPort = service.port
+			return
+		}
+	}
+
+	// Default to frontend if no match
+	if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+		endpoint.ServerAddress = "frontend"
+		endpoint.ServerPort = "5000"
+	}
+}
+
 // mapDeathStarBenchGRPCToService maps gRPC services to server addresses for DeathStarBench systems
 func mapDeathStarBenchGRPCToService(operation *GRPCOperation, namespace string) {
 	rpcService := operation.RPCService
@@ -1891,6 +1960,8 @@ func mapDeathStarBenchGRPCToService(operation *GRPCOperation, namespace string) 
 		mapMediaMicroservicesGRPCToService(operation, rpcService)
 	case "sn":
 		mapSocialNetworkGRPCToService(operation, rpcService)
+	case "hs":
+		mapHotelReservationGRPCToService(operation, rpcService)
 	}
 }
 
@@ -1901,19 +1972,19 @@ func mapMediaMicroservicesGRPCToService(operation *GRPCOperation, rpcService str
 		service string
 		port    string
 	}{
-		"CastInfoService":      {"cast-info-service", "8080"},
-		"ComposeReviewService": {"compose-review-service", "8080"},
-		"MovieIdService":       {"movie-id-service", "8080"},
-		"MovieInfoService":     {"movie-info-service", "8080"},
-		"MovieReviewService":   {"movie-review-service", "8080"},
-		"PageService":          {"page-service", "8080"},
-		"PlotService":          {"plot-service", "8080"},
-		"RatingService":        {"rating-service", "8080"},
-		"ReviewStorageService": {"review-storage-service", "8080"},
-		"TextService":          {"text-service", "8080"},
-		"UniqueIdService":      {"unique-id-service", "8080"},
-		"UserService":          {"user-service", "8080"},
-		"UserReviewService":    {"user-review-service", "8080"},
+		"CastInfoService":      {"cast-info-service", "9090"},
+		"ComposeReviewService": {"compose-review-service", "9090"},
+		"MovieIdService":       {"movie-id-service", "9090"},
+		"MovieInfoService":     {"movie-info-service", "9090"},
+		"MovieReviewService":   {"movie-review-service", "9090"},
+		"PageService":          {"page-service", "9090"},
+		"PlotService":          {"plot-service", "9090"},
+		"RatingService":        {"rating-service", "9090"},
+		"ReviewStorageService": {"review-storage-service", "9090"},
+		"TextService":          {"text-service", "9090"},
+		"UniqueIdService":      {"unique-id-service", "9090"},
+		"UserService":          {"user-service", "9090"},
+		"UserReviewService":    {"user-review-service", "9090"},
 	}
 
 	for pattern, service := range serviceMap {
@@ -1932,17 +2003,44 @@ func mapSocialNetworkGRPCToService(operation *GRPCOperation, rpcService string) 
 		service string
 		port    string
 	}{
-		"ComposePostService":   {"compose-post-service", "8080"},
-		"HomeTimelineService":  {"home-timeline-service", "8080"},
-		"MediaService":         {"media-service", "8080"},
-		"PostStorageService":   {"post-storage-service", "8080"},
-		"SocialGraphService":   {"social-graph-service", "8080"},
-		"TextService":          {"text-service", "8080"},
-		"UniqueIdService":      {"unique-id-service", "8080"},
-		"UrlShortenService":    {"url-shorten-service", "8080"},
-		"UserMentionService":   {"user-mention-service", "8080"},
-		"UserService":          {"user-service", "8080"},
-		"UserTimelineService":  {"user-timeline-service", "8080"},
+		"ComposePostService":   {"compose-post-service", "9090"},
+		"HomeTimelineService":  {"home-timeline-service", "9090"},
+		"MediaService":         {"media-service", "9090"},
+		"PostStorageService":   {"post-storage-service", "9090"},
+		"SocialGraphService":   {"social-graph-service", "9090"},
+		"TextService":          {"text-service", "9090"},
+		"UniqueIdService":      {"unique-id-service", "9090"},
+		"UrlShortenService":    {"url-shorten-service", "9090"},
+		"UserMentionService":   {"user-mention-service", "9090"},
+		"UserService":          {"user-service", "9090"},
+		"UserTimelineService":  {"user-timeline-service", "9090"},
+	}
+
+	for pattern, service := range serviceMap {
+		if strings.Contains(rpcService, pattern) {
+			operation.ServerAddress = service.service
+			operation.ServerPort = service.port
+			return
+		}
+	}
+}
+
+// mapHotelReservationGRPCToService maps gRPC services to server addresses for Hotel Reservation
+func mapHotelReservationGRPCToService(operation *GRPCOperation, rpcService string) {
+	// Map based on RPC service name patterns
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		"AttractionsService":    {"attractions", "8089"},
+		"FrontendService":       {"frontend", "5000"},
+		"GeoService":            {"geo", "8083"},
+		"ProfileService":        {"profile", "8081"},
+		"RateService":           {"rate", "8084"},
+		"RecommendationService": {"recommendation", "8085"},
+		"ReservationService":    {"reservation", "8087"},
+		"SearchService":         {"search", "8082"},
+		"UserService":           {"user", "8086"},
 	}
 
 	for pattern, service := range serviceMap {
