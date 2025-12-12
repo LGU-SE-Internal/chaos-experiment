@@ -118,6 +118,16 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 	},
 }
 
+// AllServices contains all unique service names (callers and callees)
+var AllServices = []string{
+	"compose-review-service",
+	"movie-info-service",
+	"movie-review-service",
+	"nginx-web-server",
+	"page-service",
+	"plot-service",
+}
+
 // GetEndpointsByService returns all endpoints for a service
 func GetEndpointsByService(serviceName string) []ServiceEndpoint {
 	if endpoints, exists := ServiceEndpoints[serviceName]; exists {
@@ -128,9 +138,5 @@ func GetEndpointsByService(serviceName string) []ServiceEndpoint {
 
 // GetAllServices returns a list of all available service names
 func GetAllServices() []string {
-	services := make([]string, 0, len(ServiceEndpoints))
-	for service := range ServiceEndpoints {
-		services = append(services, service)
-	}
-	return services
+	return AllServices
 }

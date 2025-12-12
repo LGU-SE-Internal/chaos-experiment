@@ -2589,6 +2589,47 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 	},
 }
 
+// AllServices contains all unique service names (callers and callees)
+var AllServices = []string{
+	"mysql",
+	"ts-assurance-service",
+	"ts-auth-service",
+	"ts-basic-service",
+	"ts-cancel-service",
+	"ts-config-service",
+	"ts-consign-price-service",
+	"ts-consign-service",
+	"ts-contacts-service",
+	"ts-delivery-service",
+	"ts-execute-service",
+	"ts-food-delivery-service",
+	"ts-food-service",
+	"ts-inside-payment-service",
+	"ts-notification-service",
+	"ts-order-other-service",
+	"ts-order-service",
+	"ts-payment-service",
+	"ts-preserve-service",
+	"ts-price-service",
+	"ts-rabbitmq",
+	"ts-rebook-service",
+	"ts-route-plan-service",
+	"ts-route-service",
+	"ts-seat-service",
+	"ts-security-service",
+	"ts-station-food-service",
+	"ts-station-service",
+	"ts-train-food-service",
+	"ts-train-service",
+	"ts-travel-plan-service",
+	"ts-travel-service",
+	"ts-travel2-service",
+	"ts-ui-dashboard",
+	"ts-user-service",
+	"ts-verification-code-service",
+	"ts-wait-order-service",
+}
+
 // GetEndpointsByService returns all endpoints for a service
 func GetEndpointsByService(serviceName string) []ServiceEndpoint {
 	if endpoints, exists := ServiceEndpoints[serviceName]; exists {
@@ -2599,9 +2640,5 @@ func GetEndpointsByService(serviceName string) []ServiceEndpoint {
 
 // GetAllServices returns a list of all available service names
 func GetAllServices() []string {
-	services := make([]string, 0, len(ServiceEndpoints))
-	for service := range ServiceEndpoints {
-		services = append(services, service)
-	}
-	return services
+	return AllServices
 }
