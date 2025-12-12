@@ -15,13 +15,13 @@ import (
 
 func main() {
 	// Define global flags
-	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket) or 'otel-demo' (OpenTelemetry Demo)")
+	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), or 'sn' (SocialNetwork)")
 	flag.Parse()
 
 	// Set the system type
 	systemType, err := systemconfig.ParseSystemType(*system)
 	if err != nil {
-		fmt.Printf("Invalid system: %s. Must be 'ts' or 'otel-demo'\n", *system)
+		fmt.Printf("Invalid system: %s. Must be 'ts', 'otel-demo', 'media', 'hs', or 'sn'\n", *system)
 		os.Exit(1)
 	}
 	if err := systemconfig.SetCurrentSystem(systemType); err != nil {
@@ -82,10 +82,10 @@ func main() {
 
 func printUsage() {
 	fmt.Println("Usage:")
-	fmt.Println("  cli [--system ts|otel-demo] <command> [args]")
+	fmt.Println("  cli [--system ts|otel-demo|media|hs|sn] <command> [args]")
 	fmt.Println()
 	fmt.Println("Flags:")
-	fmt.Println("  --system <system>                - Target system: 'ts' (TrainTicket) or 'otel-demo' (OpenTelemetry Demo)")
+	fmt.Println("  --system <system>                - Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), or 'sn' (SocialNetwork)")
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  list-services                    - List all services with network dependencies")

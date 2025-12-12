@@ -5,7 +5,10 @@ package databaseoperations
 import (
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 
+	hsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/databaseoperations"
+	mediadb "github.com/LGU-SE-Internal/chaos-experiment/internal/media/databaseoperations"
 	oteldemodb "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/databaseoperations"
+	sndb "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/databaseoperations"
 	tsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/databaseoperations"
 )
 
@@ -30,6 +33,15 @@ func GetOperationsByService(serviceName string) []DatabaseOperation {
 	case systemconfig.SystemOtelDemo:
 		otelOps := oteldemodb.GetOperationsByService(serviceName)
 		return convertOtelDemoOperations(otelOps)
+	case systemconfig.SystemMediaMicroservices:
+		mediaOps := mediadb.GetOperationsByService(serviceName)
+		return convertMediaOperations(mediaOps)
+	case systemconfig.SystemHotelReservation:
+		hsOps := hsdb.GetOperationsByService(serviceName)
+		return convertHSOperations(hsOps)
+	case systemconfig.SystemSocialNetwork:
+		snOps := sndb.GetOperationsByService(serviceName)
+		return convertSNOperations(snOps)
 	default:
 		// Default to TrainTicket
 		tsOps := tsdb.GetOperationsByService(serviceName)
@@ -45,6 +57,12 @@ func GetAllDatabaseServices() []string {
 		return tsdb.GetAllDatabaseServices()
 	case systemconfig.SystemOtelDemo:
 		return oteldemodb.GetAllDatabaseServices()
+	case systemconfig.SystemMediaMicroservices:
+		return mediadb.GetAllDatabaseServices()
+	case systemconfig.SystemHotelReservation:
+		return hsdb.GetAllDatabaseServices()
+	case systemconfig.SystemSocialNetwork:
+		return sndb.GetAllDatabaseServices()
 	default:
 		// Default to TrainTicket
 		return tsdb.GetAllDatabaseServices()
@@ -61,6 +79,15 @@ func GetOperationsByDatabase(dbName string) []DatabaseOperation {
 	case systemconfig.SystemOtelDemo:
 		otelOps := oteldemodb.GetOperationsByDatabase(dbName)
 		return convertOtelDemoOperations(otelOps)
+	case systemconfig.SystemMediaMicroservices:
+		mediaOps := mediadb.GetOperationsByDatabase(dbName)
+		return convertMediaOperations(mediaOps)
+	case systemconfig.SystemHotelReservation:
+		hsOps := hsdb.GetOperationsByDatabase(dbName)
+		return convertHSOperations(hsOps)
+	case systemconfig.SystemSocialNetwork:
+		snOps := sndb.GetOperationsByDatabase(dbName)
+		return convertSNOperations(snOps)
 	default:
 		// Default to TrainTicket
 		tsOps := tsdb.GetOperationsByDatabase(dbName)
@@ -78,6 +105,15 @@ func GetOperationsByTable(dbTable string) []DatabaseOperation {
 	case systemconfig.SystemOtelDemo:
 		otelOps := oteldemodb.GetOperationsByTable(dbTable)
 		return convertOtelDemoOperations(otelOps)
+	case systemconfig.SystemMediaMicroservices:
+		mediaOps := mediadb.GetOperationsByTable(dbTable)
+		return convertMediaOperations(mediaOps)
+	case systemconfig.SystemHotelReservation:
+		hsOps := hsdb.GetOperationsByTable(dbTable)
+		return convertHSOperations(hsOps)
+	case systemconfig.SystemSocialNetwork:
+		snOps := sndb.GetOperationsByTable(dbTable)
+		return convertSNOperations(snOps)
 	default:
 		// Default to TrainTicket
 		tsOps := tsdb.GetOperationsByTable(dbTable)
@@ -106,6 +142,57 @@ func convertTSOperations(tsOps []tsdb.DatabaseOperation) []DatabaseOperation {
 func convertOtelDemoOperations(otelOps []oteldemodb.DatabaseOperation) []DatabaseOperation {
 	result := make([]DatabaseOperation, len(otelOps))
 	for i, op := range otelOps {
+		result[i] = DatabaseOperation{
+			ServiceName:   op.ServiceName,
+			DBName:        op.DBName,
+			DBTable:       op.DBTable,
+			Operation:     op.Operation,
+			DBSystem:      op.DBSystem,
+			ServerAddress: op.ServerAddress,
+			ServerPort:    op.ServerPort,
+		}
+	}
+	return result
+}
+
+// convertMediaOperations converts media-specific operations to the common type
+func convertMediaOperations(mediaOps []mediadb.DatabaseOperation) []DatabaseOperation {
+	result := make([]DatabaseOperation, len(mediaOps))
+	for i, op := range mediaOps {
+		result[i] = DatabaseOperation{
+			ServiceName:   op.ServiceName,
+			DBName:        op.DBName,
+			DBTable:       op.DBTable,
+			Operation:     op.Operation,
+			DBSystem:      op.DBSystem,
+			ServerAddress: op.ServerAddress,
+			ServerPort:    op.ServerPort,
+		}
+	}
+	return result
+}
+
+// convertHSOperations converts hs-specific operations to the common type
+func convertHSOperations(hsOps []hsdb.DatabaseOperation) []DatabaseOperation {
+	result := make([]DatabaseOperation, len(hsOps))
+	for i, op := range hsOps {
+		result[i] = DatabaseOperation{
+			ServiceName:   op.ServiceName,
+			DBName:        op.DBName,
+			DBTable:       op.DBTable,
+			Operation:     op.Operation,
+			DBSystem:      op.DBSystem,
+			ServerAddress: op.ServerAddress,
+			ServerPort:    op.ServerPort,
+		}
+	}
+	return result
+}
+
+// convertSNOperations converts sn-specific operations to the common type
+func convertSNOperations(snOps []sndb.DatabaseOperation) []DatabaseOperation {
+	result := make([]DatabaseOperation, len(snOps))
+	for i, op := range snOps {
 		result[i] = DatabaseOperation{
 			ServiceName:   op.ServiceName,
 			DBName:        op.DBName,

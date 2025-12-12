@@ -5,7 +5,10 @@ package serviceendpoints
 import (
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 
+	hsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/serviceendpoints"
+	mediaendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/media/serviceendpoints"
 	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
+	snendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/serviceendpoints"
 	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
 )
 
@@ -30,6 +33,15 @@ func GetEndpointsByService(serviceName string) []ServiceEndpoint {
 	case systemconfig.SystemOtelDemo:
 		otelEps := oteldemoendpoints.GetEndpointsByService(serviceName)
 		return convertOtelDemoEndpoints(otelEps)
+	case systemconfig.SystemMediaMicroservices:
+		mediaEps := mediaendpoints.GetEndpointsByService(serviceName)
+		return convertMediaEndpoints(mediaEps)
+	case systemconfig.SystemHotelReservation:
+		hsEps := hsendpoints.GetEndpointsByService(serviceName)
+		return convertHSEndpoints(hsEps)
+	case systemconfig.SystemSocialNetwork:
+		snEps := snendpoints.GetEndpointsByService(serviceName)
+		return convertSNEndpoints(snEps)
 	default:
 		// Default to TrainTicket
 		tsEps := tsendpoints.GetEndpointsByService(serviceName)
@@ -45,6 +57,12 @@ func GetAllServices() []string {
 		return tsendpoints.GetAllServices()
 	case systemconfig.SystemOtelDemo:
 		return oteldemoendpoints.GetAllServices()
+	case systemconfig.SystemMediaMicroservices:
+		return mediaendpoints.GetAllServices()
+	case systemconfig.SystemHotelReservation:
+		return hsendpoints.GetAllServices()
+	case systemconfig.SystemSocialNetwork:
+		return snendpoints.GetAllServices()
 	default:
 		// Default to TrainTicket
 		return tsendpoints.GetAllServices()
@@ -72,6 +90,57 @@ func convertTSEndpoints(tsEps []tsendpoints.ServiceEndpoint) []ServiceEndpoint {
 func convertOtelDemoEndpoints(otelEps []oteldemoendpoints.ServiceEndpoint) []ServiceEndpoint {
 	result := make([]ServiceEndpoint, len(otelEps))
 	for i, ep := range otelEps {
+		result[i] = ServiceEndpoint{
+			ServiceName:    ep.ServiceName,
+			RequestMethod:  ep.RequestMethod,
+			ResponseStatus: ep.ResponseStatus,
+			Route:          ep.Route,
+			ServerAddress:  ep.ServerAddress,
+			ServerPort:     ep.ServerPort,
+			SpanName:       ep.SpanName,
+		}
+	}
+	return result
+}
+
+// convertMediaEndpoints converts media-specific endpoints to the common type
+func convertMediaEndpoints(mediaEps []mediaendpoints.ServiceEndpoint) []ServiceEndpoint {
+	result := make([]ServiceEndpoint, len(mediaEps))
+	for i, ep := range mediaEps {
+		result[i] = ServiceEndpoint{
+			ServiceName:    ep.ServiceName,
+			RequestMethod:  ep.RequestMethod,
+			ResponseStatus: ep.ResponseStatus,
+			Route:          ep.Route,
+			ServerAddress:  ep.ServerAddress,
+			ServerPort:     ep.ServerPort,
+			SpanName:       ep.SpanName,
+		}
+	}
+	return result
+}
+
+// convertHSEndpoints converts hs-specific endpoints to the common type
+func convertHSEndpoints(hsEps []hsendpoints.ServiceEndpoint) []ServiceEndpoint {
+	result := make([]ServiceEndpoint, len(hsEps))
+	for i, ep := range hsEps {
+		result[i] = ServiceEndpoint{
+			ServiceName:    ep.ServiceName,
+			RequestMethod:  ep.RequestMethod,
+			ResponseStatus: ep.ResponseStatus,
+			Route:          ep.Route,
+			ServerAddress:  ep.ServerAddress,
+			ServerPort:     ep.ServerPort,
+			SpanName:       ep.SpanName,
+		}
+	}
+	return result
+}
+
+// convertSNEndpoints converts sn-specific endpoints to the common type
+func convertSNEndpoints(snEps []snendpoints.ServiceEndpoint) []ServiceEndpoint {
+	result := make([]ServiceEndpoint, len(snEps))
+	for i, ep := range snEps {
 		result[i] = ServiceEndpoint{
 			ServiceName:    ep.ServiceName,
 			RequestMethod:  ep.RequestMethod,
