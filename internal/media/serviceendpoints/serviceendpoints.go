@@ -21,8 +21,8 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			RequestMethod:  "POST",
 			ResponseStatus: "200",
 			Route:          "/wrk2-api/cast-info/write",
-			ServerAddress:  "nginx-web-server",
-			ServerPort:     "8080",
+			ServerAddress:  "cast-info-service",
+			ServerPort:     "9090",
 			SpanName:       "/wrk2-api/cast-info/write",
 		},
 		{
@@ -48,8 +48,8 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			RequestMethod:  "GET",
 			ResponseStatus: "500",
 			Route:          "/wrk2-api/movie/read-info",
-			ServerAddress:  "nginx-web-server",
-			ServerPort:     "8080",
+			ServerAddress:  "movie-info-service",
+			ServerPort:     "9090",
 			SpanName:       "/wrk2-api/movie/read-info",
 		},
 		{
@@ -93,8 +93,8 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			RequestMethod:  "POST",
 			ResponseStatus: "200",
 			Route:          "/wrk2-api/review/compose",
-			ServerAddress:  "nginx-web-server",
-			ServerPort:     "8080",
+			ServerAddress:  "compose-review-service",
+			ServerPort:     "9090",
 			SpanName:       "/wrk2-api/review/compose",
 		},
 		{
@@ -102,7 +102,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			RequestMethod:  "POST",
 			ResponseStatus: "500",
 			Route:          "/wrk2-api/review/compose",
-			ServerAddress:  "movie-review-service",
+			ServerAddress:  "compose-review-service",
 			ServerPort:     "9090",
 			SpanName:       "/wrk2-api/review/compose",
 		},
@@ -111,7 +111,7 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			RequestMethod:  "POST",
 			ResponseStatus: "200",
 			Route:          "/wrk2-api/user/register",
-			ServerAddress:  "compose-review-service",
+			ServerAddress:  "user-service",
 			ServerPort:     "9090",
 			SpanName:       "/wrk2-api/user/register",
 		},
@@ -120,12 +120,13 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 
 // AllServices contains all unique service names (callers and callees)
 var AllServices = []string{
+	"cast-info-service",
 	"compose-review-service",
 	"movie-info-service",
-	"movie-review-service",
 	"nginx-web-server",
 	"page-service",
 	"plot-service",
+	"user-service",
 }
 
 // GetEndpointsByService returns all endpoints for a service

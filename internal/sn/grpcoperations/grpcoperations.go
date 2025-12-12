@@ -16,6 +16,18 @@ type GRPCOperation struct {
 
 // GRPCOperations maps service names to their gRPC operations
 var GRPCOperations = map[string][]GRPCOperation{
+	"user-service": {
+		{
+			ServiceName:    "user-service",
+			RPCSystem:      "thrift",
+			RPCService:     "UserService",
+			RPCMethod:      "RegisterUserWithId",
+			GRPCStatusCode: "",
+			ServerAddress:  "user-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+		},
+	},
 	"post-storage-service": {
 		{
 			ServiceName:    "post-storage-service",
@@ -60,18 +72,6 @@ var GRPCOperations = map[string][]GRPCOperation{
 			RPCMethod:      "ComposeUserMentions",
 			GRPCStatusCode: "",
 			ServerAddress:  "user-mention-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-		},
-	},
-	"user-service": {
-		{
-			ServiceName:    "user-service",
-			RPCSystem:      "thrift",
-			RPCService:     "UserService",
-			RPCMethod:      "RegisterUserWithId",
-			GRPCStatusCode: "",
-			ServerAddress:  "user-service",
 			ServerPort:     "9090",
 			SpanKind:       "Server",
 		},

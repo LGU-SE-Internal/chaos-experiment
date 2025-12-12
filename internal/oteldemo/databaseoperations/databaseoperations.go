@@ -15,17 +15,6 @@ type DatabaseOperation struct {
 
 // DatabaseOperations maps service names to their database operations
 var DatabaseOperations = map[string][]DatabaseOperation{
-	"accounting": {
-		{
-			ServiceName:   "accounting",
-			DBName:        "otel",
-			DBTable:       "",
-			Operation:     "",
-			DBSystem:      "postgresql",
-			ServerAddress: "postgresql",
-			ServerPort:    "5432",
-		},
-	},
 	"cart": {
 		{
 			ServiceName:   "cart",
@@ -35,6 +24,17 @@ var DatabaseOperations = map[string][]DatabaseOperation{
 			DBSystem:      "redis",
 			ServerAddress: "redis",
 			ServerPort:    "6379",
+		},
+	},
+	"accounting": {
+		{
+			ServiceName:   "accounting",
+			DBName:        "otel",
+			DBTable:       "",
+			Operation:     "",
+			DBSystem:      "postgresql",
+			ServerAddress: "postgresql",
+			ServerPort:    "5432",
 		},
 	},
 }
