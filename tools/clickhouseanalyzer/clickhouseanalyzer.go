@@ -1725,12 +1725,14 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 	}{
 		// Cast info service
 		"/wrk2-api/cast-info":  {"cast-info-service", "9090"},
+		"/wrk2-api/movie/read-cast-info": {"cast-info-service", "9090"},
 		"CastInfoHandler":      {"cast-info-service", "9090"},
 		"WriteCastInfo":        {"cast-info-service", "9090"},
 		"ReadCastInfo":         {"cast-info-service", "9090"},
 		"/cast-info":          {"cast-info-service", "9090"},
 		// Compose review service
 		"/wrk2-api/review/compose": {"compose-review-service", "9090"},
+		"/wrk2-api/movie/register": {"compose-review-service", "9090"},
 		"ComposeReview":            {"compose-review-service", "9090"},
 		"UploadText":               {"compose-review-service", "9090"},
 		"UploadRating":             {"compose-review-service", "9090"},
@@ -1738,16 +1740,19 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		"UploadUniqueId":           {"compose-review-service", "9090"},
 		"UploadUserId":             {"compose-review-service", "9090"},
 		"/compose":                 {"compose-review-service", "9090"},
+		"/register":               {"compose-review-service", "9090"},
 		// Movie ID service
 		"RegisterMovieId": {"movie-id-service", "9090"},
 		"MovieIdHandler":  {"movie-id-service", "9090"},
 		"/movie-id":       {"movie-id-service", "9090"},
 		// Movie info service
 		"/wrk2-api/movie-info":  {"movie-info-service", "9090"},
+		"/wrk2-api/movie/read-info": {"movie-info-service", "9090"},
 		"MovieInfoHandler":      {"movie-info-service", "9090"},
 		"WriteMovieInfo":        {"movie-info-service", "9090"},
 		"ReadMovieInfo":         {"movie-info-service", "9090"},
 		"/movie-info":           {"movie-info-service", "9090"},
+		"/read-info":            {"movie-info-service", "9090"},
 		// Movie review service
 		"StoreReview":        {"movie-review-service", "9090"},
 		"ReadMovieReviews":   {"movie-review-service", "9090"},
@@ -1760,10 +1765,12 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		"/read-page":      {"page-service", "9090"},
 		// Plot service
 		"/wrk2-api/plot":  {"plot-service", "9090"},
+		"/wrk2-api/movie/read-plot": {"plot-service", "9090"},
 		"PlotHandler":     {"plot-service", "9090"},
 		"WritePlot":       {"plot-service", "9090"},
 		"ReadPlot":        {"plot-service", "9090"},
 		"/plot":           {"plot-service", "9090"},
+		"/read-plot":      {"plot-service", "9090"},
 		// Rating service
 		"StoreRating": {"rating-service", "9090"},
 		"ReadRatings": {"rating-service", "9090"},
@@ -1823,6 +1830,7 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 	}{
 		// Compose post service
 		"/wrk2-api/post/compose": {"compose-post-service", "9090"},
+		"/wrk2-api/post":         {"compose-post-service", "9090"},
 		"ComposePost":            {"compose-post-service", "9090"},
 		"UploadText":             {"compose-post-service", "9090"},
 		"UploadMedia":            {"compose-post-service", "9090"},
@@ -1830,19 +1838,23 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 		"UploadCreator":          {"compose-post-service", "9090"},
 		"UploadUrls":             {"compose-post-service", "9090"},
 		"UploadUserMentions":     {"compose-post-service", "9090"},
+		"/compose":               {"compose-post-service", "9090"},
 		// Home timeline service
 		"/wrk2-api/home-timeline": {"home-timeline-service", "9090"},
 		"ReadHomeTimeline":        {"home-timeline-service", "9090"},
 		"WriteHomeTimeline":       {"home-timeline-service", "9090"},
+		"/home-timeline":          {"home-timeline-service", "9090"},
 		// Media service
 		"/wrk2-api/media":    {"media-service", "9090"},
 		"MediaHandler":       {"media-service", "9090"},
 		"UploadMediaHandler": {"media-service", "9090"},
 		"StoreMedia":         {"media-service", "9090"},
+		"/media":             {"media-service", "9090"},
 		// Post storage service
-		"StorePost":  {"post-storage-service", "9090"},
-		"ReadPost":   {"post-storage-service", "9090"},
-		"ReadPosts":  {"post-storage-service", "9090"},
+		"StorePost":       {"post-storage-service", "9090"},
+		"ReadPost":        {"post-storage-service", "9090"},
+		"ReadPosts":       {"post-storage-service", "9090"},
+		"/post-storage":   {"post-storage-service", "9090"},
 		// Social graph service
 		"/wrk2-api/user/follow":     {"social-graph-service", "9090"},
 		"/wrk2-api/user/unfollow":   {"social-graph-service", "9090"},
@@ -1853,20 +1865,26 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 		"InsertUser":                {"social-graph-service", "9090"},
 		"FollowWithUsername":        {"social-graph-service", "9090"},
 		"UnfollowWithUsername":      {"social-graph-service", "9090"},
+		"/social-graph":             {"social-graph-service", "9090"},
 		// Text service
 		"TextHandler":   {"text-service", "9090"},
 		"ProcessText":   {"text-service", "9090"},
+		"/text":         {"text-service", "9090"},
 		// Unique ID service
 		"UniqueIdHandler": {"unique-id-service", "9090"},
 		"ComposeUniqueId": {"unique-id-service", "9090"},
+		"/unique-id":      {"unique-id-service", "9090"},
 		// URL shorten service
 		"/wrk2-api/shorten-urls": {"url-shorten-service", "9090"},
 		"UrlHandler":             {"url-shorten-service", "9090"},
 		"ShortenUrls":            {"url-shorten-service", "9090"},
 		"GetExtendedUrls":        {"url-shorten-service", "9090"},
+		"/url-shorten":           {"url-shorten-service", "9090"},
+		"/shorten":               {"url-shorten-service", "9090"},
 		// User mention service
 		"UserMentionHandler":   {"user-mention-service", "9090"},
 		"ComposeUserMentions":  {"user-mention-service", "9090"},
+		"/user-mention":        {"user-mention-service", "9090"},
 		// User service
 		"/wrk2-api/user/register": {"user-service", "9090"},
 		"/wrk2-api/user/login":    {"user-service", "9090"},
@@ -1874,10 +1892,14 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 		"RegisterUserWithId":      {"user-service", "9090"},
 		"Login":                   {"user-service", "9090"},
 		"GetUserId":               {"user-service", "9090"},
+		"/user":                   {"user-service", "9090"},
+		"/register":               {"user-service", "9090"},
+		"/login":                  {"user-service", "9090"},
 		// User timeline service
 		"/wrk2-api/user-timeline": {"user-timeline-service", "9090"},
 		"ReadUserTimeline":        {"user-timeline-service", "9090"},
 		"WriteUserTimeline":       {"user-timeline-service", "9090"},
+		"/user-timeline":          {"user-timeline-service", "9090"},
 		// Media frontend
 		"/wrk2-api/media-frontend": {"media-frontend", "8081"},
 		// Frontend
