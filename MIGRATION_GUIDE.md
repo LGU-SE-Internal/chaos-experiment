@@ -7,6 +7,7 @@ The new architecture provides complete decoupling between:
 2. **Handler Endpoints** (`internal/endpoint`) - Unified conversion layer
 3. **System Data Model** (`internal/model`) - Container for all resources
 4. **Registry** (`internal/registry`) - Auto-registration pattern
+5. **Adapter** (`internal/adapter`) - Compatibility layer for existing generated files
 
 ## Current Status
 
@@ -16,20 +17,73 @@ The new architecture provides complete decoupling between:
 - `internal/endpoint/converter.go` - Conversion functions from internal data to endpoints
 - `internal/model/systemdata.go` - Unified SystemData container
 - `internal/registry/registry.go` - Registry pattern implementation
+- `internal/adapter/adapter.go` - **NEW**: Bridges old generated code with new registry
 - `tools/clickhouseanalyzer` - NO LONGER imports internal packages (fully decoupled)
+- **`cmd/faultpoints/main.go`** - **MIGRATED**: Now uses registry pattern!
+
+### ✅ FULLY FUNCTIONAL
+The new architecture is **actively in use**:
+- cmd/faultpoints eliminates 18+ system imports, uses registry pattern
+- Tested and working with all 6 systems (ts, otel-demo, media, hs, sn, ob)
+- Adapter layer provides backward compatibility with existing generated files
 
 ### 🔄 In Progress
-- Generated code still uses OLD 3-file structure
-- resourcelookup still uses OLD switch-case pattern
-- cmd/faultpoints still imports ALL system packages
+- resourcelookup still uses OLD switch-case pattern (next to migrate)
+- Handlers still use old endpoint types
 
 ### ❌ Not Started
 - Generate single `data.go` per system with auto-registration
-- Update resourcelookup to use registry pattern
-- Update cmd/faultpoints to use registry pattern
 - Update handlers to use new endpoint types
 
 ## How to Use the New Architecture
+
+### Real Example: cmd/faultpoints (MIGRATED)
+
+The cmd/faultpoints has been fully migrated and demonstrates the new pattern:
+
+```go
+package main
+
+import (
+	_ "github.com/LGU-SE-Internal/chaos-experiment/internal/adapter" // Auto-registers all systems
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/endpoint"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/registry"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
+)
+
+func main() {
+	// Set system (done once at startup)
+	systemconfig.SetCurrentSystem(systemconfig.SystemTrainTicket)
+	
+	// Verify registration
+	if !registry.IsRegistered(systemconfig.GetCurrentSystem()) {
+		panic("System not registered")
+	}
+	
+	// Use the system data
+	listHTTPEndpoints()
+}
+
+func listHTTPEndpoints() {
+	sysData := registry.MustGetCurrent()  // No switch-case needed!
+	
+	var endpoints []endpoint.HTTPEndpointInfo
+	for _, service := range sysData.GetAllServices() {
+		for _, ep := range sysData.GetHTTPEndpointsByService(service) {
+			if ep.Route != "" {
+				endpoints = append(endpoints, endpoint.ToHTTPEndpointInfo(ep))
+			}
+		}
+	}
+	// Use endpoints...
+}
+```
+
+**What this eliminates:**
+- ❌ No more 18+ system-specific imports
+- ❌ No more switch-case on system type
+- ❌ No more manual system initialization
+- ✅ Just import adapter and use registry!
 
 ### For New Code (Recommended Pattern)
 
