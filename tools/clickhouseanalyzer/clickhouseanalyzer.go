@@ -22,6 +22,7 @@ type ClickHouseConfig struct {
 }
 
 // ServiceEndpoint represents a service endpoint with its details
+// This is used internally by the analyzer tool
 type ServiceEndpoint struct {
 	ServiceName    string
 	RequestMethod  string
@@ -29,8 +30,35 @@ type ServiceEndpoint struct {
 	Route          string
 	ServerAddress  string
 	ServerPort     string
-	SpanKind       string // Add SpanKind to track if it's Server or Client
-	SpanName       string // Span name for groundtruth generation
+	SpanKind       string
+	SpanName       string
+}
+
+// DatabaseOperation represents a database operation with its details
+// This is used internally by the analyzer tool
+type DatabaseOperation struct {
+	ServiceName   string
+	DBName        string
+	DBTable       string
+	Operation     string
+	DBSystem      string
+	ServerAddress string
+	ServerPort    string
+	SpanName      string
+}
+
+// GRPCOperation represents a gRPC operation with its details
+// This is used internally by the analyzer tool
+type GRPCOperation struct {
+	ServiceName    string
+	RPCSystem      string
+	RPCService     string
+	RPCMethod      string
+	StatusCode     string
+	ServerAddress  string
+	ServerPort     string
+	SpanKind       string
+	SpanName       string
 }
 
 // TrainTicket span name pattern replacements for ts-ui-dashboard and loadgenerator services
@@ -95,29 +123,6 @@ func NormalizeTrainTicketSpanName(spanName string, serviceName string) string {
 		}
 	}
 	return spanName
-}
-
-// DatabaseOperation represents a database operation with its details
-type DatabaseOperation struct {
-	ServiceName   string
-	DBName        string
-	DBTable       string
-	Operation     string
-	DBSystem      string
-	ServerAddress string
-	ServerPort    string
-}
-
-// GRPCOperation represents a gRPC operation with its details
-type GRPCOperation struct {
-	ServiceName    string
-	RPCSystem      string
-	RPCService     string
-	RPCMethod      string
-	GRPCStatusCode string
-	ServerAddress  string
-	ServerPort     string
-	SpanKind       string
 }
 
 // Create materialized view SQL statement
@@ -662,7 +667,8 @@ SELECT DISTINCT
     ServiceName,
     db_name,
     db_sql_table,
-    db_operation
+    db_operation,
+    span_name
 FROM otel_traces_mv
 FINAL
 WHERE db_system = 'mysql'
@@ -716,7 +722,8 @@ SELECT DISTINCT
     grpc_status_code,
     server_address,
     server_port,
-    SpanKind
+    SpanKind,
+    span_name
 FROM otel_demo_traces_mv
 FINAL
 WHERE rpc_system != ''
@@ -731,7 +738,8 @@ SELECT DISTINCT
     db_name,
     db_sql_table,
     db_operation,
-    db_system
+    db_system,
+    span_name
 FROM otel_demo_traces_mv
 FINAL
 WHERE db_system != ''
@@ -790,7 +798,8 @@ SELECT DISTINCT
     grpc_status_code,
     server_address,
     server_port,
-    SpanKind
+    SpanKind,
+    span_name
 FROM %s
 FINAL
 WHERE rpc_system != ''
@@ -807,7 +816,8 @@ SELECT DISTINCT
     db_name,
     db_sql_table,
     db_operation,
-    db_system
+    db_system,
+    span_name
 FROM %s
 FINAL
 WHERE db_system != ''
@@ -1006,13 +1016,14 @@ func QueryMySQLOperations(db *sql.DB) ([]DatabaseOperation, error) {
 	var results []DatabaseOperation
 	for rows.Next() {
 		var operation DatabaseOperation
-		var dbName, dbTable, dbOperation sql.NullString
+		var dbName, dbTable, dbOperation, spanName sql.NullString
 
 		if err := rows.Scan(
 			&operation.ServiceName,
 			&dbName,
 			&dbTable,
 			&dbOperation,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -1026,6 +1037,9 @@ func QueryMySQLOperations(db *sql.DB) ([]DatabaseOperation, error) {
 		}
 		if dbOperation.Valid {
 			operation.Operation = dbOperation.String
+		}
+		if spanName.Valid {
+			operation.SpanName = spanName.String
 		}
 
 		// Set fixed MySQL connection info for TrainTicket
@@ -1171,7 +1185,7 @@ func QueryOtelDemoGRPCOperations(db *sql.DB) ([]GRPCOperation, error) {
 	var results []GRPCOperation
 	for rows.Next() {
 		var operation GRPCOperation
-		var serverAddr, serverPort, grpcStatus sql.NullString
+		var serverAddr, serverPort, grpcStatus, spanName sql.NullString
 
 		if err := rows.Scan(
 			&operation.ServiceName,
@@ -1182,6 +1196,7 @@ func QueryOtelDemoGRPCOperations(db *sql.DB) ([]GRPCOperation, error) {
 			&serverAddr,
 			&serverPort,
 			&operation.SpanKind,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -1193,7 +1208,10 @@ func QueryOtelDemoGRPCOperations(db *sql.DB) ([]GRPCOperation, error) {
 			operation.ServerPort = serverPort.String
 		}
 		if grpcStatus.Valid {
-			operation.GRPCStatusCode = grpcStatus.String
+			operation.StatusCode = grpcStatus.String
+		}
+		if spanName.Valid {
+			operation.SpanName = spanName.String
 		}
 
 		// Map empty server address or IP to service based on RPC service
@@ -1225,7 +1243,7 @@ func QueryOtelDemoDatabaseOperations(db *sql.DB) ([]DatabaseOperation, error) {
 	var results []DatabaseOperation
 	for rows.Next() {
 		var operation DatabaseOperation
-		var dbName, dbTable, dbOperation, dbSystem sql.NullString
+		var dbName, dbTable, dbOperation, dbSystem, spanName sql.NullString
 
 		if err := rows.Scan(
 			&operation.ServiceName,
@@ -1233,6 +1251,7 @@ func QueryOtelDemoDatabaseOperations(db *sql.DB) ([]DatabaseOperation, error) {
 			&dbTable,
 			&dbOperation,
 			&dbSystem,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -1248,6 +1267,9 @@ func QueryOtelDemoDatabaseOperations(db *sql.DB) ([]DatabaseOperation, error) {
 		}
 		if dbSystem.Valid {
 			operation.DBSystem = dbSystem.String
+		}
+		if spanName.Valid {
+			operation.SpanName = spanName.String
 		}
 
 		// Map database system to server address and port
@@ -1396,7 +1418,7 @@ func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string, namespace st
 	var results []GRPCOperation
 	for rows.Next() {
 		var operation GRPCOperation
-		var serverAddr, serverPort, grpcStatus sql.NullString
+		var serverAddr, serverPort, grpcStatus, spanName sql.NullString
 
 		if err := rows.Scan(
 			&operation.ServiceName,
@@ -1407,6 +1429,7 @@ func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string, namespace st
 			&serverAddr,
 			&serverPort,
 			&operation.SpanKind,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -1418,7 +1441,10 @@ func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string, namespace st
 			operation.ServerPort = serverPort.String
 		}
 		if grpcStatus.Valid {
-			operation.GRPCStatusCode = grpcStatus.String
+			operation.StatusCode = grpcStatus.String
+		}
+		if spanName.Valid {
+			operation.SpanName = spanName.String
 		}
 
 		// Map empty server address or IP to service based on RPC service/method
@@ -1452,7 +1478,7 @@ func QueryDeathStarBenchDatabaseOperations(db *sql.DB, viewName string) ([]Datab
 	var results []DatabaseOperation
 	for rows.Next() {
 		var operation DatabaseOperation
-		var dbName, dbTable, dbOperation, dbSystem sql.NullString
+		var dbName, dbTable, dbOperation, dbSystem, spanName sql.NullString
 
 		if err := rows.Scan(
 			&operation.ServiceName,
@@ -1460,6 +1486,7 @@ func QueryDeathStarBenchDatabaseOperations(db *sql.DB, viewName string) ([]Datab
 			&dbTable,
 			&dbOperation,
 			&dbSystem,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -1475,6 +1502,9 @@ func QueryDeathStarBenchDatabaseOperations(db *sql.DB, viewName string) ([]Datab
 		}
 		if dbSystem.Valid {
 			operation.DBSystem = dbSystem.String
+		}
+		if spanName.Valid {
+			operation.SpanName = spanName.String
 		}
 
 		// Map database system to server address and port
