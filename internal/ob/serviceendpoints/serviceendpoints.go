@@ -70,15 +70,6 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			ServerPort:     "50051",
 			SpanName:       "hipstershop.ShippingService/GetQuote",
 		},
-		{
-			ServiceName:    "checkoutservice",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/opentelemetry.proto.collector.trace.v1.TraceService/Export",
-			ServerAddress:  "10.10.10.223",
-			ServerPort:     "4317",
-			SpanName:       "opentelemetry.proto.collector.trace.v1.TraceService/Export",
-		},
 	},
 	"frontend": {
 		{
@@ -144,35 +135,6 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			ServerPort:     "50051",
 			SpanName:       "hipstershop.ShippingService/GetQuote",
 		},
-		{
-			ServiceName:    "frontend",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/opentelemetry.proto.collector.trace.v1.TraceService/Export",
-			ServerAddress:  "10.10.10.222",
-			ServerPort:     "4317",
-			SpanName:       "opentelemetry.proto.collector.trace.v1.TraceService/Export",
-		},
-		{
-			ServiceName:    "frontend",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/opentelemetry.proto.collector.trace.v1.TraceService/Export",
-			ServerAddress:  "10.10.10.224",
-			ServerPort:     "4317",
-			SpanName:       "opentelemetry.proto.collector.trace.v1.TraceService/Export",
-		},
-	},
-	"productcatalogservice": {
-		{
-			ServiceName:    "productcatalogservice",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/opentelemetry.proto.collector.trace.v1.TraceService/Export",
-			ServerAddress:  "10.10.10.225",
-			ServerPort:     "4317",
-			SpanName:       "opentelemetry.proto.collector.trace.v1.TraceService/Export",
-		},
 	},
 	"recommendationservice": {
 		{
@@ -189,10 +151,6 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 
 // AllServices contains all unique service names (callers and callees)
 var AllServices = []string{
-	"10.10.10.222",
-	"10.10.10.223",
-	"10.10.10.224",
-	"10.10.10.225",
 	"adservice",
 	"cartservice",
 	"checkoutservice",
