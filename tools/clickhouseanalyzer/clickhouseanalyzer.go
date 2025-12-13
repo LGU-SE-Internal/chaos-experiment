@@ -531,6 +531,101 @@ WHERE
 `, viewName, namespace)
 }
 
+// createOnlineBoutiqueMaterializedViewSQL creates SQL for OnlineBoutique materialized view
+// Filters out OpenTelemetry collector internal spans
+func createOnlineBoutiqueMaterializedViewSQL(namespace string, viewName string) string {
+	return fmt.Sprintf(`
+CREATE MATERIALIZED VIEW IF NOT EXISTS %s 
+ENGINE = ReplacingMergeTree(version)
+PARTITION BY toYYYYMM(Timestamp)
+PRIMARY KEY (masked_route, ServiceName, db_name)
+ORDER BY (
+    masked_route,
+    ServiceName,
+    db_name,
+    SpanKind,
+    request_method,
+    response_status_code,
+    server_address,
+    server_port,
+    db_operation,
+    db_sql_table,
+    rpc_system,
+    rpc_service,
+    rpc_method,
+    grpc_status_code
+)
+SETTINGS allow_nullable_key = 1
+POPULATE
+AS 
+SELECT 
+    ResourceAttributes['service.name'] AS ServiceName,
+    4294967295 - toUnixTimestamp(Timestamp) AS version,
+    Timestamp,
+    SpanKind,
+    SpanAttributes['client.address'] AS client_address,
+    SpanAttributes['http.request.method'] AS http_request_method,
+    SpanAttributes['http.response.status_code'] AS http_response_status_code,
+    SpanAttributes['http.route'] AS http_route,
+    SpanAttributes['http.method'] AS http_method,
+    SpanAttributes['url.full'] AS url_full,
+    SpanAttributes['http.status_code'] AS http_status_code,
+    SpanAttributes['http.target'] AS http_target,
+    
+    CASE 
+        WHEN SpanAttributes['http.request.method'] IS NOT NULL AND SpanAttributes['http.request.method'] != '' 
+            THEN SpanAttributes['http.request.method']
+        WHEN SpanAttributes['http.method'] IS NOT NULL AND SpanAttributes['http.method'] != '' 
+            THEN SpanAttributes['http.method']
+        ELSE ''
+    END AS request_method,
+    
+    CASE 
+        WHEN SpanAttributes['http.response.status_code'] IS NOT NULL AND SpanAttributes['http.response.status_code'] != '' 
+            THEN SpanAttributes['http.response.status_code']
+        WHEN SpanAttributes['http.status_code'] IS NOT NULL AND SpanAttributes['http.status_code'] != '' 
+            THEN SpanAttributes['http.status_code']
+        ELSE ''
+    END AS response_status_code,
+    
+    -- Path normalization for DeathStarBench systems - replace IDs with wildcards
+    -- Matches: UUIDs (8-4-4-4-12 hex format) and numeric IDs (sequences of digits)
+    CASE
+        WHEN SpanAttributes['http.route'] IS NOT NULL AND SpanAttributes['http.route'] != ''
+            THEN replaceRegexpAll(SpanAttributes['http.route'], '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/\\d+', '/*')
+        WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
+            THEN replaceRegexpAll(SpanAttributes['http.target'], '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/\\d+', '/*')
+        WHEN SpanAttributes['url.full'] IS NOT NULL AND SpanAttributes['url.full'] != ''
+            THEN replaceRegexpAll(replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1'), '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/\\d+', '/*')
+        ELSE ''
+    END AS masked_route,
+    
+    SpanAttributes['server.address'] AS server_address,
+    SpanAttributes['server.port'] AS server_port,
+    SpanAttributes['db.connection_string'] AS db_connection_string,
+    SpanAttributes['db.name'] AS db_name,
+    SpanAttributes['db.operation'] AS db_operation,
+    SpanAttributes['db.sql.table'] AS db_sql_table, 
+    SpanAttributes['db.statement'] AS db_statement,
+    SpanAttributes['db.system'] AS db_system,
+    SpanAttributes['db.user'] AS db_user,
+    SpanAttributes['rpc.system'] AS rpc_system,
+    SpanAttributes['rpc.service'] AS rpc_service,
+    SpanAttributes['rpc.method'] AS rpc_method,
+    SpanAttributes['rpc.grpc.status_code'] AS grpc_status_code,
+    SpanName AS span_name
+FROM otel_traces
+WHERE 
+    ResourceAttributes['k8s.namespace.name'] = '%s'
+    AND SpanKind IN ('Server', 'Client')
+    AND SpanName != 'opentelemetry.proto.collector.trace.v1.TraceService/Export'
+    AND mapExists(
+        (k, v) -> (k IS NOT NULL AND k != '') AND (v IS NOT NULL AND v != ''),
+        SpanAttributes
+    );
+`, viewName, namespace)
+}
+
 // Client query
 const clientTracesQuery = `
 SELECT DISTINCT
@@ -766,13 +861,20 @@ func CreateOtelDemoMaterializedView(db *sql.DB) error {
 }
 
 // CreateDeathStarBenchMaterializedView creates the materialized view for DeathStarBench systems
-// namespace: the k8s namespace (media, hs, sn)
+// namespace: the k8s namespace (media, hs, sn, ob)
 // viewName: the name of the materialized view to create
 func CreateDeathStarBenchMaterializedView(db *sql.DB, namespace string, viewName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	sql := createDeathStarBenchMaterializedViewSQL(namespace, viewName)
+	var sql string
+	// Use custom SQL for OnlineBoutique to filter out OpenTelemetry collector spans
+	if namespace == "ob" {
+		sql = createOnlineBoutiqueMaterializedViewSQL(namespace, viewName)
+	} else {
+		sql = createDeathStarBenchMaterializedViewSQL(namespace, viewName)
+	}
+	
 	if _, err := db.ExecContext(ctx, sql); err != nil {
 		return fmt.Errorf("error creating DeathStarBench materialized view for namespace %s: %w", namespace, err)
 	}
