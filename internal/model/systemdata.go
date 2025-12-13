@@ -1,7 +1,6 @@
 // Package model defines the unified data model for all system metadata.
 // This package provides a single structure that contains all endpoint types
-// (HTTP, gRPC, Database) for a given system, eliminating the need for
-// separate packages per endpoint type.
+// (HTTP, RPC, Database) for a given system.
 package model
 
 import (
@@ -9,32 +8,31 @@ import (
 )
 
 // SystemData represents all metadata for a single system.
-// This unified structure contains all endpoint types and eliminates
-// the need for separate serviceendpoints, databaseoperations, and
-// grpcoperations packages per system.
+// This unified structure contains all endpoint types, stored separately
+// by their type (HTTP, RPC, Database).
 type SystemData struct {
 	// SystemName identifies the system (e.g., "ts", "otel-demo", "hs")
 	SystemName string
 
-	// ServiceEndpoints maps service names to their HTTP/REST endpoints
-	ServiceEndpoints map[string][]resourcetypes.ServiceEndpoint
+	// HTTPEndpoints maps service names to their HTTP/REST endpoints
+	HTTPEndpoints map[string][]resourcetypes.HTTPEndpoint
 
 	// DatabaseOperations maps service names to their database operations
 	DatabaseOperations map[string][]resourcetypes.DatabaseOperation
 
-	// GRPCOperations maps service names to their gRPC operations
-	GRPCOperations map[string][]resourcetypes.GRPCOperation
+	// RPCOperations maps service names to their RPC/gRPC operations
+	RPCOperations map[string][]resourcetypes.RPCOperation
 
 	// AllServices contains all unique service names (both callers and callees)
 	AllServices []string
 }
 
-// GetEndpointsByService returns all HTTP endpoints for a service
-func (sd *SystemData) GetEndpointsByService(serviceName string) []resourcetypes.ServiceEndpoint {
-	if endpoints, exists := sd.ServiceEndpoints[serviceName]; exists {
+// GetHTTPEndpointsByService returns all HTTP endpoints for a service
+func (sd *SystemData) GetHTTPEndpointsByService(serviceName string) []resourcetypes.HTTPEndpoint {
+	if endpoints, exists := sd.HTTPEndpoints[serviceName]; exists {
 		return endpoints
 	}
-	return []resourcetypes.ServiceEndpoint{}
+	return []resourcetypes.HTTPEndpoint{}
 }
 
 // GetAllServices returns a list of all available service names
@@ -59,27 +57,27 @@ func (sd *SystemData) GetAllDatabaseServices() []string {
 	return services
 }
 
-// GetGRPCOperationsByService returns all gRPC operations for a service
-func (sd *SystemData) GetGRPCOperationsByService(serviceName string) []resourcetypes.GRPCOperation {
-	if operations, exists := sd.GRPCOperations[serviceName]; exists {
+// GetRPCOperationsByService returns all RPC operations for a service
+func (sd *SystemData) GetRPCOperationsByService(serviceName string) []resourcetypes.RPCOperation {
+	if operations, exists := sd.RPCOperations[serviceName]; exists {
 		return operations
 	}
-	return []resourcetypes.GRPCOperation{}
+	return []resourcetypes.RPCOperation{}
 }
 
-// GetAllGRPCServices returns a list of all services that perform gRPC operations
-func (sd *SystemData) GetAllGRPCServices() []string {
-	services := make([]string, 0, len(sd.GRPCOperations))
-	for service := range sd.GRPCOperations {
+// GetAllRPCServices returns a list of all services that perform RPC operations
+func (sd *SystemData) GetAllRPCServices() []string {
+	services := make([]string, 0, len(sd.RPCOperations))
+	for service := range sd.RPCOperations {
 		services = append(services, service)
 	}
 	return services
 }
 
-// GetClientGRPCOperations returns all client-side gRPC operations
-func (sd *SystemData) GetClientGRPCOperations() []resourcetypes.GRPCOperation {
-	var results []resourcetypes.GRPCOperation
-	for _, operations := range sd.GRPCOperations {
+// GetClientRPCOperations returns all client-side RPC operations
+func (sd *SystemData) GetClientRPCOperations() []resourcetypes.RPCOperation {
+	var results []resourcetypes.RPCOperation
+	for _, operations := range sd.RPCOperations {
 		for _, op := range operations {
 			if op.SpanKind == "Client" {
 				results = append(results, op)

@@ -1174,7 +1174,7 @@ func QueryOtelDemoGRPCOperations(db *sql.DB) ([]GRPCOperation, error) {
 			operation.ServerPort = serverPort.String
 		}
 		if grpcStatus.Valid {
-			operation.GRPCStatusCode = grpcStatus.String
+			operation.StatusCode = grpcStatus.String
 		}
 		if spanName.Valid {
 			operation.SpanName = spanName.String
@@ -1407,7 +1407,7 @@ func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string, namespace st
 			operation.ServerPort = serverPort.String
 		}
 		if grpcStatus.Valid {
-			operation.GRPCStatusCode = grpcStatus.String
+			operation.StatusCode = grpcStatus.String
 		}
 		if spanName.Valid {
 			operation.SpanName = spanName.String

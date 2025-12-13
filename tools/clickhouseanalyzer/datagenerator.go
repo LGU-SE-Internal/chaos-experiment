@@ -194,7 +194,7 @@ var GRPCOperations = map[string][]GRPCOperation{
 			RPCSystem:      "{{ .RPCSystem }}",
 			RPCService:     "{{ .RPCService }}",
 			RPCMethod:      "{{ .RPCMethod }}",
-			GRPCStatusCode: "{{ .GRPCStatusCode }}",
+			StatusCode:     "{{ .StatusCode }}",
 			ServerAddress:  "{{ .ServerAddress }}",
 			ServerPort:     "{{ .ServerPort }}",
 			SpanKind:       "{{ .SpanKind }}",
