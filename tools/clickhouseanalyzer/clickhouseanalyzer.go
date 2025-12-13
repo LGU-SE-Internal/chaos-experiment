@@ -861,22 +861,32 @@ func CreateOtelDemoMaterializedView(db *sql.DB) error {
 }
 
 // CreateDeathStarBenchMaterializedView creates the materialized view for DeathStarBench systems
-// namespace: the k8s namespace (media, hs, sn, ob)
+// namespace: the k8s namespace (media, hs, sn)
 // viewName: the name of the materialized view to create
 func CreateDeathStarBenchMaterializedView(db *sql.DB, namespace string, viewName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var sql string
-	// Use custom SQL for OnlineBoutique to filter out OpenTelemetry collector spans
-	if namespace == "ob" {
-		sql = createOnlineBoutiqueMaterializedViewSQL(namespace, viewName)
-	} else {
-		sql = createDeathStarBenchMaterializedViewSQL(namespace, viewName)
-	}
+	sql := createDeathStarBenchMaterializedViewSQL(namespace, viewName)
 	
 	if _, err := db.ExecContext(ctx, sql); err != nil {
 		return fmt.Errorf("error creating DeathStarBench materialized view for namespace %s: %w", namespace, err)
+	}
+
+	return nil
+}
+
+// CreateOnlineBoutiqueMaterializedView creates the materialized view for OnlineBoutique system
+// namespace: the k8s namespace (ob)
+// viewName: the name of the materialized view to create
+func CreateOnlineBoutiqueMaterializedView(db *sql.DB, namespace string, viewName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	sql := createOnlineBoutiqueMaterializedViewSQL(namespace, viewName)
+	
+	if _, err := db.ExecContext(ctx, sql); err != nil {
+		return fmt.Errorf("error creating OnlineBoutique materialized view for namespace %s: %w", namespace, err)
 	}
 
 	return nil
