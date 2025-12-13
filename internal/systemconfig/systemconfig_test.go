@@ -45,10 +45,16 @@ func TestSetCurrentSystem(t *testing.T) {
 			expectedSys: SystemSocialNetwork,
 		},
 		{
+			name:        "set OnlineBoutique system",
+			system:      SystemOnlineBoutique,
+			wantErr:     false,
+			expectedSys: SystemOnlineBoutique,
+		},
+		{
 			name:        "set invalid system",
 			system:      "invalid-system",
 			wantErr:     true,
-			expectedSys: SystemSocialNetwork, // Should remain unchanged from previous test
+			expectedSys: SystemOnlineBoutique, // Should remain unchanged from previous test
 		},
 	}
 
@@ -146,6 +152,19 @@ func TestIsSocialNetwork(t *testing.T) {
 	}
 }
 
+func TestIsOnlineBoutique(t *testing.T) {
+	_ = SetCurrentSystem(SystemTrainTicket)
+
+	if IsOnlineBoutique() {
+		t.Error("IsOnlineBoutique() should return false when system is TrainTicket")
+	}
+
+	_ = SetCurrentSystem(SystemOnlineBoutique)
+	if !IsOnlineBoutique() {
+		t.Error("IsOnlineBoutique() should return true when system is OnlineBoutique")
+	}
+}
+
 func TestSystemTypeString(t *testing.T) {
 	if SystemTrainTicket.String() != "ts" {
 		t.Errorf("SystemTrainTicket.String() = %v, want %v", SystemTrainTicket.String(), "ts")
@@ -166,12 +185,16 @@ func TestSystemTypeString(t *testing.T) {
 	if SystemSocialNetwork.String() != "sn" {
 		t.Errorf("SystemSocialNetwork.String() = %v, want %v", SystemSocialNetwork.String(), "sn")
 	}
+
+	if SystemOnlineBoutique.String() != "ob" {
+		t.Errorf("SystemOnlineBoutique.String() = %v, want %v", SystemOnlineBoutique.String(), "ob")
+	}
 }
 
 func TestGetAllSystemTypes(t *testing.T) {
 	types := GetAllSystemTypes()
-	if len(types) != 5 {
-		t.Errorf("GetAllSystemTypes() returned %d types, want 5", len(types))
+	if len(types) != 6 {
+		t.Errorf("GetAllSystemTypes() returned %d types, want 6", len(types))
 	}
 
 	found := make(map[SystemType]bool)
@@ -193,6 +216,9 @@ func TestGetAllSystemTypes(t *testing.T) {
 	}
 	if !found[SystemSocialNetwork] {
 		t.Error("GetAllSystemTypes() should include SystemSocialNetwork")
+	}
+	if !found[SystemOnlineBoutique] {
+		t.Error("GetAllSystemTypes() should include SystemOnlineBoutique")
 	}
 }
 
@@ -231,6 +257,12 @@ func TestParseSystemType(t *testing.T) {
 			name:    "parse sn",
 			input:   "sn",
 			want:    SystemSocialNetwork,
+			wantErr: false,
+		},
+		{
+			name:    "parse ob",
+			input:   "ob",
+			want:    SystemOnlineBoutique,
 			wantErr: false,
 		},
 		{

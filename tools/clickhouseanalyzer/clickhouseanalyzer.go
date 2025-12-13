@@ -531,6 +531,101 @@ WHERE
 `, viewName, namespace)
 }
 
+// createOnlineBoutiqueMaterializedViewSQL creates SQL for OnlineBoutique materialized view
+// Filters out OpenTelemetry collector internal spans
+func createOnlineBoutiqueMaterializedViewSQL(namespace string, viewName string) string {
+	return fmt.Sprintf(`
+CREATE MATERIALIZED VIEW IF NOT EXISTS %s 
+ENGINE = ReplacingMergeTree(version)
+PARTITION BY toYYYYMM(Timestamp)
+PRIMARY KEY (masked_route, ServiceName, db_name)
+ORDER BY (
+    masked_route,
+    ServiceName,
+    db_name,
+    SpanKind,
+    request_method,
+    response_status_code,
+    server_address,
+    server_port,
+    db_operation,
+    db_sql_table,
+    rpc_system,
+    rpc_service,
+    rpc_method,
+    grpc_status_code
+)
+SETTINGS allow_nullable_key = 1
+POPULATE
+AS 
+SELECT 
+    ResourceAttributes['service.name'] AS ServiceName,
+    4294967295 - toUnixTimestamp(Timestamp) AS version,
+    Timestamp,
+    SpanKind,
+    SpanAttributes['client.address'] AS client_address,
+    SpanAttributes['http.request.method'] AS http_request_method,
+    SpanAttributes['http.response.status_code'] AS http_response_status_code,
+    SpanAttributes['http.route'] AS http_route,
+    SpanAttributes['http.method'] AS http_method,
+    SpanAttributes['url.full'] AS url_full,
+    SpanAttributes['http.status_code'] AS http_status_code,
+    SpanAttributes['http.target'] AS http_target,
+    
+    CASE 
+        WHEN SpanAttributes['http.request.method'] IS NOT NULL AND SpanAttributes['http.request.method'] != '' 
+            THEN SpanAttributes['http.request.method']
+        WHEN SpanAttributes['http.method'] IS NOT NULL AND SpanAttributes['http.method'] != '' 
+            THEN SpanAttributes['http.method']
+        ELSE ''
+    END AS request_method,
+    
+    CASE 
+        WHEN SpanAttributes['http.response.status_code'] IS NOT NULL AND SpanAttributes['http.response.status_code'] != '' 
+            THEN SpanAttributes['http.response.status_code']
+        WHEN SpanAttributes['http.status_code'] IS NOT NULL AND SpanAttributes['http.status_code'] != '' 
+            THEN SpanAttributes['http.status_code']
+        ELSE ''
+    END AS response_status_code,
+    
+    -- Path normalization for DeathStarBench systems - replace IDs with wildcards
+    -- Matches: UUIDs (8-4-4-4-12 hex format) and numeric IDs (sequences of digits)
+    CASE
+        WHEN SpanAttributes['http.route'] IS NOT NULL AND SpanAttributes['http.route'] != ''
+            THEN replaceRegexpAll(SpanAttributes['http.route'], '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/\\d+', '/*')
+        WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
+            THEN replaceRegexpAll(SpanAttributes['http.target'], '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/\\d+', '/*')
+        WHEN SpanAttributes['url.full'] IS NOT NULL AND SpanAttributes['url.full'] != ''
+            THEN replaceRegexpAll(replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1'), '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/\\d+', '/*')
+        ELSE ''
+    END AS masked_route,
+    
+    SpanAttributes['server.address'] AS server_address,
+    SpanAttributes['server.port'] AS server_port,
+    SpanAttributes['db.connection_string'] AS db_connection_string,
+    SpanAttributes['db.name'] AS db_name,
+    SpanAttributes['db.operation'] AS db_operation,
+    SpanAttributes['db.sql.table'] AS db_sql_table, 
+    SpanAttributes['db.statement'] AS db_statement,
+    SpanAttributes['db.system'] AS db_system,
+    SpanAttributes['db.user'] AS db_user,
+    SpanAttributes['rpc.system'] AS rpc_system,
+    SpanAttributes['rpc.service'] AS rpc_service,
+    SpanAttributes['rpc.method'] AS rpc_method,
+    SpanAttributes['rpc.grpc.status_code'] AS grpc_status_code,
+    SpanName AS span_name
+FROM otel_traces
+WHERE 
+    ResourceAttributes['k8s.namespace.name'] = '%s'
+    AND SpanKind IN ('Server', 'Client')
+    AND SpanName != 'opentelemetry.proto.collector.trace.v1.TraceService/Export'
+    AND mapExists(
+        (k, v) -> (k IS NOT NULL AND k != '') AND (v IS NOT NULL AND v != ''),
+        SpanAttributes
+    );
+`, viewName, namespace)
+}
+
 // Client query
 const clientTracesQuery = `
 SELECT DISTINCT
@@ -773,8 +868,25 @@ func CreateDeathStarBenchMaterializedView(db *sql.DB, namespace string, viewName
 	defer cancel()
 
 	sql := createDeathStarBenchMaterializedViewSQL(namespace, viewName)
+	
 	if _, err := db.ExecContext(ctx, sql); err != nil {
 		return fmt.Errorf("error creating DeathStarBench materialized view for namespace %s: %w", namespace, err)
+	}
+
+	return nil
+}
+
+// CreateOnlineBoutiqueMaterializedView creates the materialized view for OnlineBoutique system
+// namespace: the k8s namespace (ob)
+// viewName: the name of the materialized view to create
+func CreateOnlineBoutiqueMaterializedView(db *sql.DB, namespace string, viewName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	sql := createOnlineBoutiqueMaterializedViewSQL(namespace, viewName)
+	
+	if _, err := db.ExecContext(ctx, sql); err != nil {
+		return fmt.Errorf("error creating OnlineBoutique materialized view for namespace %s: %w", namespace, err)
 	}
 
 	return nil
@@ -1715,6 +1827,8 @@ func mapDeathStarBenchRouteToService(endpoint *ServiceEndpoint, namespace string
 		mapSocialNetworkRouteToService(endpoint)
 	case "hs":
 		mapHotelReservationRouteToService(endpoint)
+	case "ob":
+		mapOnlineBoutiqueRouteToService(endpoint)
 	}
 }
 
@@ -2029,6 +2143,92 @@ func mapHotelReservationRouteToService(endpoint *ServiceEndpoint) {
 	}
 }
 
+// mapOnlineBoutiqueRouteToService maps routes to services for OnlineBoutique
+func mapOnlineBoutiqueRouteToService(endpoint *ServiceEndpoint) {
+	route := endpoint.Route
+	spanName := endpoint.SpanName
+
+	// Service mapping based on route patterns and span names
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		// Frontend service
+		"/":                   {"frontend", "80"},
+		"/product":            {"frontend", "80"},
+		"/cart":               {"frontend", "80"},
+		"/checkout":           {"frontend", "80"},
+		"frontend":            {"frontend", "80"},
+		// Ad service
+		"/hipstershop.AdService":        {"adservice", "9555"},
+		"AdService":                     {"adservice", "9555"},
+		"GetAds":                        {"adservice", "9555"},
+		// Cart service
+		"/hipstershop.CartService":      {"cartservice", "7070"},
+		"CartService":                   {"cartservice", "7070"},
+		"AddItem":                       {"cartservice", "7070"},
+		"GetCart":                       {"cartservice", "7070"},
+		"EmptyCart":                     {"cartservice", "7070"},
+		// Checkout service
+		"/hipstershop.CheckoutService":  {"checkoutservice", "5050"},
+		"CheckoutService":               {"checkoutservice", "5050"},
+		"PlaceOrder":                    {"checkoutservice", "5050"},
+		// Currency service
+		"/hipstershop.CurrencyService":  {"currencyservice", "7000"},
+		"CurrencyService":               {"currencyservice", "7000"},
+		"GetSupportedCurrencies":        {"currencyservice", "7000"},
+		"Convert":                       {"currencyservice", "7000"},
+		// Email service
+		"/hipstershop.EmailService":     {"emailservice", "5000"},
+		"EmailService":                  {"emailservice", "5000"},
+		"SendOrderConfirmation":         {"emailservice", "5000"},
+		// Payment service
+		"/hipstershop.PaymentService":   {"paymentservice", "50051"},
+		"PaymentService":                {"paymentservice", "50051"},
+		"Charge":                        {"paymentservice", "50051"},
+		// Product catalog service
+		"/hipstershop.ProductCatalogService": {"productcatalogservice", "3550"},
+		"ProductCatalogService":              {"productcatalogservice", "3550"},
+		"ListProducts":                       {"productcatalogservice", "3550"},
+		"GetProduct":                         {"productcatalogservice", "3550"},
+		"SearchProducts":                     {"productcatalogservice", "3550"},
+		// Recommendation service
+		"/hipstershop.RecommendationService": {"recommendationservice", "8080"},
+		"RecommendationService":              {"recommendationservice", "8080"},
+		"ListRecommendations":                {"recommendationservice", "8080"},
+		// Shipping service
+		"/hipstershop.ShippingService":  {"shippingservice", "50051"},
+		"ShippingService":               {"shippingservice", "50051"},
+		"GetQuote":                      {"shippingservice", "50051"},
+		"ShipOrder":                     {"shippingservice", "50051"},
+	}
+
+	// Sort patterns by length (longest first) to match more specific patterns first
+	patterns := make([]string, 0, len(serviceMap))
+	for pattern := range serviceMap {
+		patterns = append(patterns, pattern)
+	}
+	sort.Slice(patterns, func(i, j int) bool {
+		return len(patterns[i]) > len(patterns[j])
+	})
+
+	// Check route and span name with sorted patterns
+	for _, pattern := range patterns {
+		service := serviceMap[pattern]
+		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
+			endpoint.ServerAddress = service.service
+			endpoint.ServerPort = service.port
+			return
+		}
+	}
+
+	// Default to frontend if no match
+	if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+		endpoint.ServerAddress = "frontend"
+		endpoint.ServerPort = "80"
+	}
+}
+
 // mapDeathStarBenchGRPCToService maps gRPC services to server addresses for DeathStarBench systems
 func mapDeathStarBenchGRPCToService(operation *GRPCOperation, namespace string) {
 	rpcService := operation.RPCService
@@ -2040,6 +2240,8 @@ func mapDeathStarBenchGRPCToService(operation *GRPCOperation, namespace string) 
 		mapSocialNetworkGRPCToService(operation, rpcService)
 	case "hs":
 		mapHotelReservationGRPCToService(operation, rpcService)
+	case "ob":
+		mapOnlineBoutiqueGRPCToService(operation, rpcService)
 	}
 }
 
@@ -2130,6 +2332,42 @@ func mapHotelReservationGRPCToService(operation *GRPCOperation, rpcService strin
 		"reservation.Reservation": {"reservation", "8087"},
 		"search.Search":           {"search", "8082"},
 		"user.User":               {"user", "8086"},
+	}
+
+	for pattern, service := range serviceMap {
+		if strings.Contains(rpcService, pattern) {
+			operation.ServerAddress = service.service
+			operation.ServerPort = service.port
+			return
+		}
+	}
+}
+
+// mapOnlineBoutiqueGRPCToService maps gRPC services to server addresses for OnlineBoutique
+func mapOnlineBoutiqueGRPCToService(operation *GRPCOperation, rpcService string) {
+	// Map based on RPC service name patterns
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		"hipstershop.AdService":              {"adservice", "9555"},
+		"AdService":                          {"adservice", "9555"},
+		"hipstershop.CartService":            {"cartservice", "7070"},
+		"CartService":                        {"cartservice", "7070"},
+		"hipstershop.CheckoutService":        {"checkoutservice", "5050"},
+		"CheckoutService":                    {"checkoutservice", "5050"},
+		"hipstershop.CurrencyService":        {"currencyservice", "7000"},
+		"CurrencyService":                    {"currencyservice", "7000"},
+		"hipstershop.EmailService":           {"emailservice", "5000"},
+		"EmailService":                       {"emailservice", "5000"},
+		"hipstershop.PaymentService":         {"paymentservice", "50051"},
+		"PaymentService":                     {"paymentservice", "50051"},
+		"hipstershop.ProductCatalogService":  {"productcatalogservice", "3550"},
+		"ProductCatalogService":              {"productcatalogservice", "3550"},
+		"hipstershop.RecommendationService":  {"recommendationservice", "8080"},
+		"RecommendationService":              {"recommendationservice", "8080"},
+		"hipstershop.ShippingService":        {"shippingservice", "50051"},
+		"ShippingService":                    {"shippingservice", "50051"},
 	}
 
 	for pattern, service := range serviceMap {

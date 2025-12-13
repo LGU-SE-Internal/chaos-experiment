@@ -7,6 +7,7 @@ import (
 
 	hsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/serviceendpoints"
 	mediaendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/media/serviceendpoints"
+	obendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/serviceendpoints"
 	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
 	snendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/serviceendpoints"
 	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
@@ -42,6 +43,9 @@ func GetEndpointsByService(serviceName string) []ServiceEndpoint {
 	case systemconfig.SystemSocialNetwork:
 		snEps := snendpoints.GetEndpointsByService(serviceName)
 		return convertSNEndpoints(snEps)
+	case systemconfig.SystemOnlineBoutique:
+		obEps := obendpoints.GetEndpointsByService(serviceName)
+		return convertOBEndpoints(obEps)
 	default:
 		// Default to TrainTicket
 		tsEps := tsendpoints.GetEndpointsByService(serviceName)
@@ -63,6 +67,8 @@ func GetAllServices() []string {
 		return hsendpoints.GetAllServices()
 	case systemconfig.SystemSocialNetwork:
 		return snendpoints.GetAllServices()
+	case systemconfig.SystemOnlineBoutique:
+		return obendpoints.GetAllServices()
 	default:
 		// Default to TrainTicket
 		return tsendpoints.GetAllServices()
@@ -141,6 +147,23 @@ func convertHSEndpoints(hsEps []hsendpoints.ServiceEndpoint) []ServiceEndpoint {
 func convertSNEndpoints(snEps []snendpoints.ServiceEndpoint) []ServiceEndpoint {
 	result := make([]ServiceEndpoint, len(snEps))
 	for i, ep := range snEps {
+		result[i] = ServiceEndpoint{
+			ServiceName:    ep.ServiceName,
+			RequestMethod:  ep.RequestMethod,
+			ResponseStatus: ep.ResponseStatus,
+			Route:          ep.Route,
+			ServerAddress:  ep.ServerAddress,
+			ServerPort:     ep.ServerPort,
+			SpanName:       ep.SpanName,
+		}
+	}
+	return result
+}
+
+// convertOBEndpoints converts ob-specific endpoints to the common type
+func convertOBEndpoints(obEps []obendpoints.ServiceEndpoint) []ServiceEndpoint {
+	result := make([]ServiceEndpoint, len(obEps))
+	for i, ep := range obEps {
 		result[i] = ServiceEndpoint{
 			ServiceName:    ep.ServiceName,
 			RequestMethod:  ep.RequestMethod,

@@ -9,6 +9,7 @@ import (
 	hsgrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/grpcoperations"
 	mediagrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/media/grpcoperations"
 	oteldemogrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/grpcoperations"
+	obgrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/grpcoperations"
 	sngrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/grpcoperations"
 )
 
@@ -40,6 +41,9 @@ func GetOperationsByService(serviceName string) []GRPCOperation {
 	case systemconfig.SystemSocialNetwork:
 		snOps := sngrpc.GetOperationsByService(serviceName)
 		return convertSNOperations(snOps)
+	case systemconfig.SystemOnlineBoutique:
+		obOps := obgrpc.GetOperationsByService(serviceName)
+		return convertOBOperations(obOps)
 	default:
 		// TrainTicket doesn't have gRPC operations
 		return []GRPCOperation{}
@@ -201,6 +205,24 @@ func convertSNOperations(snOps []sngrpc.GRPCOperation) []GRPCOperation {
 	}
 	return result
 }
+// convertOBOperations converts ob-specific operations to the common type
+func convertOBOperations(obOps []obgrpc.GRPCOperation) []GRPCOperation {
+result := make([]GRPCOperation, len(obOps))
+for i, op := range obOps {
+result[i] = GRPCOperation{
+ServiceName:    op.ServiceName,
+RPCSystem:      op.RPCSystem,
+RPCService:     op.RPCService,
+RPCMethod:      op.RPCMethod,
+GRPCStatusCode: op.GRPCStatusCode,
+ServerAddress:  op.ServerAddress,
+ServerPort:     op.ServerPort,
+SpanKind:       op.SpanKind,
+}
+}
+return result
+}
+
 
 // IsGRPCRoutePattern checks if a route looks like a gRPC route pattern
 // gRPC routes typically follow the format: /package.Service/Method
