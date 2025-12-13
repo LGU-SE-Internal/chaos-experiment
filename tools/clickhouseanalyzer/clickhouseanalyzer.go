@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcetypes"
 	_ "github.com/ClickHouse/clickhouse-go/v2"
 )
 
@@ -22,10 +21,45 @@ type ClickHouseConfig struct {
 	Password string
 }
 
-// Type aliases for compatibility
-type ServiceEndpoint = resourcetypes.ServiceEndpoint
-type DatabaseOperation = resourcetypes.DatabaseOperation
-type GRPCOperation = resourcetypes.GRPCOperation
+// ServiceEndpoint represents a service endpoint with its details
+// This is used internally by the analyzer tool
+type ServiceEndpoint struct {
+	ServiceName    string
+	RequestMethod  string
+	ResponseStatus string
+	Route          string
+	ServerAddress  string
+	ServerPort     string
+	SpanKind       string
+	SpanName       string
+}
+
+// DatabaseOperation represents a database operation with its details
+// This is used internally by the analyzer tool
+type DatabaseOperation struct {
+	ServiceName   string
+	DBName        string
+	DBTable       string
+	Operation     string
+	DBSystem      string
+	ServerAddress string
+	ServerPort    string
+	SpanName      string
+}
+
+// GRPCOperation represents a gRPC operation with its details
+// This is used internally by the analyzer tool
+type GRPCOperation struct {
+	ServiceName    string
+	RPCSystem      string
+	RPCService     string
+	RPCMethod      string
+	StatusCode     string
+	ServerAddress  string
+	ServerPort     string
+	SpanKind       string
+	SpanName       string
+}
 
 // TrainTicket span name pattern replacements for ts-ui-dashboard and loadgenerator services
 // These patterns normalize dynamic URL parameters to template placeholders
