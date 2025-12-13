@@ -1715,6 +1715,8 @@ func mapDeathStarBenchRouteToService(endpoint *ServiceEndpoint, namespace string
 		mapSocialNetworkRouteToService(endpoint)
 	case "hs":
 		mapHotelReservationRouteToService(endpoint)
+	case "ob":
+		mapOnlineBoutiqueRouteToService(endpoint)
 	}
 }
 
@@ -2029,6 +2031,92 @@ func mapHotelReservationRouteToService(endpoint *ServiceEndpoint) {
 	}
 }
 
+// mapOnlineBoutiqueRouteToService maps routes to services for OnlineBoutique
+func mapOnlineBoutiqueRouteToService(endpoint *ServiceEndpoint) {
+	route := endpoint.Route
+	spanName := endpoint.SpanName
+
+	// Service mapping based on route patterns and span names
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		// Frontend service
+		"/":                   {"frontend", "80"},
+		"/product":            {"frontend", "80"},
+		"/cart":               {"frontend", "80"},
+		"/checkout":           {"frontend", "80"},
+		"frontend":            {"frontend", "80"},
+		// Ad service
+		"/hipstershop.AdService":        {"adservice", "9555"},
+		"AdService":                     {"adservice", "9555"},
+		"GetAds":                        {"adservice", "9555"},
+		// Cart service
+		"/hipstershop.CartService":      {"cartservice", "7070"},
+		"CartService":                   {"cartservice", "7070"},
+		"AddItem":                       {"cartservice", "7070"},
+		"GetCart":                       {"cartservice", "7070"},
+		"EmptyCart":                     {"cartservice", "7070"},
+		// Checkout service
+		"/hipstershop.CheckoutService":  {"checkoutservice", "5050"},
+		"CheckoutService":               {"checkoutservice", "5050"},
+		"PlaceOrder":                    {"checkoutservice", "5050"},
+		// Currency service
+		"/hipstershop.CurrencyService":  {"currencyservice", "7000"},
+		"CurrencyService":               {"currencyservice", "7000"},
+		"GetSupportedCurrencies":        {"currencyservice", "7000"},
+		"Convert":                       {"currencyservice", "7000"},
+		// Email service
+		"/hipstershop.EmailService":     {"emailservice", "5000"},
+		"EmailService":                  {"emailservice", "5000"},
+		"SendOrderConfirmation":         {"emailservice", "5000"},
+		// Payment service
+		"/hipstershop.PaymentService":   {"paymentservice", "50051"},
+		"PaymentService":                {"paymentservice", "50051"},
+		"Charge":                        {"paymentservice", "50051"},
+		// Product catalog service
+		"/hipstershop.ProductCatalogService": {"productcatalogservice", "3550"},
+		"ProductCatalogService":              {"productcatalogservice", "3550"},
+		"ListProducts":                       {"productcatalogservice", "3550"},
+		"GetProduct":                         {"productcatalogservice", "3550"},
+		"SearchProducts":                     {"productcatalogservice", "3550"},
+		// Recommendation service
+		"/hipstershop.RecommendationService": {"recommendationservice", "8080"},
+		"RecommendationService":              {"recommendationservice", "8080"},
+		"ListRecommendations":                {"recommendationservice", "8080"},
+		// Shipping service
+		"/hipstershop.ShippingService":  {"shippingservice", "50051"},
+		"ShippingService":               {"shippingservice", "50051"},
+		"GetQuote":                      {"shippingservice", "50051"},
+		"ShipOrder":                     {"shippingservice", "50051"},
+	}
+
+	// Sort patterns by length (longest first) to match more specific patterns first
+	patterns := make([]string, 0, len(serviceMap))
+	for pattern := range serviceMap {
+		patterns = append(patterns, pattern)
+	}
+	sort.Slice(patterns, func(i, j int) bool {
+		return len(patterns[i]) > len(patterns[j])
+	})
+
+	// Check route and span name with sorted patterns
+	for _, pattern := range patterns {
+		service := serviceMap[pattern]
+		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
+			endpoint.ServerAddress = service.service
+			endpoint.ServerPort = service.port
+			return
+		}
+	}
+
+	// Default to frontend if no match
+	if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+		endpoint.ServerAddress = "frontend"
+		endpoint.ServerPort = "80"
+	}
+}
+
 // mapDeathStarBenchGRPCToService maps gRPC services to server addresses for DeathStarBench systems
 func mapDeathStarBenchGRPCToService(operation *GRPCOperation, namespace string) {
 	rpcService := operation.RPCService
@@ -2040,6 +2128,8 @@ func mapDeathStarBenchGRPCToService(operation *GRPCOperation, namespace string) 
 		mapSocialNetworkGRPCToService(operation, rpcService)
 	case "hs":
 		mapHotelReservationGRPCToService(operation, rpcService)
+	case "ob":
+		mapOnlineBoutiqueGRPCToService(operation, rpcService)
 	}
 }
 
@@ -2130,6 +2220,42 @@ func mapHotelReservationGRPCToService(operation *GRPCOperation, rpcService strin
 		"reservation.Reservation": {"reservation", "8087"},
 		"search.Search":           {"search", "8082"},
 		"user.User":               {"user", "8086"},
+	}
+
+	for pattern, service := range serviceMap {
+		if strings.Contains(rpcService, pattern) {
+			operation.ServerAddress = service.service
+			operation.ServerPort = service.port
+			return
+		}
+	}
+}
+
+// mapOnlineBoutiqueGRPCToService maps gRPC services to server addresses for OnlineBoutique
+func mapOnlineBoutiqueGRPCToService(operation *GRPCOperation, rpcService string) {
+	// Map based on RPC service name patterns
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		"hipstershop.AdService":              {"adservice", "9555"},
+		"AdService":                          {"adservice", "9555"},
+		"hipstershop.CartService":            {"cartservice", "7070"},
+		"CartService":                        {"cartservice", "7070"},
+		"hipstershop.CheckoutService":        {"checkoutservice", "5050"},
+		"CheckoutService":                    {"checkoutservice", "5050"},
+		"hipstershop.CurrencyService":        {"currencyservice", "7000"},
+		"CurrencyService":                    {"currencyservice", "7000"},
+		"hipstershop.EmailService":           {"emailservice", "5000"},
+		"EmailService":                       {"emailservice", "5000"},
+		"hipstershop.PaymentService":         {"paymentservice", "50051"},
+		"PaymentService":                     {"paymentservice", "50051"},
+		"hipstershop.ProductCatalogService":  {"productcatalogservice", "3550"},
+		"ProductCatalogService":              {"productcatalogservice", "3550"},
+		"hipstershop.RecommendationService":  {"recommendationservice", "8080"},
+		"RecommendationService":              {"recommendationservice", "8080"},
+		"hipstershop.ShippingService":        {"shippingservice", "50051"},
+		"ShippingService":                    {"shippingservice", "50051"},
 	}
 
 	for pattern, service := range serviceMap {
