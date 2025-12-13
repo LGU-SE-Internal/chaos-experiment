@@ -106,6 +106,7 @@ var DatabaseOperations = map[string][]DatabaseOperation{
 			DBSystem:      "{{ .DBSystem }}",
 			ServerAddress: "{{ .ServerAddress }}",
 			ServerPort:    "{{ .ServerPort }}",
+			SpanName:      "{{ .SpanName }}",
 		},
 		{{- end }}
 	},
@@ -197,6 +198,7 @@ var GRPCOperations = map[string][]GRPCOperation{
 			ServerAddress:  "{{ .ServerAddress }}",
 			ServerPort:     "{{ .ServerPort }}",
 			SpanKind:       "{{ .SpanKind }}",
+			SpanName:       "{{ .SpanName }}",
 		},
 		{{- end }}
 	},

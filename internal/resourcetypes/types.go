@@ -22,7 +22,8 @@ type ServiceEndpoint struct {
 	Route          string
 	ServerAddress  string
 	ServerPort     string
-	SpanName       string
+	SpanKind       string       // Server or Client span kind
+	SpanName       string       // Span name for groundtruth generation
 	EndpointType   EndpointType // Type marker for filtering
 }
 
@@ -35,6 +36,7 @@ type DatabaseOperation struct {
 	DBSystem      string
 	ServerAddress string
 	ServerPort    string
+	SpanName      string // Span name for groundtruth generation
 }
 
 // GRPCOperation represents a gRPC operation from ClickHouse analysis
@@ -47,4 +49,5 @@ type GRPCOperation struct {
 	ServerAddress  string
 	ServerPort     string
 	SpanKind       string
+	SpanName       string // Span name for groundtruth generation
 }
