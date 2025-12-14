@@ -11,15 +11,19 @@ import (
 	// Import old generated packages
 	hsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/databaseoperations"
 	hsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/serviceendpoints"
+	hsgrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/grpcoperations"
 	mediadb "github.com/LGU-SE-Internal/chaos-experiment/internal/media/databaseoperations"
 	mediaendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/media/serviceendpoints"
+	mediagrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/media/grpcoperations"
 	obdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/databaseoperations"
 	obendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/serviceendpoints"
+	obgrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/grpcoperations"
 	oteldemodb "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/databaseoperations"
 	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
 	oteldemogrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/grpcoperations"
 	sndb "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/databaseoperations"
 	snendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/serviceendpoints"
+	sngrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/grpcoperations"
 	tsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/databaseoperations"
 	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
 )
@@ -64,12 +68,13 @@ func registerOtelDemo() {
 func registerMediaMicroservices() {
 	httpEps := convertMediaEndpoints(mediaendpoints.ServiceEndpoints)
 	dbOps := convertMediaDBOperations(mediadb.DatabaseOperations)
+	rpcOps := convertMediaRPCOperations(mediagrpc.GRPCOperations)
 	
 	registry.Register(systemconfig.SystemMediaMicroservices, &model.SystemData{
 		SystemName:         "media",
 		HTTPEndpoints:      httpEps,
 		DatabaseOperations: dbOps,
-		RPCOperations:      make(map[string][]resourcetypes.RPCOperation),
+		RPCOperations:      rpcOps,
 		AllServices:        mediaendpoints.GetAllServices(),
 	})
 }
@@ -77,12 +82,13 @@ func registerMediaMicroservices() {
 func registerHotelReservation() {
 	httpEps := convertHSEndpoints(hsendpoints.ServiceEndpoints)
 	dbOps := convertHSDBOperations(hsdb.DatabaseOperations)
+	rpcOps := convertHSRPCOperations(hsgrpc.GRPCOperations)
 	
 	registry.Register(systemconfig.SystemHotelReservation, &model.SystemData{
 		SystemName:         "hs",
 		HTTPEndpoints:      httpEps,
 		DatabaseOperations: dbOps,
-		RPCOperations:      make(map[string][]resourcetypes.RPCOperation),
+		RPCOperations:      rpcOps,
 		AllServices:        hsendpoints.GetAllServices(),
 	})
 }
@@ -90,12 +96,13 @@ func registerHotelReservation() {
 func registerSocialNetwork() {
 	httpEps := convertSNEndpoints(snendpoints.ServiceEndpoints)
 	dbOps := convertSNDBOperations(sndb.DatabaseOperations)
+	rpcOps := convertSNRPCOperations(sngrpc.GRPCOperations)
 	
 	registry.Register(systemconfig.SystemSocialNetwork, &model.SystemData{
 		SystemName:         "sn",
 		HTTPEndpoints:      httpEps,
 		DatabaseOperations: dbOps,
-		RPCOperations:      make(map[string][]resourcetypes.RPCOperation),
+		RPCOperations:      rpcOps,
 		AllServices:        snendpoints.GetAllServices(),
 	})
 }
@@ -103,12 +110,13 @@ func registerSocialNetwork() {
 func registerOnlineBoutique() {
 	httpEps := convertOBEndpoints(obendpoints.ServiceEndpoints)
 	dbOps := convertOBDBOperations(obdb.DatabaseOperations)
+	rpcOps := convertOBRPCOperations(obgrpc.GRPCOperations)
 	
 	registry.Register(systemconfig.SystemOnlineBoutique, &model.SystemData{
 		SystemName:         "ob",
 		HTTPEndpoints:      httpEps,
 		DatabaseOperations: dbOps,
-		RPCOperations:      make(map[string][]resourcetypes.RPCOperation),
+		RPCOperations:      rpcOps,
 		AllServices:        obendpoints.GetAllServices(),
 	})
 }
@@ -382,6 +390,94 @@ func convertOBDBOperations(old map[string][]obdb.DatabaseOperation) map[string][
 				DBSystem:      op.DBSystem,
 				ServerAddress: op.ServerAddress,
 				ServerPort:    op.ServerPort,
+				SpanName:      "",
+			}
+		}
+		result[service] = converted
+	}
+	return result
+}
+
+func convertMediaRPCOperations(old map[string][]mediagrpc.GRPCOperation) map[string][]resourcetypes.RPCOperation {
+	result := make(map[string][]resourcetypes.RPCOperation)
+	for service, ops := range old {
+		converted := make([]resourcetypes.RPCOperation, len(ops))
+		for i, op := range ops {
+			converted[i] = resourcetypes.RPCOperation{
+				ServiceName:   op.ServiceName,
+				RPCSystem:     op.RPCSystem,
+				RPCService:    op.RPCService,
+				RPCMethod:     op.RPCMethod,
+				StatusCode:    op.GRPCStatusCode,
+				ServerAddress: op.ServerAddress,
+				ServerPort:    op.ServerPort,
+				SpanKind:      op.SpanKind,
+				SpanName:      "",
+			}
+		}
+		result[service] = converted
+	}
+	return result
+}
+
+func convertHSRPCOperations(old map[string][]hsgrpc.GRPCOperation) map[string][]resourcetypes.RPCOperation {
+	result := make(map[string][]resourcetypes.RPCOperation)
+	for service, ops := range old {
+		converted := make([]resourcetypes.RPCOperation, len(ops))
+		for i, op := range ops {
+			converted[i] = resourcetypes.RPCOperation{
+				ServiceName:   op.ServiceName,
+				RPCSystem:     op.RPCSystem,
+				RPCService:    op.RPCService,
+				RPCMethod:     op.RPCMethod,
+				StatusCode:    op.GRPCStatusCode,
+				ServerAddress: op.ServerAddress,
+				ServerPort:    op.ServerPort,
+				SpanKind:      op.SpanKind,
+				SpanName:      "",
+			}
+		}
+		result[service] = converted
+	}
+	return result
+}
+
+func convertSNRPCOperations(old map[string][]sngrpc.GRPCOperation) map[string][]resourcetypes.RPCOperation {
+	result := make(map[string][]resourcetypes.RPCOperation)
+	for service, ops := range old {
+		converted := make([]resourcetypes.RPCOperation, len(ops))
+		for i, op := range ops {
+			converted[i] = resourcetypes.RPCOperation{
+				ServiceName:   op.ServiceName,
+				RPCSystem:     op.RPCSystem,
+				RPCService:    op.RPCService,
+				RPCMethod:     op.RPCMethod,
+				StatusCode:    op.GRPCStatusCode,
+				ServerAddress: op.ServerAddress,
+				ServerPort:    op.ServerPort,
+				SpanKind:      op.SpanKind,
+				SpanName:      "",
+			}
+		}
+		result[service] = converted
+	}
+	return result
+}
+
+func convertOBRPCOperations(old map[string][]obgrpc.GRPCOperation) map[string][]resourcetypes.RPCOperation {
+	result := make(map[string][]resourcetypes.RPCOperation)
+	for service, ops := range old {
+		converted := make([]resourcetypes.RPCOperation, len(ops))
+		for i, op := range ops {
+			converted[i] = resourcetypes.RPCOperation{
+				ServiceName:   op.ServiceName,
+				RPCSystem:     op.RPCSystem,
+				RPCService:    op.RPCService,
+				RPCMethod:     op.RPCMethod,
+				StatusCode:    op.GRPCStatusCode,
+				ServerAddress: op.ServerAddress,
+				ServerPort:    op.ServerPort,
+				SpanKind:      op.SpanKind,
 				SpanName:      "",
 			}
 		}
