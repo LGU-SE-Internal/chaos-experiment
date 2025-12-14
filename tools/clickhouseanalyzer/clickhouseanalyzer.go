@@ -659,7 +659,7 @@ WHERE
 `, viewName, namespace)
 }
 
-// Client query
+// Client query - HTTP endpoints only (excludes database and RPC operations)
 const clientTracesQuery = `
 SELECT DISTINCT
     ServiceName,
@@ -672,10 +672,13 @@ SELECT DISTINCT
 FROM otel_traces_mv
 FINAL
 WHERE SpanKind = 'Client'
+  AND (db_system IS NULL OR db_system = '')  -- Exclude database operations
+  AND (rpc_system IS NULL OR rpc_system = '')  -- Exclude RPC operations
+  AND request_method != ''  -- Must have HTTP method
 ORDER BY version ASC
 `
 
-// Dashboard query
+// Dashboard query - HTTP endpoints only
 const dashboardRoutesQuery = `
 SELECT DISTINCT
     ServiceName,
@@ -686,6 +689,9 @@ SELECT DISTINCT
 FROM otel_traces_mv
 FINAL
 WHERE ServiceName = 'ts-ui-dashboard'
+  AND (db_system IS NULL OR db_system = '')  -- Exclude database operations
+  AND (rpc_system IS NULL OR rpc_system = '')  -- Exclude RPC operations
+  AND request_method != ''  -- Must have HTTP method
 ORDER BY version ASC
 `
 
@@ -703,7 +709,7 @@ WHERE db_system = 'mysql'
 ORDER BY version ASC
 `
 
-// HTTP Client traces query for OTel Demo
+// HTTP Client traces query for OTel Demo - HTTP endpoints only (excludes database and RPC)
 const otelDemoHTTPClientTracesQuery = `
 SELECT DISTINCT
     ServiceName,
@@ -716,6 +722,8 @@ SELECT DISTINCT
 FROM otel_demo_traces_mv
 FINAL
 WHERE SpanKind = 'Client'
+  AND (db_system IS NULL OR db_system = '')  -- Exclude database operations
+  AND (rpc_system IS NULL OR rpc_system = '')  -- Exclude RPC operations
   AND request_method != ''
   AND masked_route != ''
 ORDER BY ServiceName, masked_route
@@ -775,6 +783,7 @@ ORDER BY ServiceName, db_name
 `
 
 // deathStarBenchHTTPClientTracesQuery generates a query for HTTP client traces for DeathStarBench systems
+// HTTP endpoints only (excludes database and RPC operations)
 func deathStarBenchHTTPClientTracesQuery(viewName string) string {
 	return fmt.Sprintf(`
 SELECT DISTINCT
@@ -788,6 +797,8 @@ SELECT DISTINCT
 FROM %s
 FINAL
 WHERE SpanKind = 'Client'
+  AND (db_system IS NULL OR db_system = '')  -- Exclude database operations
+  AND (rpc_system IS NULL OR rpc_system = '')  -- Exclude RPC operations
   AND request_method != ''
   AND masked_route != ''
 ORDER BY ServiceName, masked_route
