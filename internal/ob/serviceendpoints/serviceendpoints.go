@@ -2,16 +2,12 @@
 // System: ob
 package serviceendpoints
 
-// ServiceEndpoint represents a service endpoint from ClickHouse analysis
-type ServiceEndpoint struct {
-	ServiceName      string
-	RequestMethod    string
-	ResponseStatus   string
-	Route            string
-	ServerAddress    string
-	ServerPort       string
-	SpanName         string
-}
+import (
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcetypes"
+)
+
+// ServiceEndpoint is an alias for the shared type
+type ServiceEndpoint = resourcetypes.ServiceEndpoint
 
 // ServiceEndpoints maps service names to their endpoints
 var ServiceEndpoints = map[string][]ServiceEndpoint{

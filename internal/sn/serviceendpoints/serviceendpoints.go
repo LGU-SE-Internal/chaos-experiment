@@ -2,19 +2,98 @@
 // System: sn
 package serviceendpoints
 
-// ServiceEndpoint represents a service endpoint from ClickHouse analysis
-type ServiceEndpoint struct {
-	ServiceName      string
-	RequestMethod    string
-	ResponseStatus   string
-	Route            string
-	ServerAddress    string
-	ServerPort       string
-	SpanName         string
-}
+import (
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcetypes"
+)
+
+// ServiceEndpoint is an alias for the shared type
+type ServiceEndpoint = resourcetypes.ServiceEndpoint
 
 // ServiceEndpoints maps service names to their endpoints
 var ServiceEndpoints = map[string][]ServiceEndpoint{
+	"nginx-web-server": {
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "GET",
+			ResponseStatus: "200",
+			Route:          "/wrk2-api/home-timeline/read",
+			ServerAddress:  "home-timeline-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/home-timeline/read",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "GET",
+			ResponseStatus: "500",
+			Route:          "/wrk2-api/home-timeline/read",
+			ServerAddress:  "home-timeline-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/home-timeline/read",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "POST",
+			ResponseStatus: "200",
+			Route:          "/wrk2-api/post/compose",
+			ServerAddress:  "compose-post-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/post/compose",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "POST",
+			ResponseStatus: "500",
+			Route:          "/wrk2-api/post/compose",
+			ServerAddress:  "compose-post-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/post/compose",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "GET",
+			ResponseStatus: "200",
+			Route:          "/wrk2-api/user-timeline/read",
+			ServerAddress:  "user-timeline-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/user-timeline/read",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "GET",
+			ResponseStatus: "500",
+			Route:          "/wrk2-api/user-timeline/read",
+			ServerAddress:  "user-timeline-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/user-timeline/read",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "POST",
+			ResponseStatus: "200",
+			Route:          "/wrk2-api/user/follow",
+			ServerAddress:  "social-graph-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/user/follow",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "POST",
+			ResponseStatus: "200",
+			Route:          "/wrk2-api/user/register",
+			ServerAddress:  "user-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/user/register",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "POST",
+			ResponseStatus: "200",
+			Route:          "/wrk2-api/user/unfollow",
+			ServerAddress:  "social-graph-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/user/unfollow",
+		},
+	},
 	"nginx-thrift": {
 		{
 			ServiceName:    "nginx-thrift",
@@ -45,6 +124,15 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 		},
 		{
 			ServiceName:    "nginx-thrift",
+			RequestMethod:  "POST",
+			ResponseStatus: "500",
+			Route:          "/wrk2-api/post/compose",
+			ServerAddress:  "compose-post-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/post/compose",
+		},
+		{
+			ServiceName:    "nginx-thrift",
 			RequestMethod:  "GET",
 			ResponseStatus: "200",
 			Route:          "/wrk2-api/user-timeline/read",
@@ -54,8 +142,26 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 		},
 		{
 			ServiceName:    "nginx-thrift",
+			RequestMethod:  "GET",
+			ResponseStatus: "500",
+			Route:          "/wrk2-api/user-timeline/read",
+			ServerAddress:  "user-timeline-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/user-timeline/read",
+		},
+		{
+			ServiceName:    "nginx-thrift",
 			RequestMethod:  "POST",
 			ResponseStatus: "200",
+			Route:          "/wrk2-api/user/follow",
+			ServerAddress:  "social-graph-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/user/follow",
+		},
+		{
+			ServiceName:    "nginx-thrift",
+			RequestMethod:  "POST",
+			ResponseStatus: "500",
 			Route:          "/wrk2-api/user/follow",
 			ServerAddress:  "social-graph-service",
 			ServerPort:     "9090",
@@ -79,6 +185,15 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			ServerPort:     "9090",
 			SpanName:       "/wrk2-api/user/unfollow",
 		},
+		{
+			ServiceName:    "nginx-thrift",
+			RequestMethod:  "POST",
+			ResponseStatus: "500",
+			Route:          "/wrk2-api/user/unfollow",
+			ServerAddress:  "social-graph-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/user/unfollow",
+		},
 	},
 }
 
@@ -87,6 +202,7 @@ var AllServices = []string{
 	"compose-post-service",
 	"home-timeline-service",
 	"nginx-thrift",
+	"nginx-web-server",
 	"social-graph-service",
 	"user-service",
 	"user-timeline-service",

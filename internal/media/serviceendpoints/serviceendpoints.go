@@ -2,16 +2,12 @@
 // System: media
 package serviceendpoints
 
-// ServiceEndpoint represents a service endpoint from ClickHouse analysis
-type ServiceEndpoint struct {
-	ServiceName      string
-	RequestMethod    string
-	ResponseStatus   string
-	Route            string
-	ServerAddress    string
-	ServerPort       string
-	SpanName         string
-}
+import (
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcetypes"
+)
+
+// ServiceEndpoint is an alias for the shared type
+type ServiceEndpoint = resourcetypes.ServiceEndpoint
 
 // ServiceEndpoints maps service names to their endpoints
 var ServiceEndpoints = map[string][]ServiceEndpoint{
@@ -28,7 +24,25 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 		{
 			ServiceName:    "nginx-web-server",
 			RequestMethod:  "POST",
+			ResponseStatus: "500",
+			Route:          "/wrk2-api/cast-info/write",
+			ServerAddress:  "cast-info-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/cast-info/write",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "POST",
 			ResponseStatus: "200",
+			Route:          "/wrk2-api/movie-info/write",
+			ServerAddress:  "movie-info-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/movie-info/write",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "POST",
+			ResponseStatus: "500",
 			Route:          "/wrk2-api/movie-info/write",
 			ServerAddress:  "movie-info-service",
 			ServerPort:     "9090",
@@ -82,7 +96,25 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 		{
 			ServiceName:    "nginx-web-server",
 			RequestMethod:  "POST",
+			ResponseStatus: "500",
+			Route:          "/wrk2-api/movie/register",
+			ServerAddress:  "compose-review-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/movie/register",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "POST",
 			ResponseStatus: "200",
+			Route:          "/wrk2-api/plot/write",
+			ServerAddress:  "plot-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/plot/write",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "POST",
+			ResponseStatus: "500",
 			Route:          "/wrk2-api/plot/write",
 			ServerAddress:  "plot-service",
 			ServerPort:     "9090",
@@ -110,6 +142,15 @@ var ServiceEndpoints = map[string][]ServiceEndpoint{
 			ServiceName:    "nginx-web-server",
 			RequestMethod:  "POST",
 			ResponseStatus: "200",
+			Route:          "/wrk2-api/user/register",
+			ServerAddress:  "user-service",
+			ServerPort:     "9090",
+			SpanName:       "/wrk2-api/user/register",
+		},
+		{
+			ServiceName:    "nginx-web-server",
+			RequestMethod:  "POST",
+			ResponseStatus: "500",
 			Route:          "/wrk2-api/user/register",
 			ServerAddress:  "user-service",
 			ServerPort:     "9090",
