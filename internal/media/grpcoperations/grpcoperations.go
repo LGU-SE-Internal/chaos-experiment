@@ -11,6 +11,41 @@ type GRPCOperation = resourcetypes.GRPCOperation
 
 // GRPCOperations maps service names to their gRPC operations
 var GRPCOperations = map[string][]GRPCOperation{
+	"cast-info-service": {
+		{
+			ServiceName:    "cast-info-service",
+			RPCSystem:      "thrift",
+			RPCService:     "CastInfoService",
+			RPCMethod:      "ReadCastInfo",
+			StatusCode:     "",
+			ServerAddress:  "cast-info-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+			SpanName:       "ReadCastInfo",
+		},
+		{
+			ServiceName:    "cast-info-service",
+			RPCSystem:      "thrift",
+			RPCService:     "CastInfoService",
+			RPCMethod:      "WriteCastInfo",
+			StatusCode:     "",
+			ServerAddress:  "cast-info-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+			SpanName:       "WriteCastInfo",
+		},
+		{
+			ServiceName:    "cast-info-service",
+			RPCSystem:      "thrift",
+			RPCService:     "PageService",
+			RPCMethod:      "ReadPage",
+			StatusCode:     "",
+			ServerAddress:  "page-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+			SpanName:       "ReadPage",
+		},
+	},
 	"compose-review-service": {
 		{
 			ServiceName:    "compose-review-service",
@@ -116,6 +151,19 @@ var GRPCOperations = map[string][]GRPCOperation{
 			SpanName:       "WriteMovieInfo",
 		},
 	},
+	"rating-service": {
+		{
+			ServiceName:    "rating-service",
+			RPCSystem:      "thrift",
+			RPCService:     "RatingService",
+			RPCMethod:      "UploadRating",
+			StatusCode:     "",
+			ServerAddress:  "rating-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+			SpanName:       "UploadRating",
+		},
+	},
 	"movie-review-service": {
 		{
 			ServiceName:    "movie-review-service",
@@ -162,54 +210,6 @@ var GRPCOperations = map[string][]GRPCOperation{
 			ServerPort:     "9090",
 			SpanKind:       "Server",
 			SpanName:       "WritePlot",
-		},
-	},
-	"rating-service": {
-		{
-			ServiceName:    "rating-service",
-			RPCSystem:      "thrift",
-			RPCService:     "RatingService",
-			RPCMethod:      "UploadRating",
-			StatusCode:     "",
-			ServerAddress:  "rating-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-			SpanName:       "UploadRating",
-		},
-	},
-	"cast-info-service": {
-		{
-			ServiceName:    "cast-info-service",
-			RPCSystem:      "thrift",
-			RPCService:     "CastInfoService",
-			RPCMethod:      "ReadCastInfo",
-			StatusCode:     "",
-			ServerAddress:  "cast-info-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-			SpanName:       "ReadCastInfo",
-		},
-		{
-			ServiceName:    "cast-info-service",
-			RPCSystem:      "thrift",
-			RPCService:     "CastInfoService",
-			RPCMethod:      "WriteCastInfo",
-			StatusCode:     "",
-			ServerAddress:  "cast-info-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-			SpanName:       "WriteCastInfo",
-		},
-		{
-			ServiceName:    "cast-info-service",
-			RPCSystem:      "thrift",
-			RPCService:     "PageService",
-			RPCMethod:      "ReadPage",
-			StatusCode:     "",
-			ServerAddress:  "page-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-			SpanName:       "ReadPage",
 		},
 	},
 	"review-storage-service": {

@@ -11,32 +11,6 @@ type GRPCOperation = resourcetypes.GRPCOperation
 
 // GRPCOperations maps service names to their gRPC operations
 var GRPCOperations = map[string][]GRPCOperation{
-	"url-shorten-service": {
-		{
-			ServiceName:    "url-shorten-service",
-			RPCSystem:      "thrift",
-			RPCService:     "UrlShortenService",
-			RPCMethod:      "ComposeUrls",
-			StatusCode:     "",
-			ServerAddress:  "url-shorten-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-			SpanName:       "compose_urls_server",
-		},
-	},
-	"user-mention-service": {
-		{
-			ServiceName:    "user-mention-service",
-			RPCSystem:      "thrift",
-			RPCService:     "UserMentionService",
-			RPCMethod:      "ComposeUserMentions",
-			StatusCode:     "",
-			ServerAddress:  "user-mention-service",
-			ServerPort:     "9090",
-			SpanKind:       "Server",
-			SpanName:       "compose_user_mentions_server",
-		},
-	},
 	"user-service": {
 		{
 			ServiceName:    "user-service",
@@ -74,6 +48,32 @@ var GRPCOperations = map[string][]GRPCOperation{
 			ServerPort:     "9090",
 			SpanKind:       "Server",
 			SpanName:       "follow_with_username_server",
+		},
+	},
+	"url-shorten-service": {
+		{
+			ServiceName:    "url-shorten-service",
+			RPCSystem:      "thrift",
+			RPCService:     "UrlShortenService",
+			RPCMethod:      "ComposeUrls",
+			StatusCode:     "",
+			ServerAddress:  "url-shorten-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+			SpanName:       "compose_urls_server",
+		},
+	},
+	"user-mention-service": {
+		{
+			ServiceName:    "user-mention-service",
+			RPCSystem:      "thrift",
+			RPCService:     "UserMentionService",
+			RPCMethod:      "ComposeUserMentions",
+			StatusCode:     "",
+			ServerAddress:  "user-mention-service",
+			ServerPort:     "9090",
+			SpanKind:       "Server",
+			SpanName:       "compose_user_mentions_server",
 		},
 	},
 }

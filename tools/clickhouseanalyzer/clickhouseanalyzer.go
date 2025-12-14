@@ -322,13 +322,13 @@ ORDER BY (
     masked_route,
     ServiceName,
     db_name,
+    rpc_service,
     SpanKind,
     request_method,
     response_status_code,
     db_operation,
     db_sql_table,
     rpc_system,
-    rpc_service,
     rpc_method,
     grpc_status_code
 )
@@ -478,13 +478,13 @@ ORDER BY (
     masked_route,
     ServiceName,
     db_name,
+    rpc_service,
     SpanKind,
     request_method,
     response_status_code,
     db_operation,
     db_sql_table,
     rpc_system,
-    rpc_service,
     rpc_method,
     grpc_status_code
 )
@@ -570,13 +570,13 @@ ORDER BY (
     masked_route,
     ServiceName,
     db_name,
+    rpc_service,
     SpanKind,
     request_method,
     response_status_code,
     db_operation,
     db_sql_table,
     rpc_system,
-    rpc_service,
     rpc_method,
     grpc_status_code
 )

@@ -119,7 +119,6 @@ var AllServices = []string{
 	"compose-post-service",
 	"home-timeline-service",
 	"nginx-thrift",
-	"nginx-web-server",
 	"social-graph-service",
 	"user-service",
 	"user-timeline-service",
