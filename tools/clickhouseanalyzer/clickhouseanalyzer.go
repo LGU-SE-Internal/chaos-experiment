@@ -660,6 +660,9 @@ WHERE
 }
 
 // Client query - HTTP endpoints only (excludes database and RPC operations)
+// TrainTicket client traces query - HTTP endpoints only
+// NOTE: TrainTicket has no gRPC, so otel_traces_mv does NOT have rpc_system column
+// Only filters by db_system (unlike OtelDemo/DeathStarBench which also filter rpc_system)
 const clientTracesQuery = `
 SELECT DISTINCT
     ServiceName,
@@ -677,7 +680,8 @@ WHERE SpanKind = 'Client'
 ORDER BY version ASC
 `
 
-// Dashboard query - HTTP endpoints only
+// TrainTicket dashboard query - HTTP endpoints only
+// NOTE: TrainTicket has no gRPC, so otel_traces_mv does NOT have rpc_system column
 const dashboardRoutesQuery = `
 SELECT DISTINCT
     ServiceName,
