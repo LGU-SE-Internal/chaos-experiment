@@ -652,6 +652,7 @@ WHERE
     ResourceAttributes['k8s.namespace.name'] = '%s'
     AND SpanKind IN ('Server', 'Client')
     AND SpanName != 'opentelemetry.proto.collector.trace.v1.TraceService/Export'
+	AND SpanName != 'grpc.health.v1.Health/Check'
     AND mapExists(
         (k, v) -> (k IS NOT NULL AND k != '') AND (v IS NOT NULL AND v != ''),
         SpanAttributes
