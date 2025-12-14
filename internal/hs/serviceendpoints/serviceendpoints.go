@@ -11,95 +11,10 @@ type ServiceEndpoint = resourcetypes.ServiceEndpoint
 
 // ServiceEndpoints maps service names to their endpoints
 var ServiceEndpoints = map[string][]ServiceEndpoint{
-	"frontend": {
-		{
-			ServiceName:    "frontend",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/attractions.Attractions/NearbyCinema",
-			ServerAddress:  "attractions",
-			ServerPort:     "8089",
-			SpanName:       "attractions.Attractions/NearbyCinema",
-		},
-		{
-			ServiceName:    "frontend",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/profile.Profile/GetProfiles",
-			ServerAddress:  "profile",
-			ServerPort:     "8081",
-			SpanName:       "profile.Profile/GetProfiles",
-		},
-		{
-			ServiceName:    "frontend",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/recommendation.Recommendation/GetRecommendations",
-			ServerAddress:  "recommendation",
-			ServerPort:     "8085",
-			SpanName:       "recommendation.Recommendation/GetRecommendations",
-		},
-		{
-			ServiceName:    "frontend",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/reservation.Reservation/CheckAvailability",
-			ServerAddress:  "reservation",
-			ServerPort:     "8087",
-			SpanName:       "reservation.Reservation/CheckAvailability",
-		},
-		{
-			ServiceName:    "frontend",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/search.Search/Nearby",
-			ServerAddress:  "search",
-			ServerPort:     "8082",
-			SpanName:       "search.Search/Nearby",
-		},
-		{
-			ServiceName:    "frontend",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/user.User/CheckUser",
-			ServerAddress:  "user",
-			ServerPort:     "8086",
-			SpanName:       "user.User/CheckUser",
-		},
-	},
-	"search": {
-		{
-			ServiceName:    "search",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/geo.Geo/Nearby",
-			ServerAddress:  "geo",
-			ServerPort:     "8083",
-			SpanName:       "geo.Geo/Nearby",
-		},
-		{
-			ServiceName:    "search",
-			RequestMethod:  "POST",
-			ResponseStatus: "",
-			Route:          "/rate.Rate/GetRates",
-			ServerAddress:  "rate",
-			ServerPort:     "8084",
-			SpanName:       "rate.Rate/GetRates",
-		},
-	},
 }
 
 // AllServices contains all unique service names (callers and callees)
 var AllServices = []string{
-	"attractions",
-	"frontend",
-	"geo",
-	"profile",
-	"rate",
-	"recommendation",
-	"reservation",
-	"search",
-	"user",
 }
 
 // GetEndpointsByService returns all endpoints for a service

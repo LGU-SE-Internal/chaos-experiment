@@ -3,8 +3,6 @@
 package grpcoperations
 
 import (
-	"strings"
-	
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcetypes"
 )
 
@@ -254,45 +252,6 @@ var GRPCOperations = map[string][]GRPCOperation{
 			SpanName:       "reservation.Reservation/MakeReservation",
 		},
 	},
-	"user": {
-		{
-			ServiceName:    "user",
-			RPCSystem:      "grpc",
-			RPCService:     "user.User",
-			RPCMethod:      "CheckUser",
-			StatusCode:     "0",
-			ServerAddress:  "user",
-			ServerPort:     "8086",
-			SpanKind:       "Server",
-			SpanName:       "user.User/CheckUser",
-		},
-	},
-	"geo": {
-		{
-			ServiceName:    "geo",
-			RPCSystem:      "grpc",
-			RPCService:     "geo.Geo",
-			RPCMethod:      "Nearby",
-			StatusCode:     "0",
-			ServerAddress:  "geo",
-			ServerPort:     "8083",
-			SpanKind:       "Server",
-			SpanName:       "geo.Geo/Nearby",
-		},
-	},
-	"profile": {
-		{
-			ServiceName:    "profile",
-			RPCSystem:      "grpc",
-			RPCService:     "profile.Profile",
-			RPCMethod:      "GetProfiles",
-			StatusCode:     "0",
-			ServerAddress:  "profile",
-			ServerPort:     "8081",
-			SpanKind:       "Server",
-			SpanName:       "profile.Profile/GetProfiles",
-		},
-	},
 	"search": {
 		{
 			ServiceName:    "search",
@@ -348,6 +307,45 @@ var GRPCOperations = map[string][]GRPCOperation{
 			ServerPort:     "8082",
 			SpanKind:       "Server",
 			SpanName:       "search.Search/Nearby",
+		},
+	},
+	"user": {
+		{
+			ServiceName:    "user",
+			RPCSystem:      "grpc",
+			RPCService:     "user.User",
+			RPCMethod:      "CheckUser",
+			StatusCode:     "0",
+			ServerAddress:  "user",
+			ServerPort:     "8086",
+			SpanKind:       "Server",
+			SpanName:       "user.User/CheckUser",
+		},
+	},
+	"geo": {
+		{
+			ServiceName:    "geo",
+			RPCSystem:      "grpc",
+			RPCService:     "geo.Geo",
+			RPCMethod:      "Nearby",
+			StatusCode:     "0",
+			ServerAddress:  "geo",
+			ServerPort:     "8083",
+			SpanKind:       "Server",
+			SpanName:       "geo.Geo/Nearby",
+		},
+	},
+	"profile": {
+		{
+			ServiceName:    "profile",
+			RPCSystem:      "grpc",
+			RPCService:     "profile.Profile",
+			RPCMethod:      "GetProfiles",
+			StatusCode:     "0",
+			ServerAddress:  "profile",
+			ServerPort:     "8081",
+			SpanKind:       "Server",
+			SpanName:       "profile.Profile/GetProfiles",
 		},
 	},
 }
