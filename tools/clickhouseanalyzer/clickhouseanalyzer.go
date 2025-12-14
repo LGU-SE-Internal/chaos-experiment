@@ -319,7 +319,7 @@ const createOtelDemoMaterializedViewSQL = `
 CREATE MATERIALIZED VIEW IF NOT EXISTS otel_demo_traces_mv 
 ENGINE = ReplacingMergeTree(version)
 PARTITION BY toYYYYMM(Timestamp)
-PRIMARY KEY (masked_route, ServiceName, db_name)
+PRIMARY KEY (masked_route, ServiceName, db_name, rpc_service)
 ORDER BY (
     masked_route,
     ServiceName,
@@ -477,7 +477,7 @@ func createDeathStarBenchMaterializedViewSQL(namespace string, viewName string) 
 CREATE MATERIALIZED VIEW IF NOT EXISTS %s 
 ENGINE = ReplacingMergeTree(version)
 PARTITION BY toYYYYMM(Timestamp)
-PRIMARY KEY (masked_route, ServiceName, db_name)
+PRIMARY KEY (masked_route, ServiceName, db_name, rpc_service)
 ORDER BY (
     masked_route,
     ServiceName,
@@ -571,7 +571,7 @@ func createOnlineBoutiqueMaterializedViewSQL(namespace string, viewName string) 
 CREATE MATERIALIZED VIEW IF NOT EXISTS %s 
 ENGINE = ReplacingMergeTree(version)
 PARTITION BY toYYYYMM(Timestamp)
-PRIMARY KEY (masked_route, ServiceName, db_name)
+PRIMARY KEY (masked_route, ServiceName, db_name, rpc_service)
 ORDER BY (
     masked_route,
     ServiceName,
