@@ -673,7 +673,6 @@ FROM otel_traces_mv
 FINAL
 WHERE SpanKind = 'Client'
   AND (db_system IS NULL OR db_system = '')  -- Exclude database operations
-  AND (rpc_system IS NULL OR rpc_system = '')  -- Exclude RPC operations
   AND request_method != ''  -- Must have HTTP method
 ORDER BY version ASC
 `
@@ -690,7 +689,6 @@ FROM otel_traces_mv
 FINAL
 WHERE ServiceName = 'ts-ui-dashboard'
   AND (db_system IS NULL OR db_system = '')  -- Exclude database operations
-  AND (rpc_system IS NULL OR rpc_system = '')  -- Exclude RPC operations
   AND request_method != ''  -- Must have HTTP method
 ORDER BY version ASC
 `
