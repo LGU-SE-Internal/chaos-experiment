@@ -185,6 +185,14 @@ SELECT
         WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
             THEN 
                 CASE
+                    -- New patterns first for priority matching
+                    -- /api/v1/adminorderservice/adminorder/{uuid}/{id}
+                    WHEN match(SpanAttributes['http.target'], '/api/v1/adminorderservice/adminorder/[0-9a-f-]+/[A-Z0-9]+')
+                        THEN '/api/v1/adminorderservice/adminorder/*/*'
+                    -- /api/v1/users/{uuid}
+                    WHEN match(SpanAttributes['http.target'], '^/api/v1/users/[0-9a-f-]+$')
+                        THEN '/api/v1/users/*'
+                    -- Existing patterns
                     WHEN position(SpanAttributes['http.target'], '/api/v1/verifycode/verify/') = 1
                         THEN '/api/v1/verifycode/verify/*'
                     WHEN position(SpanAttributes['http.target'], '/api/v1/cancelservice/cancel/refound/') = 1
@@ -205,6 +213,7 @@ SELECT
                         THEN '/api/v1/executeservice/execute/execute/*'
                     WHEN position(SpanAttributes['http.target'], '/api/v1/userservice/users/id/') = 1
                         THEN '/api/v1/userservice/users/id/*'
+                    -- Generic UUID pattern for remaining cases
                     WHEN match(SpanAttributes['http.target'], '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
                         THEN replaceRegexpAll(SpanAttributes['http.target'], '/([^/]+/[^/]+/[^/]+/)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})', '/\\1*')
                     ELSE SpanAttributes['http.target']
@@ -215,6 +224,17 @@ SELECT
                 CASE
                     WHEN match(SpanAttributes['url.full'], 'https?://[^/]+(/.*)') THEN
                         CASE
+                            -- New patterns first for priority matching
+                            -- /api/v1/adminorderservice/adminorder/{uuid}/{id}
+                            WHEN match(path, '/api/v1/adminorderservice/adminorder/[0-9a-f-]+/[A-Z0-9]+')
+                                THEN replaceRegexpAll(path, '(/api/v1/adminorderservice/adminorder/)[^/]+/[^/]+', '\\1*/*')
+                            -- /api/v1/users/{uuid}
+                            WHEN match(path, '^/api/v1/users/[0-9a-f-]+$')
+                                THEN '/api/v1/users/*'
+                            -- /api/v1/userservice/users/{uuid}
+                            WHEN match(path, '^/api/v1/userservice/users/[0-9a-f-]+$')
+                                THEN '/api/v1/userservice/users/*'
+                            -- Existing patterns
                             WHEN position(path, '/api/v1/assuranceservice/assurances/') = 1
                                 THEN replaceRegexpAll(path, '(/api/v1/assuranceservice/assurances/[^/]+/)[^/]+', '\\1*')
                             WHEN position(path, '/api/v1/consignpriceservice/consignprice/') = 1
