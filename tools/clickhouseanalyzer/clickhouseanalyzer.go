@@ -50,15 +50,15 @@ type DatabaseOperation struct {
 // GRPCOperation represents a gRPC operation with its details
 // This is used internally by the analyzer tool
 type GRPCOperation struct {
-	ServiceName    string
-	RPCSystem      string
-	RPCService     string
-	RPCMethod      string
-	StatusCode     string
-	ServerAddress  string
-	ServerPort     string
-	SpanKind       string
-	SpanName       string
+	ServiceName   string
+	RPCSystem     string
+	RPCService    string
+	RPCMethod     string
+	StatusCode    string
+	ServerAddress string
+	ServerPort    string
+	SpanKind      string
+	SpanName      string
 }
 
 // TrainTicket span name pattern replacements for ts-ui-dashboard and loadgenerator services
@@ -106,6 +106,14 @@ var tsSpanNamePatterns = []struct {
 	{
 		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/executeservice/execute/execute/[0-9a-f-]+`),
 		"${1}GET ${2}/api/v1/executeservice/execute/execute/{orderId}",
+	},
+	{
+		regexp.MustCompile(`(.*?)DELETE (.*?)/api/v1/adminorderservice/adminorder/[0-9a-f-]+/[A-Z0-9]+`),
+		"${1}DELETE ${2}/api/v1/adminorderservice/adminorder/{orderId}/{trainNumber}",
+	},
+	{
+		regexp.MustCompile(`(.*?)DELETE (.*?)/api/v1/adminrouteservice/adminroute/[0-9a-f-]+`),
+		"${1}DELETE ${2}/api/v1/adminrouteservice/adminroute/{routeId}",
 	},
 }
 
@@ -898,7 +906,7 @@ func CreateDeathStarBenchMaterializedView(db *sql.DB, namespace string, viewName
 	defer cancel()
 
 	sql := createDeathStarBenchMaterializedViewSQL(namespace, viewName)
-	
+
 	if _, err := db.ExecContext(ctx, sql); err != nil {
 		return fmt.Errorf("error creating DeathStarBench materialized view for namespace %s: %w", namespace, err)
 	}
@@ -914,7 +922,7 @@ func CreateOnlineBoutiqueMaterializedView(db *sql.DB, namespace string, viewName
 	defer cancel()
 
 	sql := createOnlineBoutiqueMaterializedViewSQL(namespace, viewName)
-	
+
 	if _, err := db.ExecContext(ctx, sql); err != nil {
 		return fmt.Errorf("error creating OnlineBoutique materialized view for namespace %s: %w", namespace, err)
 	}
@@ -1893,12 +1901,12 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		port    string
 	}{
 		// Cast info service
-		"/wrk2-api/cast-info":  {"cast-info-service", "9090"},
+		"/wrk2-api/cast-info":            {"cast-info-service", "9090"},
 		"/wrk2-api/movie/read-cast-info": {"cast-info-service", "9090"},
-		"CastInfoHandler":      {"cast-info-service", "9090"},
-		"WriteCastInfo":        {"cast-info-service", "9090"},
-		"ReadCastInfo":         {"cast-info-service", "9090"},
-		"/cast-info":          {"cast-info-service", "9090"},
+		"CastInfoHandler":                {"cast-info-service", "9090"},
+		"WriteCastInfo":                  {"cast-info-service", "9090"},
+		"ReadCastInfo":                   {"cast-info-service", "9090"},
+		"/cast-info":                     {"cast-info-service", "9090"},
 		// Compose review service
 		"/wrk2-api/review/compose": {"compose-review-service", "9090"},
 		"/wrk2-api/movie/register": {"compose-review-service", "9090"},
@@ -1909,37 +1917,37 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		"UploadUniqueId":           {"compose-review-service", "9090"},
 		"UploadUserId":             {"compose-review-service", "9090"},
 		"/compose":                 {"compose-review-service", "9090"},
-		"/register":               {"compose-review-service", "9090"},
+		"/register":                {"compose-review-service", "9090"},
 		// Movie ID service
 		"RegisterMovieId": {"movie-id-service", "9090"},
 		"MovieIdHandler":  {"movie-id-service", "9090"},
 		"/movie-id":       {"movie-id-service", "9090"},
 		// Movie info service
-		"/wrk2-api/movie-info":  {"movie-info-service", "9090"},
+		"/wrk2-api/movie-info":      {"movie-info-service", "9090"},
 		"/wrk2-api/movie/read-info": {"movie-info-service", "9090"},
-		"MovieInfoHandler":      {"movie-info-service", "9090"},
-		"WriteMovieInfo":        {"movie-info-service", "9090"},
-		"ReadMovieInfo":         {"movie-info-service", "9090"},
-		"/movie-info":           {"movie-info-service", "9090"},
-		"/read-info":            {"movie-info-service", "9090"},
+		"MovieInfoHandler":          {"movie-info-service", "9090"},
+		"WriteMovieInfo":            {"movie-info-service", "9090"},
+		"ReadMovieInfo":             {"movie-info-service", "9090"},
+		"/movie-info":               {"movie-info-service", "9090"},
+		"/read-info":                {"movie-info-service", "9090"},
 		// Movie review service
-		"StoreReview":        {"movie-review-service", "9090"},
-		"ReadMovieReviews":   {"movie-review-service", "9090"},
-		"/movie-review":      {"movie-review-service", "9090"},
-		"/review":            {"movie-review-service", "9090"},
+		"StoreReview":      {"movie-review-service", "9090"},
+		"ReadMovieReviews": {"movie-review-service", "9090"},
+		"/movie-review":    {"movie-review-service", "9090"},
+		"/review":          {"movie-review-service", "9090"},
 		// Page service
-		"/wrk2-api/page":  {"page-service", "9090"},
+		"/wrk2-api/page":            {"page-service", "9090"},
 		"/wrk2-api/movie/read-page": {"page-service", "9090"},
-		"ReadPage":        {"page-service", "9090"},
-		"/read-page":      {"page-service", "9090"},
+		"ReadPage":                  {"page-service", "9090"},
+		"/read-page":                {"page-service", "9090"},
 		// Plot service
-		"/wrk2-api/plot":  {"plot-service", "9090"},
+		"/wrk2-api/plot":            {"plot-service", "9090"},
 		"/wrk2-api/movie/read-plot": {"plot-service", "9090"},
-		"PlotHandler":     {"plot-service", "9090"},
-		"WritePlot":       {"plot-service", "9090"},
-		"ReadPlot":        {"plot-service", "9090"},
-		"/plot":           {"plot-service", "9090"},
-		"/read-plot":      {"plot-service", "9090"},
+		"PlotHandler":               {"plot-service", "9090"},
+		"WritePlot":                 {"plot-service", "9090"},
+		"ReadPlot":                  {"plot-service", "9090"},
+		"/plot":                     {"plot-service", "9090"},
+		"/read-plot":                {"plot-service", "9090"},
 		// Rating service
 		"StoreRating": {"rating-service", "9090"},
 		"ReadRatings": {"rating-service", "9090"},
@@ -1949,25 +1957,25 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		"ReadReviews":        {"review-storage-service", "9090"},
 		"/review-storage":    {"review-storage-service", "9090"},
 		// Text service
-		"TextHandler":  {"text-service", "9090"},
-		"StoreText":    {"text-service", "9090"},
-		"/text":        {"text-service", "9090"},
+		"TextHandler": {"text-service", "9090"},
+		"StoreText":   {"text-service", "9090"},
+		"/text":       {"text-service", "9090"},
 		// Unique ID service
 		"UniqueIdHandler": {"unique-id-service", "9090"},
 		"ComposeUniqueId": {"unique-id-service", "9090"},
 		"/unique-id":      {"unique-id-service", "9090"},
 		// User service
-		"/wrk2-api/user":  {"user-service", "9090"},
-		"UserHandler":     {"user-service", "9090"},
-		"RegisterUser":    {"user-service", "9090"},
-		"Login":           {"user-service", "9090"},
-		"/user":           {"user-service", "9090"},
+		"/wrk2-api/user": {"user-service", "9090"},
+		"UserHandler":    {"user-service", "9090"},
+		"RegisterUser":   {"user-service", "9090"},
+		"Login":          {"user-service", "9090"},
+		"/user":          {"user-service", "9090"},
 		// User review service
-		"ReadUserReviews":    {"user-review-service", "9090"},
-		"StoreUserReview":    {"user-review-service", "9090"},
-		"/user-review":       {"user-review-service", "9090"},
+		"ReadUserReviews": {"user-review-service", "9090"},
+		"StoreUserReview": {"user-review-service", "9090"},
+		"/user-review":    {"user-review-service", "9090"},
 		// Frontend - removed overly broad "/" pattern
-		"/wrk2-api/home":     {"nginx-web-server", "8080"},
+		"/wrk2-api/home": {"nginx-web-server", "8080"},
 	}
 
 	// Sort patterns by length (longest first) to ensure more specific patterns match first
@@ -2029,25 +2037,25 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 		"StoreMedia":         {"media-service", "9090"},
 		"/media":             {"media-service", "9090"},
 		// Post storage service
-		"StorePost":       {"post-storage-service", "9090"},
-		"ReadPost":        {"post-storage-service", "9090"},
-		"ReadPosts":       {"post-storage-service", "9090"},
-		"/post-storage":   {"post-storage-service", "9090"},
+		"StorePost":     {"post-storage-service", "9090"},
+		"ReadPost":      {"post-storage-service", "9090"},
+		"ReadPosts":     {"post-storage-service", "9090"},
+		"/post-storage": {"post-storage-service", "9090"},
 		// Social graph service
-		"/wrk2-api/user/follow":     {"social-graph-service", "9090"},
-		"/wrk2-api/user/unfollow":   {"social-graph-service", "9090"},
-		"Follow":                    {"social-graph-service", "9090"},
-		"Unfollow":                  {"social-graph-service", "9090"},
-		"GetFollowers":              {"social-graph-service", "9090"},
-		"GetFollowees":              {"social-graph-service", "9090"},
-		"InsertUser":                {"social-graph-service", "9090"},
-		"FollowWithUsername":        {"social-graph-service", "9090"},
-		"UnfollowWithUsername":      {"social-graph-service", "9090"},
-		"/social-graph":             {"social-graph-service", "9090"},
+		"/wrk2-api/user/follow":   {"social-graph-service", "9090"},
+		"/wrk2-api/user/unfollow": {"social-graph-service", "9090"},
+		"Follow":                  {"social-graph-service", "9090"},
+		"Unfollow":                {"social-graph-service", "9090"},
+		"GetFollowers":            {"social-graph-service", "9090"},
+		"GetFollowees":            {"social-graph-service", "9090"},
+		"InsertUser":              {"social-graph-service", "9090"},
+		"FollowWithUsername":      {"social-graph-service", "9090"},
+		"UnfollowWithUsername":    {"social-graph-service", "9090"},
+		"/social-graph":           {"social-graph-service", "9090"},
 		// Text service
-		"TextHandler":   {"text-service", "9090"},
-		"ProcessText":   {"text-service", "9090"},
-		"/text":         {"text-service", "9090"},
+		"TextHandler": {"text-service", "9090"},
+		"ProcessText": {"text-service", "9090"},
+		"/text":       {"text-service", "9090"},
 		// Unique ID service
 		"UniqueIdHandler": {"unique-id-service", "9090"},
 		"ComposeUniqueId": {"unique-id-service", "9090"},
@@ -2060,9 +2068,9 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 		"/url-shorten":           {"url-shorten-service", "9090"},
 		"/shorten":               {"url-shorten-service", "9090"},
 		// User mention service
-		"UserMentionHandler":   {"user-mention-service", "9090"},
-		"ComposeUserMentions":  {"user-mention-service", "9090"},
-		"/user-mention":        {"user-mention-service", "9090"},
+		"UserMentionHandler":  {"user-mention-service", "9090"},
+		"ComposeUserMentions": {"user-mention-service", "9090"},
+		"/user-mention":       {"user-mention-service", "9090"},
 		// User service
 		"/wrk2-api/user/register": {"user-service", "9090"},
 		"/wrk2-api/user/login":    {"user-service", "9090"},
@@ -2121,50 +2129,50 @@ func mapHotelReservationRouteToService(endpoint *ServiceEndpoint) {
 		port    string
 	}{
 		// Attractions service
-		"/attractions":     {"attractions", "8089"},
-		"GetAttractions":   {"attractions", "8089"},
+		"/attractions":            {"attractions", "8089"},
+		"GetAttractions":          {"attractions", "8089"},
 		"attractions.Attractions": {"attractions", "8089"},
 		// Frontend service - removed overly broad "/" pattern
-		"/hotels":          {"frontend", "5000"},
-		"/recommendations": {"frontend", "5000"},
-		"/user":            {"frontend", "5000"},
-		"/reservation":     {"frontend", "5000"},
+		"/hotels":           {"frontend", "5000"},
+		"/recommendations":  {"frontend", "5000"},
+		"/user":             {"frontend", "5000"},
+		"/reservation":      {"frontend", "5000"},
 		"frontend.Frontend": {"frontend", "5000"},
 		// Geo service
-		"/geo":           {"geo", "8083"},
-		"NearbyGeo":      {"geo", "8083"},
-		"GetGeo":         {"geo", "8083"},
-		"geo.Geo":        {"geo", "8083"},
+		"/geo":      {"geo", "8083"},
+		"NearbyGeo": {"geo", "8083"},
+		"GetGeo":    {"geo", "8083"},
+		"geo.Geo":   {"geo", "8083"},
 		// Profile service
-		"/profile":       {"profile", "8081"},
-		"GetProfiles":    {"profile", "8081"},
-		"GetProfile":     {"profile", "8081"},
+		"/profile":        {"profile", "8081"},
+		"GetProfiles":     {"profile", "8081"},
+		"GetProfile":      {"profile", "8081"},
 		"profile.Profile": {"profile", "8081"},
 		// Rate service
-		"/rate":          {"rate", "8084"},
-		"GetRates":       {"rate", "8084"},
-		"GetRate":        {"rate", "8084"},
-		"rate.Rate":      {"rate", "8084"},
+		"/rate":     {"rate", "8084"},
+		"GetRates":  {"rate", "8084"},
+		"GetRate":   {"rate", "8084"},
+		"rate.Rate": {"rate", "8084"},
 		// Recommendation service
-		"/recommendation": {"recommendation", "8085"},
-		"GetRecommendations": {"recommendation", "8085"},
+		"/recommendation":               {"recommendation", "8085"},
+		"GetRecommendations":            {"recommendation", "8085"},
 		"recommendation.Recommendation": {"recommendation", "8085"},
 		// Reservation service
-		"/reserve":       {"reservation", "8087"},
-		"MakeReservation": {"reservation", "8087"},
-		"CheckAvailability": {"reservation", "8087"},
+		"/reserve":                {"reservation", "8087"},
+		"MakeReservation":         {"reservation", "8087"},
+		"CheckAvailability":       {"reservation", "8087"},
 		"reservation.Reservation": {"reservation", "8087"},
 		// Search service
-		"/search":        {"search", "8082"},
-		"NearbySearch":   {"search", "8082"},
-		"search.Search":  {"search", "8082"},
+		"/search":       {"search", "8082"},
+		"NearbySearch":  {"search", "8082"},
+		"search.Search": {"search", "8082"},
 		// User service
-		"/login":         {"user", "8086"},
-		"/register":      {"user", "8086"},
-		"Login":          {"user", "8086"},
-		"Register":       {"user", "8086"},
-		"CheckUser":      {"user", "8086"},
-		"user.User":      {"user", "8086"},
+		"/login":    {"user", "8086"},
+		"/register": {"user", "8086"},
+		"Login":     {"user", "8086"},
+		"Register":  {"user", "8086"},
+		"CheckUser": {"user", "8086"},
+		"user.User": {"user", "8086"},
 	}
 
 	// Sort patterns by length (longest first) to ensure more specific patterns match first
@@ -2204,38 +2212,38 @@ func mapOnlineBoutiqueRouteToService(endpoint *ServiceEndpoint) {
 		port    string
 	}{
 		// Frontend service
-		"/":                   {"frontend", "80"},
-		"/product":            {"frontend", "80"},
-		"/cart":               {"frontend", "80"},
-		"/checkout":           {"frontend", "80"},
-		"frontend":            {"frontend", "80"},
+		"/":         {"frontend", "80"},
+		"/product":  {"frontend", "80"},
+		"/cart":     {"frontend", "80"},
+		"/checkout": {"frontend", "80"},
+		"frontend":  {"frontend", "80"},
 		// Ad service
-		"/hipstershop.AdService":        {"adservice", "9555"},
-		"AdService":                     {"adservice", "9555"},
-		"GetAds":                        {"adservice", "9555"},
+		"/hipstershop.AdService": {"adservice", "9555"},
+		"AdService":              {"adservice", "9555"},
+		"GetAds":                 {"adservice", "9555"},
 		// Cart service
-		"/hipstershop.CartService":      {"cartservice", "7070"},
-		"CartService":                   {"cartservice", "7070"},
-		"AddItem":                       {"cartservice", "7070"},
-		"GetCart":                       {"cartservice", "7070"},
-		"EmptyCart":                     {"cartservice", "7070"},
+		"/hipstershop.CartService": {"cartservice", "7070"},
+		"CartService":              {"cartservice", "7070"},
+		"AddItem":                  {"cartservice", "7070"},
+		"GetCart":                  {"cartservice", "7070"},
+		"EmptyCart":                {"cartservice", "7070"},
 		// Checkout service
-		"/hipstershop.CheckoutService":  {"checkoutservice", "5050"},
-		"CheckoutService":               {"checkoutservice", "5050"},
-		"PlaceOrder":                    {"checkoutservice", "5050"},
+		"/hipstershop.CheckoutService": {"checkoutservice", "5050"},
+		"CheckoutService":              {"checkoutservice", "5050"},
+		"PlaceOrder":                   {"checkoutservice", "5050"},
 		// Currency service
-		"/hipstershop.CurrencyService":  {"currencyservice", "7000"},
-		"CurrencyService":               {"currencyservice", "7000"},
-		"GetSupportedCurrencies":        {"currencyservice", "7000"},
-		"Convert":                       {"currencyservice", "7000"},
+		"/hipstershop.CurrencyService": {"currencyservice", "7000"},
+		"CurrencyService":              {"currencyservice", "7000"},
+		"GetSupportedCurrencies":       {"currencyservice", "7000"},
+		"Convert":                      {"currencyservice", "7000"},
 		// Email service
-		"/hipstershop.EmailService":     {"emailservice", "5000"},
-		"EmailService":                  {"emailservice", "5000"},
-		"SendOrderConfirmation":         {"emailservice", "5000"},
+		"/hipstershop.EmailService": {"emailservice", "5000"},
+		"EmailService":              {"emailservice", "5000"},
+		"SendOrderConfirmation":     {"emailservice", "5000"},
 		// Payment service
-		"/hipstershop.PaymentService":   {"paymentservice", "50051"},
-		"PaymentService":                {"paymentservice", "50051"},
-		"Charge":                        {"paymentservice", "50051"},
+		"/hipstershop.PaymentService": {"paymentservice", "50051"},
+		"PaymentService":              {"paymentservice", "50051"},
+		"Charge":                      {"paymentservice", "50051"},
 		// Product catalog service
 		"/hipstershop.ProductCatalogService": {"productcatalogservice", "3550"},
 		"ProductCatalogService":              {"productcatalogservice", "3550"},
@@ -2247,10 +2255,10 @@ func mapOnlineBoutiqueRouteToService(endpoint *ServiceEndpoint) {
 		"RecommendationService":              {"recommendationservice", "8080"},
 		"ListRecommendations":                {"recommendationservice", "8080"},
 		// Shipping service
-		"/hipstershop.ShippingService":  {"shippingservice", "50051"},
-		"ShippingService":               {"shippingservice", "50051"},
-		"GetQuote":                      {"shippingservice", "50051"},
-		"ShipOrder":                     {"shippingservice", "50051"},
+		"/hipstershop.ShippingService": {"shippingservice", "50051"},
+		"ShippingService":              {"shippingservice", "50051"},
+		"GetQuote":                     {"shippingservice", "50051"},
+		"ShipOrder":                    {"shippingservice", "50051"},
 	}
 
 	// Sort patterns by length (longest first) to match more specific patterns first
@@ -2333,17 +2341,17 @@ func mapSocialNetworkGRPCToService(operation *GRPCOperation, rpcService string) 
 		service string
 		port    string
 	}{
-		"ComposePostService":   {"compose-post-service", "9090"},
-		"HomeTimelineService":  {"home-timeline-service", "9090"},
-		"MediaService":         {"media-service", "9090"},
-		"PostStorageService":   {"post-storage-service", "9090"},
-		"SocialGraphService":   {"social-graph-service", "9090"},
-		"TextService":          {"text-service", "9090"},
-		"UniqueIdService":      {"unique-id-service", "9090"},
-		"UrlShortenService":    {"url-shorten-service", "9090"},
-		"UserMentionService":   {"user-mention-service", "9090"},
-		"UserService":          {"user-service", "9090"},
-		"UserTimelineService":  {"user-timeline-service", "9090"},
+		"ComposePostService":  {"compose-post-service", "9090"},
+		"HomeTimelineService": {"home-timeline-service", "9090"},
+		"MediaService":        {"media-service", "9090"},
+		"PostStorageService":  {"post-storage-service", "9090"},
+		"SocialGraphService":  {"social-graph-service", "9090"},
+		"TextService":         {"text-service", "9090"},
+		"UniqueIdService":     {"unique-id-service", "9090"},
+		"UrlShortenService":   {"url-shorten-service", "9090"},
+		"UserMentionService":  {"user-mention-service", "9090"},
+		"UserService":         {"user-service", "9090"},
+		"UserTimelineService": {"user-timeline-service", "9090"},
 	}
 
 	for pattern, service := range serviceMap {
@@ -2373,15 +2381,15 @@ func mapHotelReservationGRPCToService(operation *GRPCOperation, rpcService strin
 		"SearchService":         {"search", "8082"},
 		"UserService":           {"user", "8086"},
 		// DeathStarBench hotelReservation gRPC service patterns
-		"attractions.Attractions": {"attractions", "8089"},
-		"frontend.Frontend":       {"frontend", "5000"},
-		"geo.Geo":                 {"geo", "8083"},
-		"profile.Profile":         {"profile", "8081"},
-		"rate.Rate":               {"rate", "8084"},
+		"attractions.Attractions":       {"attractions", "8089"},
+		"frontend.Frontend":             {"frontend", "5000"},
+		"geo.Geo":                       {"geo", "8083"},
+		"profile.Profile":               {"profile", "8081"},
+		"rate.Rate":                     {"rate", "8084"},
 		"recommendation.Recommendation": {"recommendation", "8085"},
-		"reservation.Reservation": {"reservation", "8087"},
-		"search.Search":           {"search", "8082"},
-		"user.User":               {"user", "8086"},
+		"reservation.Reservation":       {"reservation", "8087"},
+		"search.Search":                 {"search", "8082"},
+		"user.User":                     {"user", "8086"},
 	}
 
 	for pattern, service := range serviceMap {
@@ -2400,24 +2408,24 @@ func mapOnlineBoutiqueGRPCToService(operation *GRPCOperation, rpcService string)
 		service string
 		port    string
 	}{
-		"hipstershop.AdService":              {"adservice", "9555"},
-		"AdService":                          {"adservice", "9555"},
-		"hipstershop.CartService":            {"cartservice", "7070"},
-		"CartService":                        {"cartservice", "7070"},
-		"hipstershop.CheckoutService":        {"checkoutservice", "5050"},
-		"CheckoutService":                    {"checkoutservice", "5050"},
-		"hipstershop.CurrencyService":        {"currencyservice", "7000"},
-		"CurrencyService":                    {"currencyservice", "7000"},
-		"hipstershop.EmailService":           {"emailservice", "5000"},
-		"EmailService":                       {"emailservice", "5000"},
-		"hipstershop.PaymentService":         {"paymentservice", "50051"},
-		"PaymentService":                     {"paymentservice", "50051"},
-		"hipstershop.ProductCatalogService":  {"productcatalogservice", "3550"},
-		"ProductCatalogService":              {"productcatalogservice", "3550"},
-		"hipstershop.RecommendationService":  {"recommendationservice", "8080"},
-		"RecommendationService":              {"recommendationservice", "8080"},
-		"hipstershop.ShippingService":        {"shippingservice", "50051"},
-		"ShippingService":                    {"shippingservice", "50051"},
+		"hipstershop.AdService":             {"adservice", "9555"},
+		"AdService":                         {"adservice", "9555"},
+		"hipstershop.CartService":           {"cartservice", "7070"},
+		"CartService":                       {"cartservice", "7070"},
+		"hipstershop.CheckoutService":       {"checkoutservice", "5050"},
+		"CheckoutService":                   {"checkoutservice", "5050"},
+		"hipstershop.CurrencyService":       {"currencyservice", "7000"},
+		"CurrencyService":                   {"currencyservice", "7000"},
+		"hipstershop.EmailService":          {"emailservice", "5000"},
+		"EmailService":                      {"emailservice", "5000"},
+		"hipstershop.PaymentService":        {"paymentservice", "50051"},
+		"PaymentService":                    {"paymentservice", "50051"},
+		"hipstershop.ProductCatalogService": {"productcatalogservice", "3550"},
+		"ProductCatalogService":             {"productcatalogservice", "3550"},
+		"hipstershop.RecommendationService": {"recommendationservice", "8080"},
+		"RecommendationService":             {"recommendationservice", "8080"},
+		"hipstershop.ShippingService":       {"shippingservice", "50051"},
+		"ShippingService":                   {"shippingservice", "50051"},
 	}
 
 	for pattern, service := range serviceMap {
