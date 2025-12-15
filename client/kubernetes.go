@@ -113,10 +113,10 @@ func GetK8sConfig() *rest.Config {
 	return config
 }
 
-// NewK8sClient returns the Kubernetes client.
+// GetK8sClient returns the Kubernetes client.
 // If InitWithConfig or InitWithClient was called, it uses that client.
 // Otherwise, it initializes a new client automatically (not recommended for library usage).
-func NewK8sClient() client.Client {
+func GetK8sClient() client.Client {
 	mu.RLock()
 	if k8sClientInstance != nil {
 		mu.RUnlock()
@@ -140,7 +140,7 @@ func NewK8sClient() client.Client {
 
 func ListNamespaces() ([]string, error) {
 	var namespaceList corev1.NamespaceList
-	if err := NewK8sClient().List(context.TODO(), &namespaceList); err != nil {
+	if err := GetK8sClient().List(context.TODO(), &namespaceList); err != nil {
 		return nil, fmt.Errorf("failed to list namespaces: %v", err)
 	}
 
@@ -157,7 +157,7 @@ func GetLabels(ctx context.Context, namespace string, key string) ([]string, err
 
 	// List all pods in the specified namespace
 	podList := &corev1.PodList{}
-	err := NewK8sClient().List(ctx, podList, &client.ListOptions{
+	err := GetK8sClient().List(ctx, podList, &client.ListOptions{
 		Namespace: namespace,
 	})
 	if err != nil {
@@ -186,7 +186,7 @@ func GetContainersWithAppLabel(ctx context.Context, namespace string) ([]map[str
 
 	// List all pods in the specified namespace
 	podList := &corev1.PodList{}
-	if err := NewK8sClient().List(ctx, podList, &client.ListOptions{
+	if err := GetK8sClient().List(ctx, podList, &client.ListOptions{
 		Namespace: namespace,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to list pods in namespace %s: %v", namespace, err)
@@ -211,7 +211,7 @@ func GetContainersWithAppLabel(ctx context.Context, namespace string) ([]map[str
 
 func GetPodsByLabel(namespace, labelKey, labelValue string) ([]string, error) {
 	pods := &corev1.PodList{}
-	err := NewK8sClient().List(context.Background(), pods,
+	err := GetK8sClient().List(context.Background(), pods,
 		client.InNamespace(namespace),
 		client.MatchingLabels{labelKey: labelValue})
 	if err != nil {
@@ -241,7 +241,7 @@ func GetCRDMapping() map[schema.GroupVersionResource]client.Object {
 
 // QueryCRDByName 查询指定命名空间和名称的 CRD，并检查其状态
 func QueryCRDByName(namespace, nameToQuery string) (time.Time, time.Time, error) {
-	k8sClient := NewK8sClient()
+	k8sClient := GetK8sClient()
 	ctx := context.Background()
 
 	// 定义支持的 CRD 类型和对应的 GVR 映射

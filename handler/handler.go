@@ -330,25 +330,32 @@ type InjectionConf struct {
 	JVMMySQLException        *JVMMySQLExceptionSpec        `range:"0-2"`
 }
 
-func (ic *InjectionConf) Create(ctx context.Context, namespace string, annotations map[string]string, labels map[string]string) (string, error) {
-	activeField, err := ic.getActiveField()
+func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
+	instance, err := ic.getActiveInjection()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	instance := activeField.Interface().(Injection)
-	name, err := instance.Create(
-		client.NewK8sClient(),
-		WithAnnotations(annotations),
-		WithContext(ctx),
-		WithLabels(labels),
-		WithNs(namespace),
-	)
+	parsed, err := parseInjection(instance)
 	if err != nil {
-		return "", fmt.Errorf("failed to inject chaos for %T: %w", instance, err)
+		return nil, err
 	}
 
-	return name, nil
+	return parsed, nil
+}
+
+func (ic *InjectionConf) GetGroundtruth() (Groundtruth, error) {
+	instance, err := ic.getActiveInjection()
+	if err != nil {
+		return Groundtruth{}, err
+	}
+
+	// Check if the injection supports GetGroundtruth
+	if provider, ok := instance.(GroundtruthProvider); ok {
+		return provider.GetGroundtruth()
+	}
+
+	return Groundtruth{}, fmt.Errorf("injection does not support groundtruth calculation")
 }
 
 func (ic *InjectionConf) getActiveField() (reflect.Value, error) {
@@ -379,12 +386,65 @@ func (ic *InjectionConf) getActiveInjection() (Injection, error) {
 	return activeField.Interface().(Injection), nil
 }
 
-func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
-	instance, err := ic.getActiveInjection()
-	if err != nil {
-		return nil, err
+func BatchCreate(ctx context.Context, confs []InjectionConf, namespace string, annotations map[string]string, labels map[string]string) ([]string, error) {
+	if len(confs) == 0 {
+		return nil, fmt.Errorf("no injection configurations provided")
 	}
 
+	type result struct {
+		name  string
+		err   error
+		index int
+	}
+
+	resultChan := make(chan result, len(confs))
+	for idx, conf := range confs {
+		go func(ic InjectionConf, i int) {
+			injection, err := ic.getActiveInjection()
+			if err != nil {
+				resultChan <- result{err: fmt.Errorf("failed to get active injection for conf at index %d: %w", i, err), index: i}
+			}
+
+			name, err := injection.Create(
+				client.GetK8sClient(),
+				WithAnnotations(annotations),
+				WithContext(ctx),
+				WithLabels(labels),
+				WithNs(namespace),
+			)
+			if err != nil {
+				resultChan <- result{err: fmt.Errorf("failed to inject chaos for %v: %w", injection, err), index: i}
+			} else {
+				resultChan <- result{name: name, index: i}
+			}
+		}(conf, idx)
+	}
+
+	results := make([]result, len(confs))
+	for i := 0; i < len(confs); i++ {
+		res := <-resultChan
+		results[res.index] = res
+	}
+
+	names := make([]string, 0, len(confs))
+	var errs []error
+
+	for _, res := range results {
+		if res.err != nil {
+			errs = append(errs, res.err)
+		} else {
+			names = append(names, res.name)
+		}
+	}
+
+	if len(errs) > 0 {
+		return names, fmt.Errorf("some injections failed: %v", errs)
+	}
+
+	return names, nil
+}
+
+func parseInjection(instance Injection) (map[string]any, error) {
 	instanceValue := reflect.ValueOf(instance).Elem()
 	instanceType := instanceValue.Type()
 
@@ -505,20 +565,6 @@ func (ic *InjectionConf) GetDisplayConfig() (map[string]any, error) {
 	}
 
 	return result, nil
-}
-
-func (ic *InjectionConf) GetGroundtruth() (Groundtruth, error) {
-	instance, err := ic.getActiveInjection()
-	if err != nil {
-		return Groundtruth{}, err
-	}
-
-	// Check if the injection supports GetGroundtruth
-	if provider, ok := instance.(GroundtruthProvider); ok {
-		return provider.GetGroundtruth()
-	}
-
-	return Groundtruth{}, fmt.Errorf("injection does not support groundtruth calculation")
 }
 
 func getIntValue(field reflect.Value) (int64, error) {

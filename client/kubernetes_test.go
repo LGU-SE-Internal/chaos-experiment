@@ -19,7 +19,7 @@ func TestGetLabel(t *testing.T) {
 	fmt.Println(labels)
 }
 func TestCRDClient(t *testing.T) {
-	k8sClient := NewK8sClient()
+	k8sClient := GetK8sClient()
 	ctx := context.Background()
 	podChaosList := &v1alpha1.StressChaosList{}
 	nameToQuery := "ts-ts-train-service-cpu-exhaustion-7mwd86"

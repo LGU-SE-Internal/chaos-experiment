@@ -82,7 +82,7 @@ func TestHandler2(t *testing.T) {
 
 		pp.Println(displayConfig)
 
-		name, err := conf.Create(context.Background(), "ts0", map[string]string{}, map[string]string{
+		name, err := BatchCreate(context.Background(), []InjectionConf{*conf}, "ts0", map[string]string{}, map[string]string{
 			"benchmark":    "clickhouse",
 			"pre_duration": "1",
 			"task_id":      "1",

@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	k8sClient := client.NewK8sClient()
+	k8sClient := client.GetK8sClient()
 
 	namespace := "ts"
 
