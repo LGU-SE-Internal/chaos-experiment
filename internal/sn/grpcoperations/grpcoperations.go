@@ -2,17 +2,12 @@
 // System: sn
 package grpcoperations
 
-// GRPCOperation represents a gRPC operation from ClickHouse analysis
-type GRPCOperation struct {
-	ServiceName    string
-	RPCSystem      string
-	RPCService     string
-	RPCMethod      string
-	GRPCStatusCode string
-	ServerAddress  string
-	ServerPort     string
-	SpanKind       string
-}
+import (
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcetypes"
+)
+
+// GRPCOperation is an alias for the shared type
+type GRPCOperation = resourcetypes.GRPCOperation
 
 // GRPCOperations maps service names to their gRPC operations
 var GRPCOperations = map[string][]GRPCOperation{
@@ -22,10 +17,11 @@ var GRPCOperations = map[string][]GRPCOperation{
 			RPCSystem:      "thrift",
 			RPCService:     "UserService",
 			RPCMethod:      "RegisterUserWithId",
-			GRPCStatusCode: "",
+			StatusCode:     "",
 			ServerAddress:  "user-service",
 			ServerPort:     "9090",
 			SpanKind:       "Server",
+			SpanName:       "register_user_withid_server",
 		},
 	},
 	"post-storage-service": {
@@ -34,10 +30,11 @@ var GRPCOperations = map[string][]GRPCOperation{
 			RPCSystem:      "thrift",
 			RPCService:     "PostStorageService",
 			RPCMethod:      "ReadPosts",
-			GRPCStatusCode: "",
+			StatusCode:     "",
 			ServerAddress:  "post-storage-service",
 			ServerPort:     "9090",
 			SpanKind:       "Server",
+			SpanName:       "post_storage_read_posts_server",
 		},
 	},
 	"social-graph-service": {
@@ -46,10 +43,11 @@ var GRPCOperations = map[string][]GRPCOperation{
 			RPCSystem:      "thrift",
 			RPCService:     "SocialGraphService",
 			RPCMethod:      "FollowWithUsername",
-			GRPCStatusCode: "",
+			StatusCode:     "",
 			ServerAddress:  "social-graph-service",
 			ServerPort:     "9090",
 			SpanKind:       "Server",
+			SpanName:       "follow_with_username_server",
 		},
 	},
 	"url-shorten-service": {
@@ -58,10 +56,11 @@ var GRPCOperations = map[string][]GRPCOperation{
 			RPCSystem:      "thrift",
 			RPCService:     "UrlShortenService",
 			RPCMethod:      "ComposeUrls",
-			GRPCStatusCode: "",
+			StatusCode:     "",
 			ServerAddress:  "url-shorten-service",
 			ServerPort:     "9090",
 			SpanKind:       "Server",
+			SpanName:       "compose_urls_server",
 		},
 	},
 	"user-mention-service": {
@@ -70,10 +69,11 @@ var GRPCOperations = map[string][]GRPCOperation{
 			RPCSystem:      "thrift",
 			RPCService:     "UserMentionService",
 			RPCMethod:      "ComposeUserMentions",
-			GRPCStatusCode: "",
+			StatusCode:     "",
 			ServerAddress:  "user-mention-service",
 			ServerPort:     "9090",
 			SpanKind:       "Server",
+			SpanName:       "compose_user_mentions_server",
 		},
 	},
 }

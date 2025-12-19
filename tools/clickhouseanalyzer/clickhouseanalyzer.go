@@ -22,6 +22,7 @@ type ClickHouseConfig struct {
 }
 
 // ServiceEndpoint represents a service endpoint with its details
+// This is used internally by the analyzer tool
 type ServiceEndpoint struct {
 	ServiceName    string
 	RequestMethod  string
@@ -29,8 +30,35 @@ type ServiceEndpoint struct {
 	Route          string
 	ServerAddress  string
 	ServerPort     string
-	SpanKind       string // Add SpanKind to track if it's Server or Client
-	SpanName       string // Span name for groundtruth generation
+	SpanKind       string
+	SpanName       string
+}
+
+// DatabaseOperation represents a database operation with its details
+// This is used internally by the analyzer tool
+type DatabaseOperation struct {
+	ServiceName   string
+	DBName        string
+	DBTable       string
+	Operation     string
+	DBSystem      string
+	ServerAddress string
+	ServerPort    string
+	SpanName      string
+}
+
+// GRPCOperation represents a gRPC operation with its details
+// This is used internally by the analyzer tool
+type GRPCOperation struct {
+	ServiceName   string
+	RPCSystem     string
+	RPCService    string
+	RPCMethod     string
+	StatusCode    string
+	ServerAddress string
+	ServerPort    string
+	SpanKind      string
+	SpanName      string
 }
 
 // TrainTicket span name pattern replacements for ts-ui-dashboard and loadgenerator services
@@ -79,6 +107,14 @@ var tsSpanNamePatterns = []struct {
 		regexp.MustCompile(`(.*?)GET (.*?)/api/v1/executeservice/execute/execute/[0-9a-f-]+`),
 		"${1}GET ${2}/api/v1/executeservice/execute/execute/{orderId}",
 	},
+	{
+		regexp.MustCompile(`(.*?)DELETE (.*?)/api/v1/adminorderservice/adminorder/[0-9a-f-]+/[A-Z0-9]+`),
+		"${1}DELETE ${2}/api/v1/adminorderservice/adminorder/{orderId}/{trainNumber}",
+	},
+	{
+		regexp.MustCompile(`(.*?)DELETE (.*?)/api/v1/adminrouteservice/adminroute/[0-9a-f-]+`),
+		"${1}DELETE ${2}/api/v1/adminrouteservice/adminroute/{routeId}",
+	},
 }
 
 // NormalizeTrainTicketSpanName applies pattern replacements to normalize
@@ -97,29 +133,6 @@ func NormalizeTrainTicketSpanName(spanName string, serviceName string) string {
 	return spanName
 }
 
-// DatabaseOperation represents a database operation with its details
-type DatabaseOperation struct {
-	ServiceName   string
-	DBName        string
-	DBTable       string
-	Operation     string
-	DBSystem      string
-	ServerAddress string
-	ServerPort    string
-}
-
-// GRPCOperation represents a gRPC operation with its details
-type GRPCOperation struct {
-	ServiceName    string
-	RPCSystem      string
-	RPCService     string
-	RPCMethod      string
-	GRPCStatusCode string
-	ServerAddress  string
-	ServerPort     string
-	SpanKind       string
-}
-
 // Create materialized view SQL statement
 const createMaterializedViewSQL = `
 CREATE MATERIALIZED VIEW IF NOT EXISTS otel_traces_mv 
@@ -133,8 +146,6 @@ ORDER BY (
     SpanKind,
     request_method,
     response_status_code,
-    server_address,
-    server_port,
 	db_name,
     db_operation
 )
@@ -180,6 +191,14 @@ SELECT
         WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
             THEN 
                 CASE
+                    -- New patterns first for priority matching
+                    -- /api/v1/adminorderservice/adminorder/{uuid}/{id}
+                    WHEN match(SpanAttributes['http.target'], '/api/v1/adminorderservice/adminorder/[0-9a-f-]+/[A-Z0-9]+')
+                        THEN '/api/v1/adminorderservice/adminorder/*/*'
+                    -- /api/v1/users/{uuid}
+                    WHEN match(SpanAttributes['http.target'], '^/api/v1/users/[0-9a-f-]+$')
+                        THEN '/api/v1/users/*'
+                    -- Existing patterns
                     WHEN position(SpanAttributes['http.target'], '/api/v1/verifycode/verify/') = 1
                         THEN '/api/v1/verifycode/verify/*'
                     WHEN position(SpanAttributes['http.target'], '/api/v1/cancelservice/cancel/refound/') = 1
@@ -200,6 +219,7 @@ SELECT
                         THEN '/api/v1/executeservice/execute/execute/*'
                     WHEN position(SpanAttributes['http.target'], '/api/v1/userservice/users/id/') = 1
                         THEN '/api/v1/userservice/users/id/*'
+                    -- Generic UUID pattern for remaining cases
                     WHEN match(SpanAttributes['http.target'], '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
                         THEN replaceRegexpAll(SpanAttributes['http.target'], '/([^/]+/[^/]+/[^/]+/)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})', '/\\1*')
                     ELSE SpanAttributes['http.target']
@@ -210,6 +230,17 @@ SELECT
                 CASE
                     WHEN match(SpanAttributes['url.full'], 'https?://[^/]+(/.*)') THEN
                         CASE
+                            -- New patterns first for priority matching
+                            -- /api/v1/adminorderservice/adminorder/{uuid}/{id}
+                            WHEN match(path, '/api/v1/adminorderservice/adminorder/[0-9a-f-]+/[A-Z0-9]+')
+                                THEN replaceRegexpAll(path, '(/api/v1/adminorderservice/adminorder/)[^/]+/[^/]+', '\\1*/*')
+                            -- /api/v1/users/{uuid}
+                            WHEN match(path, '^/api/v1/users/[0-9a-f-]+$')
+                                THEN '/api/v1/users/*'
+                            -- /api/v1/userservice/users/{uuid}
+                            WHEN match(path, '^/api/v1/userservice/users/[0-9a-f-]+$')
+                                THEN '/api/v1/userservice/users/*'
+                            -- Existing patterns
                             WHEN position(path, '/api/v1/assuranceservice/assurances/') = 1
                                 THEN replaceRegexpAll(path, '(/api/v1/assuranceservice/assurances/[^/]+/)[^/]+', '\\1*')
                             WHEN position(path, '/api/v1/consignpriceservice/consignprice/') = 1
@@ -286,20 +317,18 @@ const createOtelDemoMaterializedViewSQL = `
 CREATE MATERIALIZED VIEW IF NOT EXISTS otel_demo_traces_mv 
 ENGINE = ReplacingMergeTree(version)
 PARTITION BY toYYYYMM(Timestamp)
-PRIMARY KEY (masked_route, ServiceName, db_name)
+PRIMARY KEY (masked_route, ServiceName, db_name, rpc_service)
 ORDER BY (
     masked_route,
     ServiceName,
     db_name,
+    rpc_service,
     SpanKind,
     request_method,
     response_status_code,
-    server_address,
-    server_port,
     db_operation,
     db_sql_table,
     rpc_system,
-    rpc_service,
     rpc_method,
     grpc_status_code
 )
@@ -444,20 +473,18 @@ func createDeathStarBenchMaterializedViewSQL(namespace string, viewName string) 
 CREATE MATERIALIZED VIEW IF NOT EXISTS %s 
 ENGINE = ReplacingMergeTree(version)
 PARTITION BY toYYYYMM(Timestamp)
-PRIMARY KEY (masked_route, ServiceName, db_name)
+PRIMARY KEY (masked_route, ServiceName, db_name, rpc_service)
 ORDER BY (
     masked_route,
     ServiceName,
     db_name,
+    rpc_service,
     SpanKind,
     request_method,
     response_status_code,
-    server_address,
-    server_port,
     db_operation,
     db_sql_table,
     rpc_system,
-    rpc_service,
     rpc_method,
     grpc_status_code
 )
@@ -538,20 +565,18 @@ func createOnlineBoutiqueMaterializedViewSQL(namespace string, viewName string) 
 CREATE MATERIALIZED VIEW IF NOT EXISTS %s 
 ENGINE = ReplacingMergeTree(version)
 PARTITION BY toYYYYMM(Timestamp)
-PRIMARY KEY (masked_route, ServiceName, db_name)
+PRIMARY KEY (masked_route, ServiceName, db_name, rpc_service)
 ORDER BY (
     masked_route,
     ServiceName,
     db_name,
+    rpc_service,
     SpanKind,
     request_method,
     response_status_code,
-    server_address,
-    server_port,
     db_operation,
     db_sql_table,
     rpc_system,
-    rpc_service,
     rpc_method,
     grpc_status_code
 )
@@ -618,7 +643,11 @@ FROM otel_traces
 WHERE 
     ResourceAttributes['k8s.namespace.name'] = '%s'
     AND SpanKind IN ('Server', 'Client')
-    AND SpanName != 'opentelemetry.proto.collector.trace.v1.TraceService/Export'
+	AND SpanName NOT IN (
+		'opentelemetry.proto.collector.trace.v1.TraceService/Export', 
+		'grpc.health.v1.Health/Check',
+		'grpc.grpc.health.v1.Health/Check'
+	)
     AND mapExists(
         (k, v) -> (k IS NOT NULL AND k != '') AND (v IS NOT NULL AND v != ''),
         SpanAttributes
@@ -626,7 +655,10 @@ WHERE
 `, viewName, namespace)
 }
 
-// Client query
+// Client query - HTTP endpoints only (excludes database and RPC operations)
+// TrainTicket client traces query - HTTP endpoints only
+// NOTE: TrainTicket has no gRPC, so otel_traces_mv does NOT have rpc_system column
+// Only filters by db_system (unlike OtelDemo/DeathStarBench which also filter rpc_system)
 const clientTracesQuery = `
 SELECT DISTINCT
     ServiceName,
@@ -639,10 +671,13 @@ SELECT DISTINCT
 FROM otel_traces_mv
 FINAL
 WHERE SpanKind = 'Client'
+  AND (db_system IS NULL OR db_system = '')  -- Exclude database operations
+  AND request_method != ''  -- Must have HTTP method
 ORDER BY version ASC
 `
 
-// Dashboard query
+// TrainTicket dashboard query - HTTP endpoints only
+// NOTE: TrainTicket has no gRPC, so otel_traces_mv does NOT have rpc_system column
 const dashboardRoutesQuery = `
 SELECT DISTINCT
     ServiceName,
@@ -653,6 +688,8 @@ SELECT DISTINCT
 FROM otel_traces_mv
 FINAL
 WHERE ServiceName = 'ts-ui-dashboard'
+  AND (db_system IS NULL OR db_system = '')  -- Exclude database operations
+  AND request_method != ''  -- Must have HTTP method
 ORDER BY version ASC
 `
 
@@ -662,14 +699,15 @@ SELECT DISTINCT
     ServiceName,
     db_name,
     db_sql_table,
-    db_operation
+    db_operation,
+    span_name
 FROM otel_traces_mv
 FINAL
 WHERE db_system = 'mysql'
 ORDER BY version ASC
 `
 
-// HTTP Client traces query for OTel Demo
+// HTTP Client traces query for OTel Demo - HTTP endpoints only (excludes database and RPC)
 const otelDemoHTTPClientTracesQuery = `
 SELECT DISTINCT
     ServiceName,
@@ -682,6 +720,8 @@ SELECT DISTINCT
 FROM otel_demo_traces_mv
 FINAL
 WHERE SpanKind = 'Client'
+  AND (db_system IS NULL OR db_system = '')  -- Exclude database operations
+  AND (rpc_system IS NULL OR rpc_system = '')  -- Exclude RPC operations
   AND request_method != ''
   AND masked_route != ''
 ORDER BY ServiceName, masked_route
@@ -716,7 +756,8 @@ SELECT DISTINCT
     grpc_status_code,
     server_address,
     server_port,
-    SpanKind
+    SpanKind,
+    span_name
 FROM otel_demo_traces_mv
 FINAL
 WHERE rpc_system != ''
@@ -731,7 +772,8 @@ SELECT DISTINCT
     db_name,
     db_sql_table,
     db_operation,
-    db_system
+    db_system,
+    span_name
 FROM otel_demo_traces_mv
 FINAL
 WHERE db_system != ''
@@ -739,6 +781,7 @@ ORDER BY ServiceName, db_name
 `
 
 // deathStarBenchHTTPClientTracesQuery generates a query for HTTP client traces for DeathStarBench systems
+// HTTP endpoints only (excludes database and RPC operations)
 func deathStarBenchHTTPClientTracesQuery(viewName string) string {
 	return fmt.Sprintf(`
 SELECT DISTINCT
@@ -752,6 +795,8 @@ SELECT DISTINCT
 FROM %s
 FINAL
 WHERE SpanKind = 'Client'
+  AND (db_system IS NULL OR db_system = '')  -- Exclude database operations
+  AND (rpc_system IS NULL OR rpc_system = '')  -- Exclude RPC operations
   AND request_method != ''
   AND masked_route != ''
 ORDER BY ServiceName, masked_route
@@ -790,7 +835,8 @@ SELECT DISTINCT
     grpc_status_code,
     server_address,
     server_port,
-    SpanKind
+    SpanKind,
+    span_name
 FROM %s
 FINAL
 WHERE rpc_system != ''
@@ -807,7 +853,8 @@ SELECT DISTINCT
     db_name,
     db_sql_table,
     db_operation,
-    db_system
+    db_system,
+    span_name
 FROM %s
 FINAL
 WHERE db_system != ''
@@ -868,7 +915,7 @@ func CreateDeathStarBenchMaterializedView(db *sql.DB, namespace string, viewName
 	defer cancel()
 
 	sql := createDeathStarBenchMaterializedViewSQL(namespace, viewName)
-	
+
 	if _, err := db.ExecContext(ctx, sql); err != nil {
 		return fmt.Errorf("error creating DeathStarBench materialized view for namespace %s: %w", namespace, err)
 	}
@@ -884,7 +931,7 @@ func CreateOnlineBoutiqueMaterializedView(db *sql.DB, namespace string, viewName
 	defer cancel()
 
 	sql := createOnlineBoutiqueMaterializedViewSQL(namespace, viewName)
-	
+
 	if _, err := db.ExecContext(ctx, sql); err != nil {
 		return fmt.Errorf("error creating OnlineBoutique materialized view for namespace %s: %w", namespace, err)
 	}
@@ -1006,13 +1053,14 @@ func QueryMySQLOperations(db *sql.DB) ([]DatabaseOperation, error) {
 	var results []DatabaseOperation
 	for rows.Next() {
 		var operation DatabaseOperation
-		var dbName, dbTable, dbOperation sql.NullString
+		var dbName, dbTable, dbOperation, spanName sql.NullString
 
 		if err := rows.Scan(
 			&operation.ServiceName,
 			&dbName,
 			&dbTable,
 			&dbOperation,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -1026,6 +1074,9 @@ func QueryMySQLOperations(db *sql.DB) ([]DatabaseOperation, error) {
 		}
 		if dbOperation.Valid {
 			operation.Operation = dbOperation.String
+		}
+		if spanName.Valid {
+			operation.SpanName = spanName.String
 		}
 
 		// Set fixed MySQL connection info for TrainTicket
@@ -1171,7 +1222,7 @@ func QueryOtelDemoGRPCOperations(db *sql.DB) ([]GRPCOperation, error) {
 	var results []GRPCOperation
 	for rows.Next() {
 		var operation GRPCOperation
-		var serverAddr, serverPort, grpcStatus sql.NullString
+		var serverAddr, serverPort, grpcStatus, spanName sql.NullString
 
 		if err := rows.Scan(
 			&operation.ServiceName,
@@ -1182,6 +1233,7 @@ func QueryOtelDemoGRPCOperations(db *sql.DB) ([]GRPCOperation, error) {
 			&serverAddr,
 			&serverPort,
 			&operation.SpanKind,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -1193,7 +1245,10 @@ func QueryOtelDemoGRPCOperations(db *sql.DB) ([]GRPCOperation, error) {
 			operation.ServerPort = serverPort.String
 		}
 		if grpcStatus.Valid {
-			operation.GRPCStatusCode = grpcStatus.String
+			operation.StatusCode = grpcStatus.String
+		}
+		if spanName.Valid {
+			operation.SpanName = spanName.String
 		}
 
 		// Map empty server address or IP to service based on RPC service
@@ -1225,7 +1280,7 @@ func QueryOtelDemoDatabaseOperations(db *sql.DB) ([]DatabaseOperation, error) {
 	var results []DatabaseOperation
 	for rows.Next() {
 		var operation DatabaseOperation
-		var dbName, dbTable, dbOperation, dbSystem sql.NullString
+		var dbName, dbTable, dbOperation, dbSystem, spanName sql.NullString
 
 		if err := rows.Scan(
 			&operation.ServiceName,
@@ -1233,6 +1288,7 @@ func QueryOtelDemoDatabaseOperations(db *sql.DB) ([]DatabaseOperation, error) {
 			&dbTable,
 			&dbOperation,
 			&dbSystem,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -1248,6 +1304,9 @@ func QueryOtelDemoDatabaseOperations(db *sql.DB) ([]DatabaseOperation, error) {
 		}
 		if dbSystem.Valid {
 			operation.DBSystem = dbSystem.String
+		}
+		if spanName.Valid {
+			operation.SpanName = spanName.String
 		}
 
 		// Map database system to server address and port
@@ -1396,7 +1455,7 @@ func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string, namespace st
 	var results []GRPCOperation
 	for rows.Next() {
 		var operation GRPCOperation
-		var serverAddr, serverPort, grpcStatus sql.NullString
+		var serverAddr, serverPort, grpcStatus, spanName sql.NullString
 
 		if err := rows.Scan(
 			&operation.ServiceName,
@@ -1407,6 +1466,7 @@ func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string, namespace st
 			&serverAddr,
 			&serverPort,
 			&operation.SpanKind,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -1418,7 +1478,10 @@ func QueryDeathStarBenchGRPCOperations(db *sql.DB, viewName string, namespace st
 			operation.ServerPort = serverPort.String
 		}
 		if grpcStatus.Valid {
-			operation.GRPCStatusCode = grpcStatus.String
+			operation.StatusCode = grpcStatus.String
+		}
+		if spanName.Valid {
+			operation.SpanName = spanName.String
 		}
 
 		// Map empty server address or IP to service based on RPC service/method
@@ -1452,7 +1515,7 @@ func QueryDeathStarBenchDatabaseOperations(db *sql.DB, viewName string) ([]Datab
 	var results []DatabaseOperation
 	for rows.Next() {
 		var operation DatabaseOperation
-		var dbName, dbTable, dbOperation, dbSystem sql.NullString
+		var dbName, dbTable, dbOperation, dbSystem, spanName sql.NullString
 
 		if err := rows.Scan(
 			&operation.ServiceName,
@@ -1460,6 +1523,7 @@ func QueryDeathStarBenchDatabaseOperations(db *sql.DB, viewName string) ([]Datab
 			&dbTable,
 			&dbOperation,
 			&dbSystem,
+			&spanName,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -1475,6 +1539,9 @@ func QueryDeathStarBenchDatabaseOperations(db *sql.DB, viewName string) ([]Datab
 		}
 		if dbSystem.Valid {
 			operation.DBSystem = dbSystem.String
+		}
+		if spanName.Valid {
+			operation.SpanName = spanName.String
 		}
 
 		// Map database system to server address and port
@@ -1843,12 +1910,12 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		port    string
 	}{
 		// Cast info service
-		"/wrk2-api/cast-info":  {"cast-info-service", "9090"},
+		"/wrk2-api/cast-info":            {"cast-info-service", "9090"},
 		"/wrk2-api/movie/read-cast-info": {"cast-info-service", "9090"},
-		"CastInfoHandler":      {"cast-info-service", "9090"},
-		"WriteCastInfo":        {"cast-info-service", "9090"},
-		"ReadCastInfo":         {"cast-info-service", "9090"},
-		"/cast-info":          {"cast-info-service", "9090"},
+		"CastInfoHandler":                {"cast-info-service", "9090"},
+		"WriteCastInfo":                  {"cast-info-service", "9090"},
+		"ReadCastInfo":                   {"cast-info-service", "9090"},
+		"/cast-info":                     {"cast-info-service", "9090"},
 		// Compose review service
 		"/wrk2-api/review/compose": {"compose-review-service", "9090"},
 		"/wrk2-api/movie/register": {"compose-review-service", "9090"},
@@ -1859,37 +1926,37 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		"UploadUniqueId":           {"compose-review-service", "9090"},
 		"UploadUserId":             {"compose-review-service", "9090"},
 		"/compose":                 {"compose-review-service", "9090"},
-		"/register":               {"compose-review-service", "9090"},
+		"/register":                {"compose-review-service", "9090"},
 		// Movie ID service
 		"RegisterMovieId": {"movie-id-service", "9090"},
 		"MovieIdHandler":  {"movie-id-service", "9090"},
 		"/movie-id":       {"movie-id-service", "9090"},
 		// Movie info service
-		"/wrk2-api/movie-info":  {"movie-info-service", "9090"},
+		"/wrk2-api/movie-info":      {"movie-info-service", "9090"},
 		"/wrk2-api/movie/read-info": {"movie-info-service", "9090"},
-		"MovieInfoHandler":      {"movie-info-service", "9090"},
-		"WriteMovieInfo":        {"movie-info-service", "9090"},
-		"ReadMovieInfo":         {"movie-info-service", "9090"},
-		"/movie-info":           {"movie-info-service", "9090"},
-		"/read-info":            {"movie-info-service", "9090"},
+		"MovieInfoHandler":          {"movie-info-service", "9090"},
+		"WriteMovieInfo":            {"movie-info-service", "9090"},
+		"ReadMovieInfo":             {"movie-info-service", "9090"},
+		"/movie-info":               {"movie-info-service", "9090"},
+		"/read-info":                {"movie-info-service", "9090"},
 		// Movie review service
-		"StoreReview":        {"movie-review-service", "9090"},
-		"ReadMovieReviews":   {"movie-review-service", "9090"},
-		"/movie-review":      {"movie-review-service", "9090"},
-		"/review":            {"movie-review-service", "9090"},
+		"StoreReview":      {"movie-review-service", "9090"},
+		"ReadMovieReviews": {"movie-review-service", "9090"},
+		"/movie-review":    {"movie-review-service", "9090"},
+		"/review":          {"movie-review-service", "9090"},
 		// Page service
-		"/wrk2-api/page":  {"page-service", "9090"},
+		"/wrk2-api/page":            {"page-service", "9090"},
 		"/wrk2-api/movie/read-page": {"page-service", "9090"},
-		"ReadPage":        {"page-service", "9090"},
-		"/read-page":      {"page-service", "9090"},
+		"ReadPage":                  {"page-service", "9090"},
+		"/read-page":                {"page-service", "9090"},
 		// Plot service
-		"/wrk2-api/plot":  {"plot-service", "9090"},
+		"/wrk2-api/plot":            {"plot-service", "9090"},
 		"/wrk2-api/movie/read-plot": {"plot-service", "9090"},
-		"PlotHandler":     {"plot-service", "9090"},
-		"WritePlot":       {"plot-service", "9090"},
-		"ReadPlot":        {"plot-service", "9090"},
-		"/plot":           {"plot-service", "9090"},
-		"/read-plot":      {"plot-service", "9090"},
+		"PlotHandler":               {"plot-service", "9090"},
+		"WritePlot":                 {"plot-service", "9090"},
+		"ReadPlot":                  {"plot-service", "9090"},
+		"/plot":                     {"plot-service", "9090"},
+		"/read-plot":                {"plot-service", "9090"},
 		// Rating service
 		"StoreRating": {"rating-service", "9090"},
 		"ReadRatings": {"rating-service", "9090"},
@@ -1899,25 +1966,25 @@ func mapMediaMicroservicesRouteToService(endpoint *ServiceEndpoint) {
 		"ReadReviews":        {"review-storage-service", "9090"},
 		"/review-storage":    {"review-storage-service", "9090"},
 		// Text service
-		"TextHandler":  {"text-service", "9090"},
-		"StoreText":    {"text-service", "9090"},
-		"/text":        {"text-service", "9090"},
+		"TextHandler": {"text-service", "9090"},
+		"StoreText":   {"text-service", "9090"},
+		"/text":       {"text-service", "9090"},
 		// Unique ID service
 		"UniqueIdHandler": {"unique-id-service", "9090"},
 		"ComposeUniqueId": {"unique-id-service", "9090"},
 		"/unique-id":      {"unique-id-service", "9090"},
 		// User service
-		"/wrk2-api/user":  {"user-service", "9090"},
-		"UserHandler":     {"user-service", "9090"},
-		"RegisterUser":    {"user-service", "9090"},
-		"Login":           {"user-service", "9090"},
-		"/user":           {"user-service", "9090"},
+		"/wrk2-api/user": {"user-service", "9090"},
+		"UserHandler":    {"user-service", "9090"},
+		"RegisterUser":   {"user-service", "9090"},
+		"Login":          {"user-service", "9090"},
+		"/user":          {"user-service", "9090"},
 		// User review service
-		"ReadUserReviews":    {"user-review-service", "9090"},
-		"StoreUserReview":    {"user-review-service", "9090"},
-		"/user-review":       {"user-review-service", "9090"},
+		"ReadUserReviews": {"user-review-service", "9090"},
+		"StoreUserReview": {"user-review-service", "9090"},
+		"/user-review":    {"user-review-service", "9090"},
 		// Frontend - removed overly broad "/" pattern
-		"/wrk2-api/home":     {"nginx-web-server", "8080"},
+		"/wrk2-api/home": {"nginx-web-server", "8080"},
 	}
 
 	// Sort patterns by length (longest first) to ensure more specific patterns match first
@@ -1979,25 +2046,25 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 		"StoreMedia":         {"media-service", "9090"},
 		"/media":             {"media-service", "9090"},
 		// Post storage service
-		"StorePost":       {"post-storage-service", "9090"},
-		"ReadPost":        {"post-storage-service", "9090"},
-		"ReadPosts":       {"post-storage-service", "9090"},
-		"/post-storage":   {"post-storage-service", "9090"},
+		"StorePost":     {"post-storage-service", "9090"},
+		"ReadPost":      {"post-storage-service", "9090"},
+		"ReadPosts":     {"post-storage-service", "9090"},
+		"/post-storage": {"post-storage-service", "9090"},
 		// Social graph service
-		"/wrk2-api/user/follow":     {"social-graph-service", "9090"},
-		"/wrk2-api/user/unfollow":   {"social-graph-service", "9090"},
-		"Follow":                    {"social-graph-service", "9090"},
-		"Unfollow":                  {"social-graph-service", "9090"},
-		"GetFollowers":              {"social-graph-service", "9090"},
-		"GetFollowees":              {"social-graph-service", "9090"},
-		"InsertUser":                {"social-graph-service", "9090"},
-		"FollowWithUsername":        {"social-graph-service", "9090"},
-		"UnfollowWithUsername":      {"social-graph-service", "9090"},
-		"/social-graph":             {"social-graph-service", "9090"},
+		"/wrk2-api/user/follow":   {"social-graph-service", "9090"},
+		"/wrk2-api/user/unfollow": {"social-graph-service", "9090"},
+		"Follow":                  {"social-graph-service", "9090"},
+		"Unfollow":                {"social-graph-service", "9090"},
+		"GetFollowers":            {"social-graph-service", "9090"},
+		"GetFollowees":            {"social-graph-service", "9090"},
+		"InsertUser":              {"social-graph-service", "9090"},
+		"FollowWithUsername":      {"social-graph-service", "9090"},
+		"UnfollowWithUsername":    {"social-graph-service", "9090"},
+		"/social-graph":           {"social-graph-service", "9090"},
 		// Text service
-		"TextHandler":   {"text-service", "9090"},
-		"ProcessText":   {"text-service", "9090"},
-		"/text":         {"text-service", "9090"},
+		"TextHandler": {"text-service", "9090"},
+		"ProcessText": {"text-service", "9090"},
+		"/text":       {"text-service", "9090"},
 		// Unique ID service
 		"UniqueIdHandler": {"unique-id-service", "9090"},
 		"ComposeUniqueId": {"unique-id-service", "9090"},
@@ -2010,9 +2077,9 @@ func mapSocialNetworkRouteToService(endpoint *ServiceEndpoint) {
 		"/url-shorten":           {"url-shorten-service", "9090"},
 		"/shorten":               {"url-shorten-service", "9090"},
 		// User mention service
-		"UserMentionHandler":   {"user-mention-service", "9090"},
-		"ComposeUserMentions":  {"user-mention-service", "9090"},
-		"/user-mention":        {"user-mention-service", "9090"},
+		"UserMentionHandler":  {"user-mention-service", "9090"},
+		"ComposeUserMentions": {"user-mention-service", "9090"},
+		"/user-mention":       {"user-mention-service", "9090"},
 		// User service
 		"/wrk2-api/user/register": {"user-service", "9090"},
 		"/wrk2-api/user/login":    {"user-service", "9090"},
@@ -2071,50 +2138,50 @@ func mapHotelReservationRouteToService(endpoint *ServiceEndpoint) {
 		port    string
 	}{
 		// Attractions service
-		"/attractions":     {"attractions", "8089"},
-		"GetAttractions":   {"attractions", "8089"},
+		"/attractions":            {"attractions", "8089"},
+		"GetAttractions":          {"attractions", "8089"},
 		"attractions.Attractions": {"attractions", "8089"},
 		// Frontend service - removed overly broad "/" pattern
-		"/hotels":          {"frontend", "5000"},
-		"/recommendations": {"frontend", "5000"},
-		"/user":            {"frontend", "5000"},
-		"/reservation":     {"frontend", "5000"},
+		"/hotels":           {"frontend", "5000"},
+		"/recommendations":  {"frontend", "5000"},
+		"/user":             {"frontend", "5000"},
+		"/reservation":      {"frontend", "5000"},
 		"frontend.Frontend": {"frontend", "5000"},
 		// Geo service
-		"/geo":           {"geo", "8083"},
-		"NearbyGeo":      {"geo", "8083"},
-		"GetGeo":         {"geo", "8083"},
-		"geo.Geo":        {"geo", "8083"},
+		"/geo":      {"geo", "8083"},
+		"NearbyGeo": {"geo", "8083"},
+		"GetGeo":    {"geo", "8083"},
+		"geo.Geo":   {"geo", "8083"},
 		// Profile service
-		"/profile":       {"profile", "8081"},
-		"GetProfiles":    {"profile", "8081"},
-		"GetProfile":     {"profile", "8081"},
+		"/profile":        {"profile", "8081"},
+		"GetProfiles":     {"profile", "8081"},
+		"GetProfile":      {"profile", "8081"},
 		"profile.Profile": {"profile", "8081"},
 		// Rate service
-		"/rate":          {"rate", "8084"},
-		"GetRates":       {"rate", "8084"},
-		"GetRate":        {"rate", "8084"},
-		"rate.Rate":      {"rate", "8084"},
+		"/rate":     {"rate", "8084"},
+		"GetRates":  {"rate", "8084"},
+		"GetRate":   {"rate", "8084"},
+		"rate.Rate": {"rate", "8084"},
 		// Recommendation service
-		"/recommendation": {"recommendation", "8085"},
-		"GetRecommendations": {"recommendation", "8085"},
+		"/recommendation":               {"recommendation", "8085"},
+		"GetRecommendations":            {"recommendation", "8085"},
 		"recommendation.Recommendation": {"recommendation", "8085"},
 		// Reservation service
-		"/reserve":       {"reservation", "8087"},
-		"MakeReservation": {"reservation", "8087"},
-		"CheckAvailability": {"reservation", "8087"},
+		"/reserve":                {"reservation", "8087"},
+		"MakeReservation":         {"reservation", "8087"},
+		"CheckAvailability":       {"reservation", "8087"},
 		"reservation.Reservation": {"reservation", "8087"},
 		// Search service
-		"/search":        {"search", "8082"},
-		"NearbySearch":   {"search", "8082"},
-		"search.Search":  {"search", "8082"},
+		"/search":       {"search", "8082"},
+		"NearbySearch":  {"search", "8082"},
+		"search.Search": {"search", "8082"},
 		// User service
-		"/login":         {"user", "8086"},
-		"/register":      {"user", "8086"},
-		"Login":          {"user", "8086"},
-		"Register":       {"user", "8086"},
-		"CheckUser":      {"user", "8086"},
-		"user.User":      {"user", "8086"},
+		"/login":    {"user", "8086"},
+		"/register": {"user", "8086"},
+		"Login":     {"user", "8086"},
+		"Register":  {"user", "8086"},
+		"CheckUser": {"user", "8086"},
+		"user.User": {"user", "8086"},
 	}
 
 	// Sort patterns by length (longest first) to ensure more specific patterns match first
@@ -2154,38 +2221,38 @@ func mapOnlineBoutiqueRouteToService(endpoint *ServiceEndpoint) {
 		port    string
 	}{
 		// Frontend service
-		"/":                   {"frontend", "80"},
-		"/product":            {"frontend", "80"},
-		"/cart":               {"frontend", "80"},
-		"/checkout":           {"frontend", "80"},
-		"frontend":            {"frontend", "80"},
+		"/":         {"frontend", "80"},
+		"/product":  {"frontend", "80"},
+		"/cart":     {"frontend", "80"},
+		"/checkout": {"frontend", "80"},
+		"frontend":  {"frontend", "80"},
 		// Ad service
-		"/hipstershop.AdService":        {"adservice", "9555"},
-		"AdService":                     {"adservice", "9555"},
-		"GetAds":                        {"adservice", "9555"},
+		"/hipstershop.AdService": {"adservice", "9555"},
+		"AdService":              {"adservice", "9555"},
+		"GetAds":                 {"adservice", "9555"},
 		// Cart service
-		"/hipstershop.CartService":      {"cartservice", "7070"},
-		"CartService":                   {"cartservice", "7070"},
-		"AddItem":                       {"cartservice", "7070"},
-		"GetCart":                       {"cartservice", "7070"},
-		"EmptyCart":                     {"cartservice", "7070"},
+		"/hipstershop.CartService": {"cartservice", "7070"},
+		"CartService":              {"cartservice", "7070"},
+		"AddItem":                  {"cartservice", "7070"},
+		"GetCart":                  {"cartservice", "7070"},
+		"EmptyCart":                {"cartservice", "7070"},
 		// Checkout service
-		"/hipstershop.CheckoutService":  {"checkoutservice", "5050"},
-		"CheckoutService":               {"checkoutservice", "5050"},
-		"PlaceOrder":                    {"checkoutservice", "5050"},
+		"/hipstershop.CheckoutService": {"checkoutservice", "5050"},
+		"CheckoutService":              {"checkoutservice", "5050"},
+		"PlaceOrder":                   {"checkoutservice", "5050"},
 		// Currency service
-		"/hipstershop.CurrencyService":  {"currencyservice", "7000"},
-		"CurrencyService":               {"currencyservice", "7000"},
-		"GetSupportedCurrencies":        {"currencyservice", "7000"},
-		"Convert":                       {"currencyservice", "7000"},
+		"/hipstershop.CurrencyService": {"currencyservice", "7000"},
+		"CurrencyService":              {"currencyservice", "7000"},
+		"GetSupportedCurrencies":       {"currencyservice", "7000"},
+		"Convert":                      {"currencyservice", "7000"},
 		// Email service
-		"/hipstershop.EmailService":     {"emailservice", "5000"},
-		"EmailService":                  {"emailservice", "5000"},
-		"SendOrderConfirmation":         {"emailservice", "5000"},
+		"/hipstershop.EmailService": {"emailservice", "5000"},
+		"EmailService":              {"emailservice", "5000"},
+		"SendOrderConfirmation":     {"emailservice", "5000"},
 		// Payment service
-		"/hipstershop.PaymentService":   {"paymentservice", "50051"},
-		"PaymentService":                {"paymentservice", "50051"},
-		"Charge":                        {"paymentservice", "50051"},
+		"/hipstershop.PaymentService": {"paymentservice", "50051"},
+		"PaymentService":              {"paymentservice", "50051"},
+		"Charge":                      {"paymentservice", "50051"},
 		// Product catalog service
 		"/hipstershop.ProductCatalogService": {"productcatalogservice", "3550"},
 		"ProductCatalogService":              {"productcatalogservice", "3550"},
@@ -2197,10 +2264,10 @@ func mapOnlineBoutiqueRouteToService(endpoint *ServiceEndpoint) {
 		"RecommendationService":              {"recommendationservice", "8080"},
 		"ListRecommendations":                {"recommendationservice", "8080"},
 		// Shipping service
-		"/hipstershop.ShippingService":  {"shippingservice", "50051"},
-		"ShippingService":               {"shippingservice", "50051"},
-		"GetQuote":                      {"shippingservice", "50051"},
-		"ShipOrder":                     {"shippingservice", "50051"},
+		"/hipstershop.ShippingService": {"shippingservice", "50051"},
+		"ShippingService":              {"shippingservice", "50051"},
+		"GetQuote":                     {"shippingservice", "50051"},
+		"ShipOrder":                    {"shippingservice", "50051"},
 	}
 
 	// Sort patterns by length (longest first) to match more specific patterns first
@@ -2283,17 +2350,17 @@ func mapSocialNetworkGRPCToService(operation *GRPCOperation, rpcService string) 
 		service string
 		port    string
 	}{
-		"ComposePostService":   {"compose-post-service", "9090"},
-		"HomeTimelineService":  {"home-timeline-service", "9090"},
-		"MediaService":         {"media-service", "9090"},
-		"PostStorageService":   {"post-storage-service", "9090"},
-		"SocialGraphService":   {"social-graph-service", "9090"},
-		"TextService":          {"text-service", "9090"},
-		"UniqueIdService":      {"unique-id-service", "9090"},
-		"UrlShortenService":    {"url-shorten-service", "9090"},
-		"UserMentionService":   {"user-mention-service", "9090"},
-		"UserService":          {"user-service", "9090"},
-		"UserTimelineService":  {"user-timeline-service", "9090"},
+		"ComposePostService":  {"compose-post-service", "9090"},
+		"HomeTimelineService": {"home-timeline-service", "9090"},
+		"MediaService":        {"media-service", "9090"},
+		"PostStorageService":  {"post-storage-service", "9090"},
+		"SocialGraphService":  {"social-graph-service", "9090"},
+		"TextService":         {"text-service", "9090"},
+		"UniqueIdService":     {"unique-id-service", "9090"},
+		"UrlShortenService":   {"url-shorten-service", "9090"},
+		"UserMentionService":  {"user-mention-service", "9090"},
+		"UserService":         {"user-service", "9090"},
+		"UserTimelineService": {"user-timeline-service", "9090"},
 	}
 
 	for pattern, service := range serviceMap {
@@ -2323,15 +2390,15 @@ func mapHotelReservationGRPCToService(operation *GRPCOperation, rpcService strin
 		"SearchService":         {"search", "8082"},
 		"UserService":           {"user", "8086"},
 		// DeathStarBench hotelReservation gRPC service patterns
-		"attractions.Attractions": {"attractions", "8089"},
-		"frontend.Frontend":       {"frontend", "5000"},
-		"geo.Geo":                 {"geo", "8083"},
-		"profile.Profile":         {"profile", "8081"},
-		"rate.Rate":               {"rate", "8084"},
+		"attractions.Attractions":       {"attractions", "8089"},
+		"frontend.Frontend":             {"frontend", "5000"},
+		"geo.Geo":                       {"geo", "8083"},
+		"profile.Profile":               {"profile", "8081"},
+		"rate.Rate":                     {"rate", "8084"},
 		"recommendation.Recommendation": {"recommendation", "8085"},
-		"reservation.Reservation": {"reservation", "8087"},
-		"search.Search":           {"search", "8082"},
-		"user.User":               {"user", "8086"},
+		"reservation.Reservation":       {"reservation", "8087"},
+		"search.Search":                 {"search", "8082"},
+		"user.User":                     {"user", "8086"},
 	}
 
 	for pattern, service := range serviceMap {
@@ -2350,24 +2417,24 @@ func mapOnlineBoutiqueGRPCToService(operation *GRPCOperation, rpcService string)
 		service string
 		port    string
 	}{
-		"hipstershop.AdService":              {"adservice", "9555"},
-		"AdService":                          {"adservice", "9555"},
-		"hipstershop.CartService":            {"cartservice", "7070"},
-		"CartService":                        {"cartservice", "7070"},
-		"hipstershop.CheckoutService":        {"checkoutservice", "5050"},
-		"CheckoutService":                    {"checkoutservice", "5050"},
-		"hipstershop.CurrencyService":        {"currencyservice", "7000"},
-		"CurrencyService":                    {"currencyservice", "7000"},
-		"hipstershop.EmailService":           {"emailservice", "5000"},
-		"EmailService":                       {"emailservice", "5000"},
-		"hipstershop.PaymentService":         {"paymentservice", "50051"},
-		"PaymentService":                     {"paymentservice", "50051"},
-		"hipstershop.ProductCatalogService":  {"productcatalogservice", "3550"},
-		"ProductCatalogService":              {"productcatalogservice", "3550"},
-		"hipstershop.RecommendationService":  {"recommendationservice", "8080"},
-		"RecommendationService":              {"recommendationservice", "8080"},
-		"hipstershop.ShippingService":        {"shippingservice", "50051"},
-		"ShippingService":                    {"shippingservice", "50051"},
+		"hipstershop.AdService":             {"adservice", "9555"},
+		"AdService":                         {"adservice", "9555"},
+		"hipstershop.CartService":           {"cartservice", "7070"},
+		"CartService":                       {"cartservice", "7070"},
+		"hipstershop.CheckoutService":       {"checkoutservice", "5050"},
+		"CheckoutService":                   {"checkoutservice", "5050"},
+		"hipstershop.CurrencyService":       {"currencyservice", "7000"},
+		"CurrencyService":                   {"currencyservice", "7000"},
+		"hipstershop.EmailService":          {"emailservice", "5000"},
+		"EmailService":                      {"emailservice", "5000"},
+		"hipstershop.PaymentService":        {"paymentservice", "50051"},
+		"PaymentService":                    {"paymentservice", "50051"},
+		"hipstershop.ProductCatalogService": {"productcatalogservice", "3550"},
+		"ProductCatalogService":             {"productcatalogservice", "3550"},
+		"hipstershop.RecommendationService": {"recommendationservice", "8080"},
+		"RecommendationService":             {"recommendationservice", "8080"},
+		"hipstershop.ShippingService":       {"shippingservice", "50051"},
+		"ShippingService":                   {"shippingservice", "50051"},
 	}
 
 	for pattern, service := range serviceMap {

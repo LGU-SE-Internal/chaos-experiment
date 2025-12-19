@@ -2,16 +2,12 @@
 // System: hs
 package databaseoperations
 
-// DatabaseOperation represents a database operation from ClickHouse analysis
-type DatabaseOperation struct {
-	ServiceName   string
-	DBName        string
-	DBTable       string
-	Operation     string
-	DBSystem      string
-	ServerAddress string
-	ServerPort    string
-}
+import (
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcetypes"
+)
+
+// DatabaseOperation is an alias for the shared type
+type DatabaseOperation = resourcetypes.DatabaseOperation
 
 // DatabaseOperations maps service names to their database operations
 var DatabaseOperations = map[string][]DatabaseOperation{
