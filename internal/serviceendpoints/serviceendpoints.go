@@ -10,6 +10,8 @@ import (
 	obendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/serviceendpoints"
 	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
 	snendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/serviceendpoints"
+	sockshopendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/sockshop/serviceendpoints"
+	teastoreendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/teastore/serviceendpoints"
 	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
 )
 
@@ -46,6 +48,12 @@ func GetEndpointsByService(serviceName string) []ServiceEndpoint {
 	case systemconfig.SystemOnlineBoutique:
 		obEps := obendpoints.GetEndpointsByService(serviceName)
 		return convertOBEndpoints(obEps)
+	case systemconfig.SystemSockShop:
+		sockshopEps := sockshopendpoints.GetEndpointsByService(serviceName)
+		return convertSockShopEndpoints(sockshopEps)
+	case systemconfig.SystemTeaStore:
+		teastoreEps := teastoreendpoints.GetEndpointsByService(serviceName)
+		return convertTeaStoreEndpoints(teastoreEps)
 	default:
 		// Default to TrainTicket
 		tsEps := tsendpoints.GetEndpointsByService(serviceName)
@@ -69,6 +77,10 @@ func GetAllServices() []string {
 		return snendpoints.GetAllServices()
 	case systemconfig.SystemOnlineBoutique:
 		return obendpoints.GetAllServices()
+	case systemconfig.SystemSockShop:
+		return sockshopendpoints.GetAllServices()
+	case systemconfig.SystemTeaStore:
+		return teastoreendpoints.GetAllServices()
 	default:
 		// Default to TrainTicket
 		return tsendpoints.GetAllServices()
@@ -164,6 +176,40 @@ func convertSNEndpoints(snEps []snendpoints.ServiceEndpoint) []ServiceEndpoint {
 func convertOBEndpoints(obEps []obendpoints.ServiceEndpoint) []ServiceEndpoint {
 	result := make([]ServiceEndpoint, len(obEps))
 	for i, ep := range obEps {
+		result[i] = ServiceEndpoint{
+			ServiceName:    ep.ServiceName,
+			RequestMethod:  ep.RequestMethod,
+			ResponseStatus: ep.ResponseStatus,
+			Route:          ep.Route,
+			ServerAddress:  ep.ServerAddress,
+			ServerPort:     ep.ServerPort,
+			SpanName:       ep.SpanName,
+		}
+	}
+	return result
+}
+
+// convertSockShopEndpoints converts sockshop-specific endpoints to the common type
+func convertSockShopEndpoints(sockshopEps []sockshopendpoints.ServiceEndpoint) []ServiceEndpoint {
+	result := make([]ServiceEndpoint, len(sockshopEps))
+	for i, ep := range sockshopEps {
+		result[i] = ServiceEndpoint{
+			ServiceName:    ep.ServiceName,
+			RequestMethod:  ep.RequestMethod,
+			ResponseStatus: ep.ResponseStatus,
+			Route:          ep.Route,
+			ServerAddress:  ep.ServerAddress,
+			ServerPort:     ep.ServerPort,
+			SpanName:       ep.SpanName,
+		}
+	}
+	return result
+}
+
+// convertTeaStoreEndpoints converts teastore-specific endpoints to the common type
+func convertTeaStoreEndpoints(teastoreEps []teastoreendpoints.ServiceEndpoint) []ServiceEndpoint {
+	result := make([]ServiceEndpoint, len(teastoreEps))
+	for i, ep := range teastoreEps {
 		result[i] = ServiceEndpoint{
 			ServiceName:    ep.ServiceName,
 			RequestMethod:  ep.RequestMethod,
