@@ -1896,6 +1896,10 @@ func mapDeathStarBenchRouteToService(endpoint *ServiceEndpoint, namespace string
 		mapHotelReservationRouteToService(endpoint)
 	case "ob":
 		mapOnlineBoutiqueRouteToService(endpoint)
+	case "sockshop":
+		mapSockShopRouteToService(endpoint)
+	case "teastore":
+		mapTeaStoreRouteToService(endpoint)
 	}
 }
 
@@ -2309,6 +2313,10 @@ func mapDeathStarBenchGRPCToService(operation *GRPCOperation, namespace string) 
 		mapHotelReservationGRPCToService(operation, rpcService)
 	case "ob":
 		mapOnlineBoutiqueGRPCToService(operation, rpcService)
+	case "sockshop":
+		mapSockShopGRPCToService(operation, rpcService)
+	case "teastore":
+		mapTeaStoreGRPCToService(operation, rpcService)
 	}
 }
 
@@ -2444,6 +2452,113 @@ func mapOnlineBoutiqueGRPCToService(operation *GRPCOperation, rpcService string)
 			return
 		}
 	}
+}
+
+// mapSockShopRouteToService maps routes to services for Sock Shop
+func mapSockShopRouteToService(endpoint *ServiceEndpoint) {
+	route := endpoint.Route
+	spanName := endpoint.SpanName
+
+	// Service mapping based on route patterns and span names
+	// This is a placeholder - actual mappings should be determined from trace data
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		"/catalogue": {"catalogue", "80"},
+		"/carts":     {"carts", "80"},
+		"/orders":    {"orders", "80"},
+		"/payment":   {"payment", "80"},
+		"/shipping":  {"shipping", "80"},
+		"/user":      {"user", "80"},
+		"/":          {"front-end", "8079"},
+	}
+
+	// Sort patterns by length (longest first) to match more specific patterns first
+	patterns := make([]string, 0, len(serviceMap))
+	for pattern := range serviceMap {
+		patterns = append(patterns, pattern)
+	}
+	sort.Slice(patterns, func(i, j int) bool {
+		return len(patterns[i]) > len(patterns[j])
+	})
+
+	// Check route and span name with sorted patterns
+	for _, pattern := range patterns {
+		service := serviceMap[pattern]
+		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
+			endpoint.ServerAddress = service.service
+			endpoint.ServerPort = service.port
+			return
+		}
+	}
+
+	// Default to front-end if no match
+	if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+		endpoint.ServerAddress = "front-end"
+		endpoint.ServerPort = "8079"
+	}
+}
+
+// mapTeaStoreRouteToService maps routes to services for Tea Store
+func mapTeaStoreRouteToService(endpoint *ServiceEndpoint) {
+	route := endpoint.Route
+	spanName := endpoint.SpanName
+
+	// Service mapping based on route patterns and span names
+	// This is a placeholder - actual mappings should be determined from trace data
+	serviceMap := map[string]struct {
+		service string
+		port    string
+	}{
+		"/tools.descartes.teastore.auth":        {"teastore-auth", "8080"},
+		"/tools.descartes.teastore.image":       {"teastore-image", "8080"},
+		"/tools.descartes.teastore.persistence": {"teastore-persistence", "8080"},
+		"/tools.descartes.teastore.recommender": {"teastore-recommender", "8080"},
+		"/tools.descartes.teastore.webui":       {"teastore-webui", "8080"},
+		"/auth":                                  {"teastore-auth", "8080"},
+		"/image":                                 {"teastore-image", "8080"},
+		"/persistence":                           {"teastore-persistence", "8080"},
+		"/recommender":                           {"teastore-recommender", "8080"},
+		"/":                                      {"teastore-webui", "8080"},
+	}
+
+	// Sort patterns by length (longest first) to match more specific patterns first
+	patterns := make([]string, 0, len(serviceMap))
+	for pattern := range serviceMap {
+		patterns = append(patterns, pattern)
+	}
+	sort.Slice(patterns, func(i, j int) bool {
+		return len(patterns[i]) > len(patterns[j])
+	})
+
+	// Check route and span name with sorted patterns
+	for _, pattern := range patterns {
+		service := serviceMap[pattern]
+		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
+			endpoint.ServerAddress = service.service
+			endpoint.ServerPort = service.port
+			return
+		}
+	}
+
+	// Default to webui if no match
+	if endpoint.ServerAddress == "" || isIPAddress(endpoint.ServerAddress) {
+		endpoint.ServerAddress = "teastore-webui"
+		endpoint.ServerPort = "8080"
+	}
+}
+
+// mapSockShopGRPCToService maps gRPC services to server addresses for Sock Shop
+func mapSockShopGRPCToService(operation *GRPCOperation, rpcService string) {
+	// Sock Shop primarily uses HTTP/REST, not gRPC
+	// This is a placeholder in case gRPC is added in the future
+}
+
+// mapTeaStoreGRPCToService maps gRPC services to server addresses for Tea Store
+func mapTeaStoreGRPCToService(operation *GRPCOperation, rpcService string) {
+	// Tea Store primarily uses HTTP/REST, not gRPC
+	// This is a placeholder in case gRPC is added in the future
 }
 
 // isIPAddress checks if a string looks like an IP address
