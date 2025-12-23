@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sort"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 )
 
 /*
@@ -28,11 +30,12 @@ type Node struct {
 }
 
 var (
-	NodeNsPrefixMap map[*Node]string
+	nodeCtxMap    map[*Node]context.Context         = make(map[*Node]context.Context)
+	nodeSystemMap map[*Node]systemconfig.SystemType = make(map[*Node]systemconfig.SystemType)
 )
 
-func Validate[T any](target *Node, namespacePrefix string) (bool, error) {
-	reference, err := StructToNode[T](namespacePrefix)
+func Validate[T any](ctx context.Context, target *Node, system SystemType) (bool, error) {
+	reference, err := StructToNode[T](ctx, system)
 	if err != nil {
 		return false, fmt.Errorf("failed to convert struct to node: %v", err)
 	}
@@ -46,7 +49,7 @@ func validateNode(reference *Node, target *Node, isFirstLevel bool) (bool, error
 	}
 
 	if target.Children == nil && reference.Range != nil && len(reference.Range) == 2 {
-		if target.Value == ValueNotSet {
+		if target.Value == valueNotSet {
 			return false, fmt.Errorf("target value is not set but reference has range constraint %v", reference.Range)
 		}
 
@@ -88,7 +91,7 @@ func NodeToMap(n *Node, excludeUnset bool) map[string]any {
 			result["range"] = n.Range
 		}
 
-		if n.Value != ValueNotSet {
+		if n.Value != valueNotSet {
 			result["value"] = n.Value
 		}
 	} else {
@@ -146,7 +149,55 @@ func MapToNode(m map[string]any) (*Node, error) {
 	return node, nil
 }
 
-func StructToNode[T any](namespacePrefix string) (*Node, error) {
+func NodeToStruct[T any](ctx context.Context, node *Node) (*T, error) {
+	var t T
+	rt := reflect.TypeOf(t)
+	if rt.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("NodeToStruct: type parameter T must be a struct type, got %s", rt.Kind())
+	}
+
+	if node == nil {
+		return nil, fmt.Errorf("NodeToStruct: input node is nil for struct type %s", rt.Name())
+	}
+
+	nodeCtxMap[node] = ctx
+
+	val := reflect.New(rt).Elem()
+	if rt.Name() == "InjectionConf" && rt.PkgPath() == "github.com/LGU-SE-Internal/chaos-experiment/handler" {
+		if len(node.Children) != 1 {
+			childCount := len(node.Children)
+			childKeys := make([]string, 0, childCount)
+			for k := range node.Children {
+				childKeys = append(childKeys, k)
+			}
+			return nil, fmt.Errorf("InjectionConf must have exactly one chaos type, got %d children with keys: %v", childCount, childKeys)
+		}
+
+		intKey := node.Value
+		if intKey < 0 || intKey >= rt.NumField() {
+			return nil, fmt.Errorf("invalid field index %d for struct %s (valid range: 0-%d)", intKey, rt.Name(), rt.NumField()-1)
+		}
+
+		expectedChildKey := strconv.Itoa(node.Value)
+		childNode, exists := node.Children[expectedChildKey]
+		if !exists {
+			availableKeys := make([]string, 0, len(node.Children))
+			for k := range node.Children {
+				availableKeys = append(availableKeys, k)
+			}
+			return nil, fmt.Errorf("expected child key '%s' not found in node children, available keys: %v", expectedChildKey, availableKeys)
+		}
+
+		fieldName := rt.Field(intKey).Name
+		if err := processStructField(rt.Field(intKey), val.Field(intKey), childNode, node); err != nil {
+			return nil, fmt.Errorf("failed to process field '%s' (index %d) in struct %s: %w", fieldName, intKey, rt.Name(), err)
+		}
+	}
+
+	return val.Addr().Interface().(*T), nil
+}
+
+func StructToNode[T any](ctx context.Context, system SystemType) (*Node, error) {
 	var t T
 	rt := reflect.TypeOf(t)
 	if rt.Kind() != reflect.Struct {
@@ -154,12 +205,15 @@ func StructToNode[T any](namespacePrefix string) (*Node, error) {
 	}
 
 	rootNode := &Node{}
-	if NodeNsPrefixMap == nil {
-		NodeNsPrefixMap = make(map[*Node]string)
+	nodeCtxMap[rootNode] = ctx
+	nodeSystemMap[rootNode] = systemconfig.SystemType(system)
+
+	newNode, err := buildNode(rt, "", rootNode)
+	if err != nil {
+		return nil, err
 	}
 
-	NodeNsPrefixMap[rootNode] = namespacePrefix
-	return buildNode(rt, "", rootNode)
+	return newNode, nil
 }
 
 func buildNode(rt reflect.Type, fieldName string, rootNode *Node) (*Node, error) {
@@ -196,16 +250,17 @@ func buildFieldNode(field reflect.StructField, rootNode *Node) (*Node, error) {
 		return nil, err
 	}
 
-	value := ValueNotSet
+	value := valueNotSet
 	description := field.Tag.Get("description")
-	if field.Name == keyNamespace {
-		namespacePrefixMap := make(map[string]int, len(NamespacePrefixs))
-		for idx, ns := range NamespacePrefixs {
-			namespacePrefixMap[ns] = idx
+	if field.Name == keySystem {
+		systems := systemconfig.GetAllSystemTypes()
+		systemIndexMap := make(map[string]int, len(systems))
+		for idx, sys := range systems {
+			systemIndexMap[sys.String()] = idx
 		}
 
-		description = mapToString(namespacePrefixMap)
-		value = namespacePrefixMap[NodeNsPrefixMap[rootNode]]
+		description = mapToString(systemIndexMap)
+		value = systemIndexMap[nodeSystemMap[rootNode].String()]
 	}
 
 	child := &Node{
@@ -237,56 +292,6 @@ func mapToString(m map[string]int) string {
 		pairs = append(pairs, fmt.Sprintf("%s: %d", key, value))
 	}
 	return "{" + strings.Join(pairs, ", ") + "}"
-}
-
-func NodeToStruct[T any](n *Node) (*T, error) {
-	var t T
-	rt := reflect.TypeOf(t)
-	if rt.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("NodeToStruct: type parameter T must be a struct type, got %s", rt.Kind())
-	}
-
-	if n == nil {
-		return nil, fmt.Errorf("NodeToStruct: input node is nil for struct type %s", rt.Name())
-	}
-
-	val := reflect.New(rt).Elem()
-	if rt.Name() == "InjectionConf" && rt.PkgPath() == "github.com/LGU-SE-Internal/chaos-experiment/handler" {
-		if len(n.Children) != 1 {
-			childCount := len(n.Children)
-			childKeys := make([]string, 0, childCount)
-			for k := range n.Children {
-				childKeys = append(childKeys, k)
-			}
-			return nil, fmt.Errorf("InjectionConf must have exactly one chaos type, got %d children with keys: %v", childCount, childKeys)
-		}
-
-		if NodeNsPrefixMap == nil {
-			NodeNsPrefixMap = make(map[*Node]string)
-		}
-
-		intKey := n.Value
-		if intKey < 0 || intKey >= rt.NumField() {
-			return nil, fmt.Errorf("invalid field index %d for struct %s (valid range: 0-%d)", intKey, rt.Name(), rt.NumField()-1)
-		}
-
-		expectedChildKey := strconv.Itoa(n.Value)
-		childNode, exists := n.Children[expectedChildKey]
-		if !exists {
-			availableKeys := make([]string, 0, len(n.Children))
-			for k := range n.Children {
-				availableKeys = append(availableKeys, k)
-			}
-			return nil, fmt.Errorf("expected child key '%s' not found in node children, available keys: %v", expectedChildKey, availableKeys)
-		}
-
-		fieldName := rt.Field(intKey).Name
-		if err := processStructField(rt.Field(intKey), val.Field(intKey), childNode, n); err != nil {
-			return nil, fmt.Errorf("failed to process field '%s' (index %d) in struct %s: %w", fieldName, intKey, rt.Name(), err)
-		}
-	}
-
-	return val.Addr().Interface().(*T), nil
 }
 
 func processStructField(field reflect.StructField, val reflect.Value, node, rootNode *Node) error {
@@ -392,12 +397,13 @@ func assignBasicType(field reflect.StructField, val reflect.Value, node, rootNod
 			field.Name, node.Value, start, end)
 	}
 
-	if field.Name == keyNamespace {
-		if node.Value >= len(NamespacePrefixs) {
-			return fmt.Errorf("field '%s': namespace index %d exceeds available namespaces count %d",
-				field.Name, node.Value, len(NamespacePrefixs))
+	if field.Name == keySystem {
+		systems := systemconfig.GetAllSystemTypes()
+		if node.Value >= len(systems) {
+			return fmt.Errorf("field '%s': system index %d exceeds available system count %d",
+				field.Name, node.Value, len(systems))
 		}
-		NodeNsPrefixMap[rootNode] = NamespacePrefixs[node.Value]
+		nodeSystemMap[rootNode] = systems[node.Value]
 	}
 
 	if err := setValue(val, node.Value); err != nil {
@@ -415,83 +421,83 @@ func getValueRange(field reflect.StructField, rootNode *Node) (int, int, error) 
 
 	dyn := field.Tag.Get("dynamic")
 	if dyn == "true" {
-		switch field.Name {
-		case keyNamespace:
-			start = DefaultStartIndex
-			end = len(NamespacePrefixs) - 1
-		case keyApp:
-			prefix, ok := NodeNsPrefixMap[rootNode]
-			if !ok {
-				return 0, 0, fmt.Errorf("failed to get namespace prefix in %s", keyApp)
-			}
+		if field.Name == keySystem {
+			start = 0
+			end = len(systemconfig.GetAllSystemTypes()) - 1
+			return start, end, nil
+		}
 
-			namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
-			values, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
-			if err != nil || len(values) == 0 {
+		ctx := nodeCtxMap[rootNode]
+		system := nodeSystemMap[rootNode]
+		namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to get namespace for system %s: %w", system, err)
+		}
+
+		systemCache := resourcelookup.GetSystemCache(system)
+
+		switch field.Name {
+		case keyApp:
+			labels, err := systemCache.GetAllAppLabels(ctx, namespace, defaultAppLabel)
+			if err != nil || len(labels) == 0 {
 				return 0, 0, fmt.Errorf("failed to get labels: %w", err)
 			}
 
-			start = DefaultStartIndex
-			end = len(values) - 1
+			start = defaultStartIndex
+			end = len(labels) - 1
 		case keyMethod:
 			// For flattened JVM methods
-			methods, err := resourcelookup.GetAllJVMMethods()
+			methods, err := systemCache.GetAllJVMMethods()
 			if err != nil {
 				return 0, 0, fmt.Errorf("failed to get JVM methods: %w", err)
 			}
 
-			start = DefaultStartIndex
+			start = defaultStartIndex
 			end = len(methods) - 1
 		case keyEndpoint:
 			// For flattened HTTP endpoints
-			endpoints, err := resourcelookup.GetAllHTTPEndpoints()
+			endpoints, err := systemCache.GetAllHTTPEndpoints()
 			if err != nil {
 				return 0, 0, fmt.Errorf("failed to get HTTP endpoints: %w", err)
 			}
 
-			start = DefaultStartIndex
+			start = defaultStartIndex
 			end = len(endpoints) - 1
 		case keyNetworkPair:
 			// For flattened network pairs
-			pairs, err := resourcelookup.GetAllNetworkPairs()
+			pairs, err := systemCache.GetAllNetworkPairs()
 			if err != nil {
 				return 0, 0, fmt.Errorf("failed to get network pairs: %w", err)
 			}
 
-			start = DefaultStartIndex
+			start = defaultStartIndex
 			end = len(pairs) - 1
 		case keyContainer:
 			// For flattened containers
-			prefix, ok := NodeNsPrefixMap[rootNode]
-			if !ok {
-				return 0, 0, fmt.Errorf("failed to get namespace prefix in %s", keyContainer)
-			}
-
-			namespace := fmt.Sprintf("%s%d", prefix, DefaultStartIndex)
-			containers, err := resourcelookup.GetAllContainers(namespace)
+			containers, err := systemCache.GetAllContainers(ctx, namespace)
 			if err != nil {
 				return 0, 0, fmt.Errorf("failed to get containers: %w", err)
 			}
 
-			start = DefaultStartIndex
+			start = defaultStartIndex
 			end = len(containers) - 1
 		case keyDNSEndpoint:
 			// For flattened DNS endpoints
-			endpoints, err := resourcelookup.GetAllDNSEndpoints()
+			endpoints, err := systemCache.GetAllDNSEndpoints()
 			if err != nil {
 				return 0, 0, fmt.Errorf("failed to get DNS endpoints: %w", err)
 			}
 
-			start = DefaultStartIndex
+			start = defaultStartIndex
 			end = len(endpoints) - 1
 		case keyDatabase:
 			// For flattened database operations
-			dbOps, err := resourcelookup.GetAllDatabaseOperations()
+			dbOps, err := systemCache.GetAllDatabaseOperations()
 			if err != nil {
 				return 0, 0, fmt.Errorf("failed to get database operations: %w", err)
 			}
 
-			start = DefaultStartIndex
+			start = defaultStartIndex
 			end = len(dbOps) - 1
 		}
 	}

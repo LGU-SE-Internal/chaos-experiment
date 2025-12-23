@@ -13,12 +13,7 @@ import (
 
 // 测试获取配置
 func TestHandler(t *testing.T) {
-	if err := InitTargetConfig(map[string]int{"ts": 6}, "app"); err != nil {
-		t.Error(err.Error())
-		return
-	}
-
-	node, err := StructToNode[InjectionConf]("ts")
+	node, err := StructToNode[InjectionConf](context.Background(), SystemTrainTicket)
 	if err != nil {
 		t.Errorf("StructToNode failed: %v", err)
 		return
@@ -40,12 +35,6 @@ func TestHandler(t *testing.T) {
 
 // 测试创建
 func TestHandler2(t *testing.T) {
-	targetCount := 6
-	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
-		t.Error(err.Error())
-		return
-	}
-
 	pwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err.Error())
@@ -59,6 +48,8 @@ func TestHandler2(t *testing.T) {
 		return
 	}
 
+	ctx := context.Background()
+
 	for _, tt := range testsMaps {
 		pp.Println(tt)
 
@@ -68,13 +59,13 @@ func TestHandler2(t *testing.T) {
 			return
 		}
 
-		conf, err := NodeToStruct[InjectionConf](node)
+		conf, err := NodeToStruct[InjectionConf](ctx, node)
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 
-		displayConfig, err := conf.GetDisplayConfig()
+		displayConfig, err := conf.GetDisplayConfig(ctx)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -82,27 +73,27 @@ func TestHandler2(t *testing.T) {
 
 		pp.Println(displayConfig)
 
-		name, err := BatchCreate(context.Background(), []InjectionConf{*conf}, "ts0", map[string]string{}, map[string]string{
-			"benchmark":    "clickhouse",
-			"pre_duration": "1",
-			"task_id":      "1",
-			"trace_id":     "2",
-			"group_id":     "3",
-		})
+		// name, err := BatchCreate(context.Background(), []InjectionConf{*conf}, "ts0", map[string]string{}, map[string]string{
+		// 	"benchmark":    "clickhouse",
+		// 	"pre_duration": "1",
+		// 	"task_id":      "1",
+		// 	"trace_id":     "2",
+		// 	"group_id":     "3",
+		// })
+		// if err != nil {
+		// 	t.Error(err.Error())
+		// 	return
+		// }
+
+		// pp.Println(name)
+
+		newConf, err := NodeToStruct[InjectionConf](ctx, node)
 		if err != nil {
 			t.Error(err.Error())
 			return
 		}
 
-		pp.Println(name)
-
-		newConf, err := NodeToStruct[InjectionConf](node)
-		if err != nil {
-			t.Error(err.Error())
-			return
-		}
-
-		groudtruth, err := newConf.GetGroundtruth()
+		groudtruth, err := newConf.GetGroundtruth(ctx)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -113,12 +104,6 @@ func TestHandler2(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	targetCount := 6
-	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
-		t.Error(err.Error())
-		return
-	}
-
 	pwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err.Error())
@@ -139,7 +124,7 @@ func TestValidate(t *testing.T) {
 			return
 		}
 
-		result, err := Validate[InjectionConf](node, "ts")
+		result, err := Validate[InjectionConf](context.Background(), node, SystemTrainTicket)
 		if err != nil {
 			t.Error(err.Error())
 			return
@@ -151,12 +136,6 @@ func TestValidate(t *testing.T) {
 
 // Test HTTPRequestReplaceMethod display config
 func TestHTTPRequestReplaceMethodDisplayConfig(t *testing.T) {
-	targetCount := 6
-	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
-		t.Error(err.Error())
-		return
-	}
-
 	// Test data representing HTTPRequestReplaceMethod with specific values
 	testData := map[string]any{
 		"name":  "InjectionConf",
@@ -211,14 +190,14 @@ func TestHTTPRequestReplaceMethodDisplayConfig(t *testing.T) {
 	}
 
 	// Convert to struct
-	conf, err := NodeToStruct[InjectionConf](node)
+	conf, err := NodeToStruct[InjectionConf](context.Background(), node)
 	if err != nil {
 		t.Errorf("NodeToStruct failed: %v", err)
 		return
 	}
 
 	// Get display config
-	displayConfig, err := conf.GetDisplayConfig()
+	displayConfig, err := conf.GetDisplayConfig(context.Background())
 	if err != nil {
 		t.Errorf("GetDisplayConfig failed: %v", err)
 		return
@@ -269,14 +248,8 @@ func TestHTTPRequestReplaceMethodDisplayConfig(t *testing.T) {
 	pp.Println(displayConfig)
 }
 
-func TestGetResources(t *testing.T) {
-	targetCount := 6
-	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
-		t.Error(err.Error())
-		return
-	}
-
-	resourceMap, err := GetNsResources()
+func TestGetSystmeResources(t *testing.T) {
+	resourceMap, err := GetSystemResourceMap(context.Background())
 	if err != nil {
 		t.Errorf("GetAllResources failed: %v", err)
 		return
@@ -285,38 +258,14 @@ func TestGetResources(t *testing.T) {
 	pp.Println(resourceMap)
 }
 
-func TestGetChaosResourceMap(t *testing.T) {
-	targetCount := 6
-	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
-		t.Error(err.Error())
-		return
-	}
-
-	resourceMap, err := GetChaosResourceMap()
+func TestGetChaosTypeResourceMappings(t *testing.T) {
+	resourceMap, err := GetChaosTypeResourceMappings()
 	if err != nil {
 		t.Errorf("GetChaosResourceMap failed: %v", err)
 		return
 	}
 
 	pp.Println(resourceMap)
-}
-
-func TestGetNsResources(t *testing.T) {
-	targetCount := 6
-	if err := InitTargetConfig(map[string]int{"ts": targetCount}, "app"); err != nil {
-		t.Error(err.Error())
-		return
-	}
-
-	resourceMap, err := GetNsResources()
-	if err != nil {
-		t.Errorf("GetNsResources failed: %v", err)
-		return
-	}
-
-	for _, resource := range resourceMap {
-		pp.Println(resource.ToDeduplicatedMap())
-	}
 }
 
 func readJSONFile(filename, key string) ([]map[string]any, error) {

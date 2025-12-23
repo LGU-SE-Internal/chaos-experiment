@@ -13,9 +13,9 @@ import (
 )
 
 type PodFailureSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
-	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
+	Duration int `range:"1-60" description:"Time Unit Minute"`
+	System   int `range:"0-0" dynamic:"true" description:"String"`
+	AppIdx   int `range:"0-0" dynamic:"true" description:"App Index"`
 }
 
 func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -40,8 +40,9 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	appLabels, err := resourcelookup.GetAllAppLabels(ns, TargetLabelKey)
+	appLabels, err := resourcelookup.GetSystemCache(system).GetAllAppLabels(ctx, ns, defaultAppLabel)
 	if err != nil {
 		return "", fmt.Errorf("failed to get app labels: %w", err)
 	}
@@ -59,9 +60,9 @@ func (s *PodFailureSpec) Create(cli cli.Client, opts ...Option) (string, error) 
 
 // Update PodKillSpec to use flattened app index
 type PodKillSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
-	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
+	Duration int `range:"1-60" description:"Time Unit Minute"`
+	System   int `range:"0-0" dynamic:"true" description:"String"`
+	AppIdx   int `range:"0-0" dynamic:"true" description:"App Index"`
 }
 
 func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -86,8 +87,9 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	appLabels, err := resourcelookup.GetAllAppLabels(ns, TargetLabelKey)
+	appLabels, err := resourcelookup.GetSystemCache(system).GetAllAppLabels(ctx, ns, defaultAppLabel)
 	if err != nil {
 		return "", fmt.Errorf("failed to get app labels: %w", err)
 	}
@@ -105,7 +107,7 @@ func (s *PodKillSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 
 type ContainerKillSpec struct {
 	Duration     int `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
+	System       int `range:"0-0" dynamic:"true" description:"String"`
 	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
 }
 
@@ -131,8 +133,9 @@ func (s *ContainerKillSpec) Create(cli cli.Client, opts ...Option) (string, erro
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	containers, err := resourcelookup.GetAllContainers(ns)
+	containers, err := resourcelookup.GetSystemCache(system).GetAllContainers(ctx, ns)
 	if err != nil {
 		return "", fmt.Errorf("failed to get containers: %w", err)
 	}

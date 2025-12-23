@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 )
 
 // MetricType defines the type of metrics for groundtruth
@@ -29,8 +31,10 @@ type Groundtruth struct {
 }
 
 // GetGroundtruthFromAppIdx returns a Groundtruth object for a given app index
-func GetGroundtruthFromAppIdx(namespace string, appIdx int) (Groundtruth, error) {
-	appLabels, err := resourcelookup.GetAllAppLabels(namespace, TargetLabelKey)
+func GetGroundtruthFromAppIdx(ctx context.Context, system systemconfig.SystemType, namespace string, appIdx int) (Groundtruth, error) {
+	systemCache := resourcelookup.GetSystemCache(system)
+
+	appLabels, err := systemCache.GetAllAppLabels(ctx, namespace, defaultAppLabel)
 	if err != nil || len(appLabels) == 0 {
 		return Groundtruth{}, fmt.Errorf("failed to get app labels: %w", err)
 	}
@@ -42,12 +46,12 @@ func GetGroundtruthFromAppIdx(namespace string, appIdx int) (Groundtruth, error)
 	appName := appLabels[appIdx]
 
 	// Get containers and pods for the service
-	containers, err := resourcelookup.GetContainersByService(namespace, appName)
+	containers, err := systemCache.GetContainersByService(ctx, namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers: %w", err)
 	}
 
-	pods, err := resourcelookup.GetPodsByService(namespace, appName)
+	pods, err := systemCache.GetPodsByService(ctx, namespace, defaultAppLabel)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get pods: %w", err)
 	}
@@ -63,8 +67,10 @@ func GetGroundtruthFromAppIdx(namespace string, appIdx int) (Groundtruth, error)
 }
 
 // GetGroundtruthFromContainerIdx returns a Groundtruth object for a given container index
-func GetGroundtruthFromContainerIdx(namespace string, containerIdx int) (Groundtruth, error) {
-	containers, err := resourcelookup.GetAllContainers(namespace)
+func GetGroundtruthFromContainerIdx(ctx context.Context, system systemconfig.SystemType, namespace string, containerIdx int) (Groundtruth, error) {
+	systemCache := resourcelookup.GetSystemCache(system)
+
+	containers, err := systemCache.GetAllContainers(ctx, namespace)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers: %w", err)
 	}
@@ -86,8 +92,10 @@ func GetGroundtruthFromContainerIdx(namespace string, containerIdx int) (Groundt
 }
 
 // GetGroundtruthFromDNSEndpointIdx returns a Groundtruth object for a given DNS endpoint index
-func GetGroundtruthFromDNSEndpointIdx(namespace string, endpointIdx int) (Groundtruth, error) {
-	endpoints, err := resourcelookup.GetAllDNSEndpoints()
+func GetGroundtruthFromDNSEndpointIdx(ctx context.Context, system systemconfig.SystemType, namespace string, endpointIdx int) (Groundtruth, error) {
+	systemCache := resourcelookup.GetSystemCache(system)
+
+	endpoints, err := systemCache.GetAllDNSEndpoints()
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get DNS endpoints: %w", err)
 	}
@@ -102,7 +110,7 @@ func GetGroundtruthFromDNSEndpointIdx(namespace string, endpointIdx int) (Ground
 	targetDomain := endpointPair.Domain
 
 	// Get containers and pods for both services
-	containers, pods, err := resourcelookup.GetContainersAndPodsByServices(namespace, []string{sourceService, targetDomain})
+	containers, pods, err := systemCache.GetContainersAndPodsByServices(ctx, namespace, []string{sourceService, targetDomain})
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers and pods: %w", err)
 	}
@@ -128,8 +136,10 @@ func GetGroundtruthFromDNSEndpointIdx(namespace string, endpointIdx int) (Ground
 }
 
 // getHTTPGroundtruth is a helper function that gets groundtruth information for HTTP chaos
-func getHTTPGroundtruth(namespace string, endpointIdx int) (Groundtruth, error) {
-	endpoints, err := resourcelookup.GetAllHTTPEndpoints()
+func getHTTPGroundtruth(ctx context.Context, system systemconfig.SystemType, namespace string, endpointIdx int) (Groundtruth, error) {
+	systemCache := resourcelookup.GetSystemCache(system)
+
+	endpoints, err := systemCache.GetAllHTTPEndpoints()
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get HTTP endpoints: %w", err)
 	}
@@ -144,7 +154,7 @@ func getHTTPGroundtruth(namespace string, endpointIdx int) (Groundtruth, error) 
 	targetService := endpointPair.ServerAddress
 
 	// Get containers and pods for both services
-	containers, pods, err := resourcelookup.GetContainersAndPodsByServices(namespace, []string{sourceService, targetService})
+	containers, pods, err := systemCache.GetContainersAndPodsByServices(ctx, namespace, []string{sourceService, targetService})
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers and pods: %w", err)
 	}
@@ -169,8 +179,10 @@ func getHTTPGroundtruth(namespace string, endpointIdx int) (Groundtruth, error) 
 }
 
 // GetGroundtruthFromNetworkPairIdx returns a Groundtruth object for a given network pair index
-func GetGroundtruthFromNetworkPairIdx(namespace string, networkPairIdx int) (Groundtruth, error) {
-	networkPairs, err := resourcelookup.GetAllNetworkPairs()
+func GetGroundtruthFromNetworkPairIdx(ctx context.Context, system systemconfig.SystemType, namespace string, networkPairIdx int) (Groundtruth, error) {
+	systemCache := resourcelookup.GetSystemCache(system)
+
+	networkPairs, err := systemCache.GetAllNetworkPairs()
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get network pairs: %w", err)
 	}
@@ -185,7 +197,7 @@ func GetGroundtruthFromNetworkPairIdx(namespace string, networkPairIdx int) (Gro
 	targetService := pair.TargetService
 
 	// Get containers and pods for both services
-	containers, pods, err := resourcelookup.GetContainersAndPodsByServices(namespace, []string{sourceService, targetService})
+	containers, pods, err := systemCache.GetContainersAndPodsByServices(ctx, namespace, []string{sourceService, targetService})
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers and pods: %w", err)
 	}
@@ -211,8 +223,10 @@ func GetGroundtruthFromNetworkPairIdx(namespace string, networkPairIdx int) (Gro
 }
 
 // GetGroundtruthFromMethodIdx returns a Groundtruth object for a given JVM method index
-func GetGroundtruthFromMethodIdx(namespace string, methodIdx int) (Groundtruth, error) {
-	methods, err := resourcelookup.GetAllJVMMethods()
+func GetGroundtruthFromMethodIdx(ctx context.Context, system systemconfig.SystemType, namespace string, methodIdx int) (Groundtruth, error) {
+	systemCache := resourcelookup.GetSystemCache(system)
+
+	methods, err := systemCache.GetAllJVMMethods()
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get JVM methods: %w", err)
 	}
@@ -230,12 +244,12 @@ func GetGroundtruthFromMethodIdx(namespace string, methodIdx int) (Groundtruth, 
 	functionName := fmt.Sprintf("%s.%s", className, methodPair.MethodName)
 
 	// Get containers and pods for the service
-	containers, err := resourcelookup.GetContainersByService(namespace, appName)
+	containers, err := systemCache.GetContainersByService(ctx, namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers: %w", err)
 	}
 
-	pods, err := resourcelookup.GetPodsByService(namespace, appName)
+	pods, err := systemCache.GetPodsByService(ctx, namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get pods: %w", err)
 	}
@@ -252,8 +266,10 @@ func GetGroundtruthFromMethodIdx(namespace string, methodIdx int) (Groundtruth, 
 }
 
 // GetGroundtruthFromDatabaseIdx returns a Groundtruth object for a given database operation index
-func GetGroundtruthFromDatabaseIdx(namespace string, dbOpIdx int) (Groundtruth, error) {
-	dbOps, err := resourcelookup.GetAllDatabaseOperations()
+func GetGroundtruthFromDatabaseIdx(ctx context.Context, system systemconfig.SystemType, namespace string, dbOpIdx int) (Groundtruth, error) {
+	systemCache := resourcelookup.GetSystemCache(system)
+
+	dbOps, err := systemCache.GetAllDatabaseOperations()
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get database operations: %w", err)
 	}
@@ -266,24 +282,24 @@ func GetGroundtruthFromDatabaseIdx(namespace string, dbOpIdx int) (Groundtruth, 
 	appName := dbOp.AppName
 
 	// Get containers and pods for the service
-	containers, err := resourcelookup.GetContainersByService(namespace, appName)
+	containers, err := systemCache.GetContainersByService(ctx, namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get containers: %w", err)
 	}
 
-	pods, err := resourcelookup.GetPodsByService(namespace, appName)
+	pods, err := systemCache.GetPodsByService(ctx, namespace, appName)
 	if err != nil {
 		return Groundtruth{}, fmt.Errorf("failed to get pods: %w", err)
 	}
 
 	// Try to get MySQL service information
-	mysqlPods, err := resourcelookup.GetPodsByService(namespace, "mysql")
+	mysqlPods, err := systemCache.GetPodsByService(ctx, namespace, "mysql")
 	if err != nil {
 		// If error, just continue without MySQL pods
 		mysqlPods = []string{}
 	}
 
-	mysqlContainers, err := resourcelookup.GetContainersByService(namespace, "mysql")
+	mysqlContainers, err := systemCache.GetContainersByService(ctx, namespace, "mysql")
 	if err != nil {
 		// If error, just continue without MySQL containers
 		mysqlContainers = []string{}
@@ -304,24 +320,40 @@ func GetGroundtruthFromDatabaseIdx(namespace string, dbOpIdx int) (Groundtruth, 
 	return gt, nil
 }
 
-func (s *PodFailureSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromAppIdx(namespace, s.AppIdx)
+func (s *PodFailureSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromAppIdx(ctx, system, namespace, s.AppIdx)
 }
 
-func (s *PodKillSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromAppIdx(namespace, s.AppIdx)
+func (s *PodKillSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromAppIdx(ctx, system, namespace, s.AppIdx)
 }
 
-func (s *ContainerKillSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromContainerIdx(namespace, s.ContainerIdx)
+func (s *ContainerKillSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromContainerIdx(ctx, system, namespace, s.ContainerIdx)
 }
 
-func (s *MemoryStressChaosSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	gt, err := GetGroundtruthFromContainerIdx(namespace, s.ContainerIdx)
+func (s *MemoryStressChaosSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt, err := GetGroundtruthFromContainerIdx(ctx, system, namespace, s.ContainerIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -330,9 +362,13 @@ func (s *MemoryStressChaosSpec) GetGroundtruth() (Groundtruth, error) {
 	return gt, nil
 }
 
-func (s *CPUStressChaosSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	gt, err := GetGroundtruthFromContainerIdx(namespace, s.ContainerIdx)
+func (s *CPUStressChaosSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt, err := GetGroundtruthFromContainerIdx(ctx, system, namespace, s.ContainerIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -341,34 +377,58 @@ func (s *CPUStressChaosSpec) GetGroundtruth() (Groundtruth, error) {
 	return gt, nil
 }
 
-func (s *TimeSkewSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromContainerIdx(namespace, s.ContainerIdx)
+func (s *TimeSkewSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromContainerIdx(ctx, system, namespace, s.ContainerIdx)
 }
 
-func (s *DNSErrorSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromDNSEndpointIdx(namespace, s.DNSEndpointIdx)
+func (s *DNSErrorSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromDNSEndpointIdx(ctx, system, namespace, s.DNSEndpointIdx)
 }
 
-func (s *DNSRandomSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromDNSEndpointIdx(namespace, s.DNSEndpointIdx)
+func (s *DNSRandomSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromDNSEndpointIdx(ctx, system, namespace, s.DNSEndpointIdx)
 }
 
-func (s *HTTPRequestAbortSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return getHTTPGroundtruth(namespace, s.EndpointIdx)
+func (s *HTTPRequestAbortSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return getHTTPGroundtruth(ctx, system, namespace, s.EndpointIdx)
 }
 
-func (s *HTTPResponseAbortSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return getHTTPGroundtruth(namespace, s.EndpointIdx)
+func (s *HTTPResponseAbortSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return getHTTPGroundtruth(ctx, system, namespace, s.EndpointIdx)
 }
 
-func (s *HTTPRequestDelaySpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	gt, err := getHTTPGroundtruth(namespace, s.EndpointIdx)
+func (s *HTTPRequestDelaySpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt, err := getHTTPGroundtruth(ctx, system, namespace, s.EndpointIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -377,9 +437,13 @@ func (s *HTTPRequestDelaySpec) GetGroundtruth() (Groundtruth, error) {
 	return gt, nil
 }
 
-func (s *HTTPResponseDelaySpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	gt, err := getHTTPGroundtruth(namespace, s.EndpointIdx)
+func (s *HTTPResponseDelaySpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt, err := getHTTPGroundtruth(ctx, system, namespace, s.EndpointIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -388,34 +452,58 @@ func (s *HTTPResponseDelaySpec) GetGroundtruth() (Groundtruth, error) {
 	return gt, nil
 }
 
-func (s *HTTPResponseReplaceBodySpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return getHTTPGroundtruth(namespace, s.EndpointIdx)
+func (s *HTTPResponseReplaceBodySpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return getHTTPGroundtruth(ctx, system, namespace, s.EndpointIdx)
 }
 
-func (s *HTTPResponsePatchBodySpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return getHTTPGroundtruth(namespace, s.EndpointIdx)
+func (s *HTTPResponsePatchBodySpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return getHTTPGroundtruth(ctx, system, namespace, s.EndpointIdx)
 }
 
-func (s *HTTPRequestReplacePathSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return getHTTPGroundtruth(namespace, s.EndpointIdx)
+func (s *HTTPRequestReplacePathSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return getHTTPGroundtruth(ctx, system, namespace, s.EndpointIdx)
 }
 
-func (s *HTTPRequestReplaceMethodSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return getHTTPGroundtruth(namespace, s.EndpointIdx)
+func (s *HTTPRequestReplaceMethodSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return getHTTPGroundtruth(ctx, system, namespace, s.EndpointIdx)
 }
 
-func (s *HTTPResponseReplaceCodeSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return getHTTPGroundtruth(namespace, s.EndpointIdx)
+func (s *HTTPResponseReplaceCodeSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return getHTTPGroundtruth(ctx, system, namespace, s.EndpointIdx)
 }
 
-func (s *NetworkDelaySpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	gt, err := GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
+func (s *NetworkDelaySpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt, err := GetGroundtruthFromNetworkPairIdx(ctx, system, namespace, s.NetworkPairIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -424,35 +512,59 @@ func (s *NetworkDelaySpec) GetGroundtruth() (Groundtruth, error) {
 	return gt, nil
 }
 
-func (s *NetworkLossSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
+func (s *NetworkLossSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromNetworkPairIdx(ctx, system, namespace, s.NetworkPairIdx)
 }
 
-func (s *NetworkDuplicateSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
+func (s *NetworkDuplicateSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromNetworkPairIdx(ctx, system, namespace, s.NetworkPairIdx)
 }
 
-func (s *NetworkCorruptSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
+func (s *NetworkCorruptSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromNetworkPairIdx(ctx, system, namespace, s.NetworkPairIdx)
 }
 
-func (s *NetworkBandwidthSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
+func (s *NetworkBandwidthSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromNetworkPairIdx(ctx, system, namespace, s.NetworkPairIdx)
 }
 
-func (s *NetworkPartitionSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromNetworkPairIdx(namespace, s.NetworkPairIdx)
+func (s *NetworkPartitionSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromNetworkPairIdx(ctx, system, namespace, s.NetworkPairIdx)
 }
 
 // JVM chaos GetGroundtruth implementations
-func (s *JVMLatencySpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	gt, err := GetGroundtruthFromMethodIdx(namespace, s.MethodIdx)
+func (s *JVMLatencySpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt, err := GetGroundtruthFromMethodIdx(ctx, system, namespace, s.MethodIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -461,24 +573,40 @@ func (s *JVMLatencySpec) GetGroundtruth() (Groundtruth, error) {
 	return gt, nil
 }
 
-func (s *JVMReturnSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromMethodIdx(namespace, s.MethodIdx)
+func (s *JVMReturnSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromMethodIdx(ctx, system, namespace, s.MethodIdx)
 }
 
-func (s *JVMExceptionSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromMethodIdx(namespace, s.MethodIdx)
+func (s *JVMExceptionSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromMethodIdx(ctx, system, namespace, s.MethodIdx)
 }
 
-func (s *JVMGCSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromAppIdx(namespace, s.AppIdx)
+func (s *JVMGCSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromAppIdx(ctx, system, namespace, s.AppIdx)
 }
 
-func (s *JVMCPUStressSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	gt, err := GetGroundtruthFromMethodIdx(namespace, s.MethodIdx)
+func (s *JVMCPUStressSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt, err := GetGroundtruthFromMethodIdx(ctx, system, namespace, s.MethodIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -487,9 +615,13 @@ func (s *JVMCPUStressSpec) GetGroundtruth() (Groundtruth, error) {
 	return gt, nil
 }
 
-func (s *JVMMemoryStressSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	gt, err := GetGroundtruthFromMethodIdx(namespace, s.MethodIdx)
+func (s *JVMMemoryStressSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt, err := GetGroundtruthFromMethodIdx(ctx, system, namespace, s.MethodIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -498,9 +630,13 @@ func (s *JVMMemoryStressSpec) GetGroundtruth() (Groundtruth, error) {
 	return gt, nil
 }
 
-func (s *JVMMySQLLatencySpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	gt, err := GetGroundtruthFromDatabaseIdx(namespace, s.DatabaseIdx)
+func (s *JVMMySQLLatencySpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	gt, err := GetGroundtruthFromDatabaseIdx(ctx, system, namespace, s.DatabaseIdx)
 	if err != nil {
 		return Groundtruth{}, err
 	}
@@ -509,7 +645,11 @@ func (s *JVMMySQLLatencySpec) GetGroundtruth() (Groundtruth, error) {
 	return gt, nil
 }
 
-func (s *JVMMySQLExceptionSpec) GetGroundtruth() (Groundtruth, error) {
-	namespace := fmt.Sprintf("%s%d", NamespacePrefixs[s.Namespace], DefaultStartIndex)
-	return GetGroundtruthFromDatabaseIdx(namespace, s.DatabaseIdx)
+func (s *JVMMySQLExceptionSpec) GetGroundtruth(ctx context.Context) (Groundtruth, error) {
+	system := systemconfig.GetAllSystemTypes()[s.System]
+	namespace, err := systemconfig.GetNamespaceByIndex(system, defaultStartIndex)
+	if err != nil {
+		return Groundtruth{}, err
+	}
+	return GetGroundtruthFromDatabaseIdx(ctx, system, namespace, s.DatabaseIdx)
 }

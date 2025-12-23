@@ -5,6 +5,7 @@ package systemconfig
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -41,6 +42,15 @@ var (
 		SystemHotelReservation:   true,
 		SystemSocialNetwork:      true,
 		SystemOnlineBoutique:     true,
+	}
+
+	systemNsPatterns = map[SystemType]string{
+		SystemTrainTicket:        "^ts\\d+$",
+		SystemOtelDemo:           "^otel-demo\\d+$",
+		SystemMediaMicroservices: "^media\\d+$",
+		SystemHotelReservation:   "^hs\\d+$",
+		SystemSocialNetwork:      "^sn\\d+$",
+		SystemOnlineBoutique:     "^ob\\d+$",
 	}
 )
 
@@ -103,6 +113,20 @@ func (s SystemType) String() string {
 // GetAllSystemTypes returns all valid system types.
 func GetAllSystemTypes() []SystemType {
 	return []SystemType{SystemTrainTicket, SystemOtelDemo, SystemMediaMicroservices, SystemHotelReservation, SystemSocialNetwork, SystemOnlineBoutique}
+}
+
+// GetNamespaceByIndex generates a namespace name based on the system type and index.
+func GetNamespaceByIndex(system SystemType, index int) (string, error) {
+	pattern, exists := systemNsPatterns[system]
+	if !exists {
+		return "", fmt.Errorf("system type not found")
+	}
+
+	name := strings.TrimPrefix(pattern, "^")
+	name = strings.TrimSuffix(name, "$")
+	name = strings.Replace(name, "\\d+", fmt.Sprintf("%d", index), 1)
+
+	return name, nil
 }
 
 // ParseSystemType parses a string into a SystemType.

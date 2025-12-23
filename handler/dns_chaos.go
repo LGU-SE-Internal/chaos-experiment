@@ -15,7 +15,7 @@ import (
 // DNSErrorSpec defines the DNS error chaos injection parameters
 type DNSErrorSpec struct {
 	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	System         int `range:"0-0" dynamic:"true" description:"String"`
 	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
 
@@ -41,8 +41,9 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	endpoints, err := resourcelookup.GetAllDNSEndpoints()
+	endpoints, err := resourcelookup.GetSystemCache(system).GetAllDNSEndpoints()
 	if err != nil {
 		return "", fmt.Errorf("failed to get DNS endpoints: %w", err)
 	}
@@ -63,7 +64,7 @@ func (s *DNSErrorSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 // DNSRandomSpec defines the DNS random chaos injection parameters
 type DNSRandomSpec struct {
 	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	System         int `range:"0-0" dynamic:"true" description:"String"`
 	DNSEndpointIdx int `range:"0-0" dynamic:"true" description:"DNS Endpoint Index"`
 }
 
@@ -89,8 +90,9 @@ func (s *DNSRandomSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	endpoints, err := resourcelookup.GetAllDNSEndpoints()
+	endpoints, err := resourcelookup.GetSystemCache(system).GetAllDNSEndpoints()
 	if err != nil {
 		return "", fmt.Errorf("failed to get DNS endpoints: %w", err)
 	}

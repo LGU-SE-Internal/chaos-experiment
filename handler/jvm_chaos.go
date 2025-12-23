@@ -35,7 +35,7 @@ const (
 // Updated to use flattened MethodIdx
 type JVMLatencySpec struct {
 	Duration        int `range:"1-60" description:"Time Unit Minute"`
-	Namespace       int `range:"0-0" dynamic:"true" description:"String"`
+	System          int `range:"0-0" dynamic:"true" description:"String"`
 	MethodIdx       int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
 	LatencyDuration int `range:"1-5000" description:"Latency in ms"`
 }
@@ -62,8 +62,9 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	methods, err := resourcelookup.GetAllJVMMethods()
+	methods, err := resourcelookup.GetSystemCache(system).GetAllJVMMethods()
 	if err != nil {
 		return "", fmt.Errorf("failed to get JVM methods: %w", err)
 	}
@@ -93,7 +94,7 @@ func (s *JVMLatencySpec) Create(cli cli.Client, opts ...Option) (string, error) 
 // Updated to use flattened MethodIdx
 type JVMReturnSpec struct {
 	Duration       int           `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int           `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
+	System         int           `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
 	MethodIdx      int           `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
 	ReturnType     JVMReturnType `range:"1-2" description:"Return Type (1=String, 2=Int)"`
 	ReturnValueOpt int           `range:"0-1" description:"Return value option (0=Default, 1=Random)"`
@@ -121,8 +122,9 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	methods, err := resourcelookup.GetAllJVMMethods()
+	methods, err := resourcelookup.GetSystemCache(system).GetAllJVMMethods()
 	if err != nil {
 		return "", fmt.Errorf("failed to get JVM methods: %w", err)
 	}
@@ -167,7 +169,7 @@ func (s *JVMReturnSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 // Updated to use flattened MethodIdx
 type JVMExceptionSpec struct {
 	Duration     int `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
+	System       int `range:"0-0" dynamic:"true" description:"String"`
 	MethodIdx    int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
 	ExceptionOpt int `range:"0-1" description:"Exception option (0=Default, 1=Random)"`
 }
@@ -194,8 +196,9 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	methods, err := resourcelookup.GetAllJVMMethods()
+	methods, err := resourcelookup.GetSystemCache(system).GetAllJVMMethods()
 	if err != nil {
 		return "", fmt.Errorf("failed to get JVM methods: %w", err)
 	}
@@ -239,9 +242,9 @@ func (s *JVMExceptionSpec) Create(cli cli.Client, opts ...Option) (string, error
 
 // JVMGCSpec defines the JVM garbage collector chaos injection parameters
 type JVMGCSpec struct {
-	Duration  int `range:"1-60" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
-	AppIdx    int `range:"0-0" dynamic:"true" description:"App Index"`
+	Duration int `range:"1-60" description:"Time Unit Minute"`
+	System   int `range:"0-0" dynamic:"true" description:"String"`
+	AppIdx   int `range:"0-0" dynamic:"true" description:"App Index"`
 }
 
 func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
@@ -266,8 +269,9 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	appLabels, err := resourcelookup.GetAllAppLabels(ns, TargetLabelKey)
+	appLabels, err := resourcelookup.GetSystemCache(system).GetAllAppLabels(ctx, ns, defaultAppLabel)
 	if err != nil {
 		return "", fmt.Errorf("failed to get app labels: %w", err)
 	}
@@ -287,7 +291,7 @@ func (s *JVMGCSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 // Updated to use flattened MethodIdx
 type JVMCPUStressSpec struct {
 	Duration  int `range:"1-60" description:"Time Unit Minute"`
-	Namespace int `range:"0-0" dynamic:"true" description:"String"`
+	System    int `range:"0-0" dynamic:"true" description:"String"`
 	MethodIdx int `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
 	CPUCount  int `range:"1-8" description:"Number of CPU cores to stress"`
 }
@@ -314,8 +318,9 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	methods, err := resourcelookup.GetAllJVMMethods()
+	methods, err := resourcelookup.GetSystemCache(system).GetAllJVMMethods()
 	if err != nil {
 		return "", fmt.Errorf("failed to get JVM methods: %w", err)
 	}
@@ -345,7 +350,7 @@ func (s *JVMCPUStressSpec) Create(cli cli.Client, opts ...Option) (string, error
 // Updated to use flattened MethodIdx
 type JVMMemoryStressSpec struct {
 	Duration  int           `range:"1-60" description:"Time Unit Minute"`
-	Namespace int           `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
+	System    int           `range:"0-0" dynamic:"true" description:"Namespace Index (0-based)"`
 	MethodIdx int           `range:"0-0" dynamic:"true" description:"Flattened app+method index"`
 	MemType   JVMMemoryType `range:"1-2" description:"Memory Type (1=Heap, 2=Stack)"`
 }
@@ -372,8 +377,9 @@ func (s *JVMMemoryStressSpec) Create(cli cli.Client, opts ...Option) (string, er
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	methods, err := resourcelookup.GetAllJVMMethods()
+	methods, err := resourcelookup.GetSystemCache(system).GetAllJVMMethods()
 	if err != nil {
 		return "", fmt.Errorf("failed to get JVM methods: %w", err)
 	}
@@ -428,7 +434,7 @@ const (
 // JVMMySQLLatencySpec defines the JVM MySQL latency chaos injection parameters
 type JVMMySQLLatencySpec struct {
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
-	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	System      int `range:"0-0" dynamic:"true" description:"String"`
 	DatabaseIdx int `range:"0-0" dynamic:"true" description:"Flattened app+database+table index"`
 	LatencyMs   int `range:"10-5000" description:"Latency in ms"`
 }
@@ -455,8 +461,9 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	dbOps, err := resourcelookup.GetAllDatabaseOperations()
+	dbOps, err := resourcelookup.GetSystemCache(system).GetAllDatabaseOperations()
 	if err != nil {
 		return "", fmt.Errorf("failed to get database operations: %w", err)
 	}
@@ -487,7 +494,7 @@ func (s *JVMMySQLLatencySpec) Create(cli cli.Client, opts ...Option) (string, er
 // JVMMySQLExceptionSpec defines the JVM MySQL exception chaos injection parameters
 type JVMMySQLExceptionSpec struct {
 	Duration    int `range:"1-60" description:"Time Unit Minute"`
-	Namespace   int `range:"0-0" dynamic:"true" description:"String"`
+	System      int `range:"0-0" dynamic:"true" description:"String"`
 	DatabaseIdx int `range:"0-0" dynamic:"true" description:"Flattened app+database+table index"`
 }
 
@@ -513,8 +520,9 @@ func (s *JVMMySQLExceptionSpec) Create(cli cli.Client, opts ...Option) (string, 
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	dbOps, err := resourcelookup.GetAllDatabaseOperations()
+	dbOps, err := resourcelookup.GetSystemCache(system).GetAllDatabaseOperations()
 	if err != nil {
 		return "", fmt.Errorf("failed to get database operations: %w", err)
 	}

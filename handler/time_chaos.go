@@ -13,7 +13,7 @@ import (
 
 type TimeSkewSpec struct {
 	Duration     int `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int `range:"0-0" dynamic:"true"`
+	System       int `range:"0-0" dynamic:"true"`
 	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
 	TimeOffset   int `range:"-600-600" description:"Time offset in seconds"`
 }
@@ -40,8 +40,9 @@ func (s *TimeSkewSpec) Create(cli cli.Client, opts ...Option) (string, error) {
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	containers, err := resourcelookup.GetAllContainers(ns)
+	containers, err := resourcelookup.GetSystemCache(system).GetAllContainers(ctx, ns)
 	if err != nil {
 		return "", fmt.Errorf("failed to get containers: %w", err)
 	}

@@ -7,6 +7,7 @@ import (
 	chaos "github.com/LGU-SE-Internal/chaos-experiment/chaos"
 	controllers "github.com/LGU-SE-Internal/chaos-experiment/controllers"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/resourcelookup"
+	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
 	chaosmeshv1alpha1 "github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"k8s.io/utils/pointer"
 	cli "sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,8 +29,8 @@ func getDirection(directionCode int) chaosmeshv1alpha1.Direction {
 }
 
 // Helper function to validate and get network pair from index
-func getNetworkPairByIndex(networkPairIdx int) (*resourcelookup.AppNetworkPair, error) {
-	networkPairs, err := resourcelookup.GetAllNetworkPairs()
+func getNetworkPairByIndex(system systemconfig.SystemType, networkPairIdx int) (*resourcelookup.AppNetworkPair, error) {
+	networkPairs, err := resourcelookup.GetSystemCache(system).GetAllNetworkPairs()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get network pairs: %w", err)
 	}
@@ -45,7 +46,7 @@ func getNetworkPairByIndex(networkPairIdx int) (*resourcelookup.AppNetworkPair, 
 // NetworkPartitionSpec defines network partition chaos parameters
 type NetworkPartitionSpec struct {
 	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	System         int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Direction      int `range:"1-3" description:"Direction (1=to, 2=from, 3=both)"`
 }
@@ -72,8 +73,9 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
+	pair, err := getNetworkPairByIndex(system, s.NetworkPairIdx)
 	if err != nil {
 		return "", err
 	}
@@ -96,7 +98,7 @@ func (s *NetworkPartitionSpec) Create(cli cli.Client, opts ...Option) (string, e
 // NetworkDelaySpec defines network delay chaos parameters
 type NetworkDelaySpec struct {
 	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	System         int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Latency        int `range:"1-2000" description:"Latency in milliseconds"`
 	Correlation    int `range:"0-100" description:"Correlation percentage"`
@@ -126,8 +128,9 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
+	pair, err := getNetworkPairByIndex(system, s.NetworkPairIdx)
 	if err != nil {
 		return "", err
 	}
@@ -155,7 +158,7 @@ func (s *NetworkDelaySpec) Create(cli cli.Client, opts ...Option) (string, error
 // NetworkLossSpec defines network packet loss chaos parameters
 type NetworkLossSpec struct {
 	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	System         int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Loss           int `range:"1-100" description:"Packet loss percentage"`
 	Correlation    int `range:"0-100" description:"Correlation percentage"`
@@ -184,8 +187,9 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
+	pair, err := getNetworkPairByIndex(system, s.NetworkPairIdx)
 	if err != nil {
 		return "", err
 	}
@@ -212,7 +216,7 @@ func (s *NetworkLossSpec) Create(cli cli.Client, opts ...Option) (string, error)
 // NetworkDuplicateSpec defines network packet duplication chaos parameters
 type NetworkDuplicateSpec struct {
 	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	System         int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Duplicate      int `range:"1-100" description:"Packet duplication percentage"`
 	Correlation    int `range:"0-100" description:"Correlation percentage"`
@@ -241,8 +245,9 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
+	pair, err := getNetworkPairByIndex(system, s.NetworkPairIdx)
 	if err != nil {
 		return "", err
 	}
@@ -269,7 +274,7 @@ func (s *NetworkDuplicateSpec) Create(cli cli.Client, opts ...Option) (string, e
 // NetworkCorruptSpec defines network packet corruption chaos parameters
 type NetworkCorruptSpec struct {
 	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	System         int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Corrupt        int `range:"1-100" description:"Packet corruption percentage"`
 	Correlation    int `range:"0-100" description:"Correlation percentage"`
@@ -298,8 +303,9 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
+	pair, err := getNetworkPairByIndex(system, s.NetworkPairIdx)
 	if err != nil {
 		return "", err
 	}
@@ -326,7 +332,7 @@ func (s *NetworkCorruptSpec) Create(cli cli.Client, opts ...Option) (string, err
 // NetworkBandwidthSpec defines network bandwidth limit chaos parameters
 type NetworkBandwidthSpec struct {
 	Duration       int `range:"1-60" description:"Time Unit Minute"`
-	Namespace      int `range:"0-0" dynamic:"true" description:"String"`
+	System         int `range:"0-0" dynamic:"true" description:"String"`
 	NetworkPairIdx int `range:"0-0" dynamic:"true" description:"Flattened network pair index"`
 	Rate           int `range:"1-1000000" description:"Bandwidth rate in kbps"`
 	Limit          int `range:"1-10000" description:"Number of bytes that can be queued"`
@@ -356,8 +362,9 @@ func (s *NetworkBandwidthSpec) Create(cli cli.Client, opts ...Option) (string, e
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	pair, err := getNetworkPairByIndex(s.NetworkPairIdx)
+	pair, err := getNetworkPairByIndex(system, s.NetworkPairIdx)
 	if err != nil {
 		return "", err
 	}

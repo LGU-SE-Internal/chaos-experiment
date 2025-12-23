@@ -14,17 +14,16 @@ import (
 	hsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/hs/serviceendpoints"
 	mediadb "github.com/LGU-SE-Internal/chaos-experiment/internal/media/databaseoperations"
 	mediaendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/media/serviceendpoints"
-	obdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/databaseoperations"
 	obendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/serviceendpoints"
 	oteldemodb "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/databaseoperations"
-	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
 	oteldemogrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/grpcoperations"
 	oteldemojvm "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/javaclassmethods"
+	oteldemoendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/serviceendpoints"
 	sndb "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/databaseoperations"
 	snendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/serviceendpoints"
 	tsdb "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/databaseoperations"
-	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
 	tsjvm "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/javaclassmethods"
+	tsendpoints "github.com/LGU-SE-Internal/chaos-experiment/internal/ts/serviceendpoints"
 )
 
 func main() {
@@ -318,8 +317,6 @@ func getHTTPEndpointsForCurrentSystem() ([]resourcelookup.AppEndpointPair, error
 			endpoints = hsendpoints.GetEndpointsByService(serviceName)
 		case systemconfig.SystemSocialNetwork:
 			endpoints = snendpoints.GetEndpointsByService(serviceName)
-case systemconfig.SystemOnlineBoutique:
-endpoints = obendpoints.GetEndpointsByService(serviceName)
 		case systemconfig.SystemOnlineBoutique:
 			endpoints = obendpoints.GetEndpointsByService(serviceName)
 		}
@@ -444,8 +441,8 @@ func getNetworkPairsForCurrentSystem() ([]resourcelookup.AppNetworkPair, error) 
 			endpoints = hsendpoints.GetEndpointsByService(serviceName)
 		case systemconfig.SystemSocialNetwork:
 			endpoints = snendpoints.GetEndpointsByService(serviceName)
-case systemconfig.SystemOnlineBoutique:
-endpoints = obendpoints.GetEndpointsByService(serviceName)
+		case systemconfig.SystemOnlineBoutique:
+			endpoints = obendpoints.GetEndpointsByService(serviceName)
 		case systemconfig.SystemOnlineBoutique:
 			endpoints = obendpoints.GetEndpointsByService(serviceName)
 		}
@@ -721,26 +718,26 @@ func getDNSEndpointsForCurrentSystem() ([]resourcelookup.AppDNSPair, error) {
 // Returns a map where key is "source->target" and value is true if gRPC-only
 func buildGRPCOnlyPairsForFaultpoints() map[string]bool {
 	grpcOnlyPairs := make(map[string]bool)
-	
+
 	// Only OtelDemo has gRPC operations
 	if systemconfig.GetCurrentSystem() != systemconfig.SystemOtelDemo {
 		return grpcOnlyPairs
 	}
-	
+
 	// Get all gRPC client operations (these represent outgoing gRPC calls)
 	grpcOps := oteldemogrpc.GetClientOperations()
-	
+
 	// Track which service pairs have gRPC connections
 	grpcPairs := make(map[string]bool)
 	for _, op := range grpcOps {
 		pairKey := op.ServiceName + "->" + op.ServerAddress
 		grpcPairs[pairKey] = true
 	}
-	
+
 	// Get all service endpoints to check which pairs also have HTTP
 	services := oteldemoendpoints.GetAllServices()
 	httpPairs := make(map[string]bool)
-	
+
 	for _, serviceName := range services {
 		endpoints := oteldemoendpoints.GetEndpointsByService(serviceName)
 		for _, endpoint := range endpoints {
@@ -753,14 +750,14 @@ func buildGRPCOnlyPairsForFaultpoints() map[string]bool {
 			}
 		}
 	}
-	
+
 	// A pair is gRPC-only if it has gRPC but no HTTP
 	for pair := range grpcPairs {
 		if !httpPairs[pair] {
 			grpcOnlyPairs[pair] = true
 		}
 	}
-	
+
 	return grpcOnlyPairs
 }
 

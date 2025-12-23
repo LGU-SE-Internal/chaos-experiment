@@ -2,7 +2,6 @@ package resourcelookup
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/networkdependencies"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/serviceendpoints"
 	"github.com/LGU-SE-Internal/chaos-experiment/internal/systemconfig"
-	"github.com/LGU-SE-Internal/chaos-experiment/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -63,29 +61,85 @@ type ContainerInfo struct {
 	ContainerName string `json:"container_name"`
 }
 
-// Global cache for lookups - now system-aware
+type systemCache struct {
+	system        systemconfig.SystemType
+	appLabels     map[string][]string
+	appMethods    []AppMethodPair
+	appEndpoints  []AppEndpointPair
+	networkPairs  []AppNetworkPair
+	dnsEndpoints  []AppDNSPair
+	containerInfo map[string][]ContainerInfo
+	dbOperations  []AppDatabasePair
+}
+
+func GetSystemCache(system systemconfig.SystemType) *systemCache {
+	return getCacheManager().getSystemCache(system)
+}
+
+// newSystemCache creates a new systemCache instance
+func newSystemCache(system systemconfig.SystemType) *systemCache {
+	return &systemCache{
+		system:        system,
+		appLabels:     make(map[string][]string),
+		appMethods:    []AppMethodPair{},
+		appEndpoints:  []AppEndpointPair{},
+		networkPairs:  []AppNetworkPair{},
+		dnsEndpoints:  []AppDNSPair{},
+		dbOperations:  []AppDatabasePair{},
+		containerInfo: make(map[string][]ContainerInfo),
+	}
+}
+
+// cacheManager manages caches for different namespaces (singleton)
+type cacheManager struct {
+	caches map[systemconfig.SystemType]*systemCache
+	mu     sync.RWMutex
+}
+
 var (
-	cachedAppLabels     map[string][]string
-	cachedAppMethods    map[systemconfig.SystemType][]AppMethodPair
-	cachedAppEndpoints  map[systemconfig.SystemType][]AppEndpointPair
-	cachedNetworkPairs  map[systemconfig.SystemType][]AppNetworkPair
-	cachedDNSEndpoints  map[systemconfig.SystemType][]AppDNSPair
-	cachedContainerInfo map[string][]ContainerInfo
-	cachedDBOperations  map[systemconfig.SystemType][]AppDatabasePair
+	managerInstance *cacheManager
+	managerOnce     sync.Once
 )
 
+// getCacheManager returns the singleton CacheManager instance
+func getCacheManager() *cacheManager {
+	managerOnce.Do(func() {
+		allSystemTypes := systemconfig.GetAllSystemTypes()
+		managerInstance = &cacheManager{
+			caches: make(map[systemconfig.SystemType]*systemCache, len(allSystemTypes)),
+		}
+	})
+	return managerInstance
+}
+
+func (cm *cacheManager) getSystemCache(system systemconfig.SystemType) *systemCache {
+	cm.mu.RLock()
+	cache, exists := cm.caches[system]
+	cm.mu.RUnlock()
+
+	if !exists {
+		cm.mu.Lock()
+		defer cm.mu.Unlock()
+		// Double-check existence
+		cache, exists = cm.caches[system]
+		if !exists {
+			cache = newSystemCache(system)
+			cm.caches[system] = cache
+		}
+	}
+
+	return cache
+}
+
 // GetAllAppLabels returns all application labels sorted alphabetically
-func GetAllAppLabels(namespace string, key string) ([]string, error) {
-	prefix, err := utils.ExtractNsPrefix(namespace)
-	if err != nil {
-		return nil, err
+func (s *systemCache) GetAllAppLabels(ctx context.Context, namespace string, key string) ([]string, error) {
+	if len(s.appLabels) > 0 {
+		if labels, exists := s.appLabels[key]; exists {
+			return labels, nil
+		}
 	}
 
-	if labels, exists := cachedAppLabels[prefix]; exists && len(labels) > 0 {
-		return labels, nil
-	}
-
-	labels, err := client.GetLabels(context.Background(), namespace, key)
+	labels, err := client.GetLabels(ctx, namespace, key)
 	logrus.Debugf("Fetched labels for namespace %s with key %s: %v", namespace, key, labels)
 	if err != nil {
 		return nil, err
@@ -93,19 +147,14 @@ func GetAllAppLabels(namespace string, key string) ([]string, error) {
 
 	// Sort alphabetically
 	sort.Strings(labels)
-	cachedAppLabels[prefix] = labels
 	return labels, nil
 }
 
 // GetAllJVMMethods returns all app+method pairs sorted by app name
 // This function uses the current system from systemconfig
-func GetAllJVMMethods() ([]AppMethodPair, error) {
-	currentSystem := systemconfig.GetCurrentSystem()
-	
-	if cachedAppMethods != nil {
-		if result, exists := cachedAppMethods[currentSystem]; exists {
-			return result, nil
-		}
+func (s *systemCache) GetAllJVMMethods() ([]AppMethodPair, error) {
+	if len(s.appMethods) > 0 {
+		return s.appMethods, nil
 	}
 
 	// Get all service names first
@@ -135,22 +184,14 @@ func GetAllJVMMethods() ([]AppMethodPair, error) {
 		return result[i].MethodName < result[j].MethodName
 	})
 
-	if cachedAppMethods == nil {
-		cachedAppMethods = make(map[systemconfig.SystemType][]AppMethodPair)
-	}
-	cachedAppMethods[currentSystem] = result
 	return result, nil
 }
 
 // GetAllHTTPEndpoints returns all app+endpoint pairs sorted by app name
 // This function uses the current system from systemconfig
-func GetAllHTTPEndpoints() ([]AppEndpointPair, error) {
-	currentSystem := systemconfig.GetCurrentSystem()
-	
-	if cachedAppEndpoints != nil {
-		if result, exists := cachedAppEndpoints[currentSystem]; exists {
-			return result, nil
-		}
+func (s *systemCache) GetAllHTTPEndpoints() ([]AppEndpointPair, error) {
+	if len(s.appEndpoints) > 0 {
+		return s.appEndpoints, nil
 	}
 
 	// Get all service names
@@ -188,22 +229,14 @@ func GetAllHTTPEndpoints() ([]AppEndpointPair, error) {
 		return result[i].Route < result[j].Route
 	})
 
-	if cachedAppEndpoints == nil {
-		cachedAppEndpoints = make(map[systemconfig.SystemType][]AppEndpointPair)
-	}
-	cachedAppEndpoints[currentSystem] = result
 	return result, nil
 }
 
 // GetAllNetworkPairs returns all network pairs sorted by source service
 // This function uses the current system from systemconfig
-func GetAllNetworkPairs() ([]AppNetworkPair, error) {
-	currentSystem := systemconfig.GetCurrentSystem()
-	
-	if cachedNetworkPairs != nil {
-		if result, exists := cachedNetworkPairs[currentSystem]; exists {
-			return result, nil
-		}
+func (s *systemCache) GetAllNetworkPairs() ([]AppNetworkPair, error) {
+	if len(s.networkPairs) > 0 {
+		return s.networkPairs, nil
 	}
 
 	// Get all service-to-service pairs
@@ -228,10 +261,6 @@ func GetAllNetworkPairs() ([]AppNetworkPair, error) {
 		return result[i].TargetService < result[j].TargetService
 	})
 
-	if cachedNetworkPairs == nil {
-		cachedNetworkPairs = make(map[systemconfig.SystemType][]AppNetworkPair)
-	}
-	cachedNetworkPairs[currentSystem] = result
 	return result, nil
 }
 
@@ -260,13 +289,9 @@ func getSpanNamesBetweenServices(sourceService, targetService string) []string {
 // This function uses the current system from systemconfig
 // Note: DNS chaos does NOT work for gRPC-only connections, so we filter those out
 // We use grpcoperations data to identify gRPC-only service pairs
-func GetAllDNSEndpoints() ([]AppDNSPair, error) {
-	currentSystem := systemconfig.GetCurrentSystem()
-	
-	if cachedDNSEndpoints != nil {
-		if result, exists := cachedDNSEndpoints[currentSystem]; exists {
-			return result, nil
-		}
+func (s *systemCache) GetAllDNSEndpoints() ([]AppDNSPair, error) {
+	if len(s.dnsEndpoints) > 0 {
+		return s.dnsEndpoints, nil
 	}
 
 	// Build a set of gRPC-only service pairs (source -> target)
@@ -304,7 +329,7 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 				// Skip gRPC-only connections - DNS chaos doesn't work for them
 				continue
 			}
-			
+
 			spanNames := make([]string, 0, len(spanNameSet))
 			for spanName := range spanNameSet {
 				spanNames = append(spanNames, spanName)
@@ -326,10 +351,6 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 		return result[i].Domain < result[j].Domain
 	})
 
-	if cachedDNSEndpoints == nil {
-		cachedDNSEndpoints = make(map[systemconfig.SystemType][]AppDNSPair)
-	}
-	cachedDNSEndpoints[currentSystem] = result
 	return result, nil
 }
 
@@ -337,21 +358,21 @@ func GetAllDNSEndpoints() ([]AppDNSPair, error) {
 // Returns a map where key is "source->target" and value is true if gRPC-only
 func buildGRPCOnlyPairs() map[string]bool {
 	grpcOnlyPairs := make(map[string]bool)
-	
+
 	// Get all gRPC client operations (these represent outgoing gRPC calls)
 	grpcOps := grpcoperations.GetClientOperations()
-	
+
 	// Track which service pairs have gRPC connections
 	grpcPairs := make(map[string]bool)
 	for _, op := range grpcOps {
 		pairKey := op.ServiceName + "->" + op.ServerAddress
 		grpcPairs[pairKey] = true
 	}
-	
+
 	// Get all service endpoints to check which pairs also have HTTP
 	services := serviceendpoints.GetAllServices()
 	httpPairs := make(map[string]bool)
-	
+
 	for _, serviceName := range services {
 		endpoints := serviceendpoints.GetEndpointsByService(serviceName)
 		for _, endpoint := range endpoints {
@@ -365,27 +386,23 @@ func buildGRPCOnlyPairs() map[string]bool {
 			}
 		}
 	}
-	
+
 	// A pair is gRPC-only if it has gRPC but no HTTP
 	for pair := range grpcPairs {
 		if !httpPairs[pair] {
 			grpcOnlyPairs[pair] = true
 		}
 	}
-	
+
 	return grpcOnlyPairs
 }
 
 // GetAllDatabaseOperations returns all app+database operations pairs sorted by app name
 // This function uses the current system from systemconfig
 // Note: DB chaos only supports MySQL, so we filter to only return MySQL operations
-func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
-	currentSystem := systemconfig.GetCurrentSystem()
-	
-	if cachedDBOperations != nil {
-		if result, exists := cachedDBOperations[currentSystem]; exists {
-			return result, nil
-		}
+func (s *systemCache) GetAllDatabaseOperations() ([]AppDatabasePair, error) {
+	if len(s.dbOperations) > 0 {
+		return s.dbOperations, nil
 	}
 
 	// Get all service names that have database operations
@@ -422,25 +439,18 @@ func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
 		return result[i].OperationType < result[j].OperationType
 	})
 
-	if cachedDBOperations == nil {
-		cachedDBOperations = make(map[systemconfig.SystemType][]AppDatabasePair)
-	}
-	cachedDBOperations[currentSystem] = result
 	return result, nil
 }
 
 // GetAllContainers returns all containers with their info sorted by app label
-func GetAllContainers(namespace string) ([]ContainerInfo, error) {
-	prefix, err := utils.ExtractNsPrefix(namespace)
-	if err != nil {
-		return nil, err
+func (s *systemCache) GetAllContainers(ctx context.Context, namespace string) ([]ContainerInfo, error) {
+	if len(s.containerInfo) > 0 {
+		if containers, exists := s.containerInfo[namespace]; exists {
+			return containers, nil
+		}
 	}
 
-	if result, exists := cachedContainerInfo[prefix]; exists {
-		return result, nil
-	}
-
-	containers, err := client.GetContainersWithAppLabel(context.Background(), namespace)
+	containers, err := client.GetContainersWithAppLabel(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -464,13 +474,13 @@ func GetAllContainers(namespace string) ([]ContainerInfo, error) {
 		return result[i].ContainerName < result[j].ContainerName
 	})
 
-	cachedContainerInfo[prefix] = result
+	s.containerInfo[namespace] = result
 	return result, nil
 }
 
 // GetContainersByService returns all container names for a specific service
-func GetContainersByService(namespace string, serviceName string) ([]string, error) {
-	allContainers, err := GetAllContainers(namespace)
+func (s *systemCache) GetContainersByService(ctx context.Context, namespace string, serviceName string) ([]string, error) {
+	allContainers, err := s.GetAllContainers(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -488,8 +498,8 @@ func GetContainersByService(namespace string, serviceName string) ([]string, err
 }
 
 // GetPodsByService returns all pod names for a specific service
-func GetPodsByService(namespace string, serviceName string) ([]string, error) {
-	allContainers, err := GetAllContainers(namespace)
+func (s *systemCache) GetPodsByService(ctx context.Context, namespace string, serviceName string) ([]string, error) {
+	allContainers, err := s.GetAllContainers(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -515,8 +525,8 @@ func GetPodsByService(namespace string, serviceName string) ([]string, error) {
 
 // GetContainersAndPodsByServices returns containers and pods for multiple services
 // This is useful for chaos that affects multiple services
-func GetContainersAndPodsByServices(namespace string, serviceNames []string) ([]string, []string, error) {
-	allContainers, err := GetAllContainers(namespace)
+func (s *systemCache) GetContainersAndPodsByServices(ctx context.Context, namespace string, serviceNames []string) ([]string, []string, error) {
+	allContainers, err := s.GetAllContainers(ctx, namespace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -557,112 +567,13 @@ func GetContainersAndPodsByServices(namespace string, serviceNames []string) ([]
 	return containers, pods, nil
 }
 
-func InitCaches() {
-	cachedAppLabels = make(map[string][]string)
-	cachedContainerInfo = make(map[string][]ContainerInfo)
-	cachedAppMethods = make(map[systemconfig.SystemType][]AppMethodPair)
-	cachedAppEndpoints = make(map[systemconfig.SystemType][]AppEndpointPair)
-	cachedNetworkPairs = make(map[systemconfig.SystemType][]AppNetworkPair)
-	cachedDNSEndpoints = make(map[systemconfig.SystemType][]AppDNSPair)
-	cachedDBOperations = make(map[systemconfig.SystemType][]AppDatabasePair)
-}
-
-// PreloadCaches preloads resource caches to reduce first-access latency
-func PreloadCaches(namespace string, labelKey string) error {
-	// Create error channel to collect all errors
-	errChan := make(chan error, 7)
-
-	var wg sync.WaitGroup
-	wg.Add(7)
-
-	// Preload app labels
-	go func() {
-		defer wg.Done()
-		_, err := GetAllAppLabels(namespace, labelKey)
-		if err != nil {
-			errChan <- fmt.Errorf("failed to preload app labels cache: %v", err)
-		}
-	}()
-
-	// Preload JVM methods
-	go func() {
-		defer wg.Done()
-		_, err := GetAllJVMMethods()
-		if err != nil {
-			errChan <- fmt.Errorf("failed to preload JVM methods cache: %v", err)
-		}
-	}()
-
-	// Preload HTTP endpoints
-	go func() {
-		defer wg.Done()
-		_, err := GetAllHTTPEndpoints()
-		if err != nil {
-			errChan <- fmt.Errorf("failed to preload HTTP endpoints cache: %v", err)
-		}
-	}()
-
-	// Preload network pairs
-	go func() {
-		defer wg.Done()
-		_, err := GetAllNetworkPairs()
-		if err != nil {
-			errChan <- fmt.Errorf("failed to preload network pairs cache: %v", err)
-		}
-	}()
-
-	// Preload DNS endpoints
-	go func() {
-		defer wg.Done()
-		_, err := GetAllDNSEndpoints()
-		if err != nil {
-			errChan <- fmt.Errorf("failed to preload DNS endpoints cache: %v", err)
-		}
-	}()
-
-	// Preload database operations
-	go func() {
-		defer wg.Done()
-		_, err := GetAllDatabaseOperations()
-		if err != nil {
-			errChan <- fmt.Errorf("failed to preload database operations cache: %v", err)
-		}
-	}()
-
-	// Preload container info
-	go func() {
-		defer wg.Done()
-		_, err := GetAllContainers(namespace)
-		if err != nil {
-			errChan <- fmt.Errorf("failed to preload container info cache: %v", err)
-		}
-	}()
-
-	// Wait for all initialization to complete
-	wg.Wait()
-	close(errChan)
-
-	// Collect all errors
-	var errs []error
-	for err := range errChan {
-		errs = append(errs, err)
-	}
-
-	// If there are errors, return the first one
-	if len(errs) > 0 {
-		return fmt.Errorf("cache preloading encountered errors: %v", errs[0])
-	}
-
-	return nil
-}
-
 // InvalidateCache clears all cached data
-func InvalidateCache() {
-	cachedAppLabels = make(map[string][]string)
-	cachedContainerInfo = make(map[string][]ContainerInfo)
-	cachedAppMethods = make(map[systemconfig.SystemType][]AppMethodPair)
-	cachedAppEndpoints = make(map[systemconfig.SystemType][]AppEndpointPair)
-	cachedNetworkPairs = make(map[systemconfig.SystemType][]AppNetworkPair)
-	cachedDNSEndpoints = make(map[systemconfig.SystemType][]AppDNSPair)
-	cachedDBOperations = make(map[systemconfig.SystemType][]AppDatabasePair)
+func (s *systemCache) InvalidateCache() {
+	s.appLabels = make(map[string][]string)
+	s.appMethods = []AppMethodPair{}
+	s.appEndpoints = []AppEndpointPair{}
+	s.networkPairs = []AppNetworkPair{}
+	s.dnsEndpoints = []AppDNSPair{}
+	s.containerInfo = make(map[string][]ContainerInfo)
+	s.dbOperations = []AppDatabasePair{}
 }

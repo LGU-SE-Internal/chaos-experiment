@@ -13,7 +13,7 @@ import (
 
 type CPUStressChaosSpec struct {
 	Duration     int `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
+	System       int `range:"0-0" dynamic:"true" description:"String"`
 	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
 	CPULoad      int `range:"1-100" description:"CPU Load Percentage"`
 	CPUWorker    int `range:"1-3" description:"CPU Stress Threads"`
@@ -41,8 +41,9 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	containers, err := resourcelookup.GetAllContainers(ns)
+	containers, err := resourcelookup.GetSystemCache(system).GetAllContainers(ctx, ns)
 	if err != nil {
 		return "", fmt.Errorf("failed to get containers: %w", err)
 	}
@@ -66,7 +67,7 @@ func (s *CPUStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, err
 
 type MemoryStressChaosSpec struct {
 	Duration     int `range:"1-60" description:"Time Unit Minute"`
-	Namespace    int `range:"0-0" dynamic:"true" description:"String"`
+	System       int `range:"0-0" dynamic:"true" description:"String"`
 	ContainerIdx int `range:"0-0" dynamic:"true" description:"Container Index"`
 	MemorySize   int `range:"1-1024" description:"Memory Size Unit MB"`
 	MemWorker    int `range:"1-4" description:"Memory Stress Threads"`
@@ -94,8 +95,9 @@ func (s *MemoryStressChaosSpec) Create(cli cli.Client, opts ...Option) (string, 
 	}
 
 	ns := conf.Namespace
+	system := conf.System
 
-	containers, err := resourcelookup.GetAllContainers(ns)
+	containers, err := resourcelookup.GetSystemCache(system).GetAllContainers(ctx, ns)
 	if err != nil {
 		return "", fmt.Errorf("failed to get containers: %w", err)
 	}
