@@ -11,6 +11,48 @@ type DatabaseOperation = resourcetypes.DatabaseOperation
 
 // DatabaseOperations maps service names to their database operations
 var DatabaseOperations = map[string][]DatabaseOperation{
+	"teastore-persistence": {
+		{
+			ServiceName:   "teastore-persistence",
+			DBName:        "teadb",
+			DBTable:       "",
+			Operation:     "SELECT",
+			DBSystem:      "mysql",
+			ServerAddress: "mysql",
+			ServerPort:    "3306",
+			SpanName:      "SELECT teadb",
+		},
+		{
+			ServiceName:   "teastore-persistence",
+			DBName:        "teadb",
+			DBTable:       "PERSISTENCECATEGORY",
+			Operation:     "SELECT",
+			DBSystem:      "mysql",
+			ServerAddress: "mysql",
+			ServerPort:    "3306",
+			SpanName:      "SELECT teadb.PERSISTENCECATEGORY",
+		},
+		{
+			ServiceName:   "teastore-persistence",
+			DBName:        "teadb",
+			DBTable:       "PERSISTENCEPRODUCT",
+			Operation:     "SELECT",
+			DBSystem:      "mysql",
+			ServerAddress: "mysql",
+			ServerPort:    "3306",
+			SpanName:      "SELECT teadb.PERSISTENCEPRODUCT",
+		},
+		{
+			ServiceName:   "teastore-persistence",
+			DBName:        "teadb",
+			DBTable:       "PERSISTENCEUSER",
+			Operation:     "SELECT",
+			DBSystem:      "mysql",
+			ServerAddress: "mysql",
+			ServerPort:    "3306",
+			SpanName:      "SELECT teadb.PERSISTENCEUSER",
+		},
+	},
 }
 
 // GetOperationsByService returns all database operations for a service

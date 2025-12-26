@@ -13,10 +13,6 @@ type GRPCOperation = resourcetypes.GRPCOperation
 var GRPCOperations = map[string][]GRPCOperation{
 }
 
-// AllServices contains all unique service names (callers and callees)
-var AllServices = []string{
-}
-
 // GetOperationsByService returns all gRPC operations for a service
 func GetOperationsByService(serviceName string) []GRPCOperation {
 	if operations, exists := GRPCOperations[serviceName]; exists {
