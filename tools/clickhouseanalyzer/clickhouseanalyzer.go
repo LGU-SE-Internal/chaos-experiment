@@ -117,6 +117,12 @@ var tsSpanNamePatterns = []struct {
 	},
 }
 
+// TeaStore route normalization patterns
+var (
+	teaStoreParamPattern = regexp.MustCompile(`\{[^}]+\}`)
+	teaStorePortPattern  = regexp.MustCompile(`:[0-9]+$`)
+)
+
 // NormalizeTrainTicketSpanName applies pattern replacements to normalize
 // span names for ts-ui-dashboard and loadgenerator services
 func NormalizeTrainTicketSpanName(spanName string, serviceName string) string {
@@ -2509,16 +2515,11 @@ func mapTeaStoreRouteToService(endpoint *ServiceEndpoint) {
 	// 1. Replace {parameter} patterns with *
 	//    e.g., /rest/categories/{id:[0-9][0-9]*} -> /rest/categories/*
 	//    e.g., /rest/services/{name}/{location} -> /rest/services/*/*
-	paramPattern := regexp.MustCompile(`\{[^}]+\}`)
-	route = paramPattern.ReplaceAllString(route, "*")
+	normalizedRoute := teaStoreParamPattern.ReplaceAllString(route, "*")
 	
 	// 2. Remove port numbers at the end
 	//    e.g., /path/to/service:8080 -> /path/to/service
-	portPattern := regexp.MustCompile(`:[0-9]+$`)
-	route = portPattern.ReplaceAllString(route, "")
-	
-	// Update the endpoint's route with the normalized version
-	endpoint.Route = route
+	normalizedRoute = teaStorePortPattern.ReplaceAllString(normalizedRoute, "")
 
 	// Service mapping based on route patterns and span names
 	// This is a placeholder - actual mappings should be determined from trace data
@@ -2547,10 +2548,10 @@ func mapTeaStoreRouteToService(endpoint *ServiceEndpoint) {
 		return len(patterns[i]) > len(patterns[j])
 	})
 
-	// Check route and span name with sorted patterns
+	// Check normalized route and span name with sorted patterns
 	for _, pattern := range patterns {
 		service := serviceMap[pattern]
-		if strings.Contains(route, pattern) || strings.Contains(spanName, pattern) {
+		if strings.Contains(normalizedRoute, pattern) || strings.Contains(spanName, pattern) {
 			endpoint.ServerAddress = service.service
 			endpoint.ServerPort = service.port
 			return
