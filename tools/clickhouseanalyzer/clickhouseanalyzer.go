@@ -2505,6 +2505,21 @@ func mapTeaStoreRouteToService(endpoint *ServiceEndpoint) {
 	route := endpoint.Route
 	spanName := endpoint.SpanName
 
+	// TeaStore-specific route normalization:
+	// 1. Replace {parameter} patterns with *
+	//    e.g., /rest/categories/{id:[0-9][0-9]*} -> /rest/categories/*
+	//    e.g., /rest/services/{name}/{location} -> /rest/services/*/*
+	paramPattern := regexp.MustCompile(`\{[^}]+\}`)
+	route = paramPattern.ReplaceAllString(route, "*")
+	
+	// 2. Remove port numbers at the end
+	//    e.g., /path/to/service:8080 -> /path/to/service
+	portPattern := regexp.MustCompile(`:[0-9]+$`)
+	route = portPattern.ReplaceAllString(route, "")
+	
+	// Update the endpoint's route with the normalized version
+	endpoint.Route = route
+
 	// Service mapping based on route patterns and span names
 	// This is a placeholder - actual mappings should be determined from trace data
 	serviceMap := map[string]struct {
