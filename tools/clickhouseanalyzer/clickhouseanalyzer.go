@@ -711,14 +711,14 @@ SELECT
     END AS response_status_code,
     
     -- TeaStore-specific path normalization
-    -- 1. Replace {parameter} patterns with * (e.g., {id:[0-9][0-9]*} -> *)
+    -- 1. Replace {parameter} patterns with /* (e.g., {id:[0-9][0-9]*} -> /*)
     -- 2. Remove port numbers at the end (e.g., :8080)
     -- 3. Also replace standard UUIDs and numeric IDs with /*
     CASE
         WHEN SpanAttributes['http.route'] IS NOT NULL AND SpanAttributes['http.route'] != ''
             THEN replaceRegexpAll(
                 replaceRegexpAll(
-                    replaceRegexpAll(SpanAttributes['http.route'], '\\{[^}]+\\}', '*'),
+                    replaceRegexpAll(SpanAttributes['http.route'], '/\\{[^}]+\\}', '/*'),
                     ':[0-9]+$',
                     ''
                 ),
@@ -728,7 +728,7 @@ SELECT
         WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
             THEN replaceRegexpAll(
                 replaceRegexpAll(
-                    replaceRegexpAll(SpanAttributes['http.target'], '\\{[^}]+\\}', '*'),
+                    replaceRegexpAll(SpanAttributes['http.target'], '/\\{[^}]+\\}', '/*'),
                     ':[0-9]+$',
                     ''
                 ),
@@ -740,8 +740,8 @@ SELECT
                 replaceRegexpAll(
                     replaceRegexpAll(
                         replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1'),
-                        '\\{[^}]+\\}',
-                        '*'
+                        '/\\{[^}]+\\}',
+                        '/*'
                     ),
                     ':[0-9]+$',
                     ''

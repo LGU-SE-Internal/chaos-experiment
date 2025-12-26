@@ -383,9 +383,11 @@ os.Exit(1)
 fmt.Println("gRPC operations file generated successfully!")
 }
 
+// runTeaStoreAnalysis runs the analysis for TeaStore system with specialized route normalization
+// It creates a TeaStore-specific materialized view and queries HTTP, gRPC, and database operations
 func runTeaStoreAnalysis(db *sql.DB, namespace, viewName, outputEndpoints, outputDatabase, outputGRPC string, skipView bool) {
-// Create TeaStore-specific materialized view if needed
-if !skipView {
+	// Create TeaStore-specific materialized view if needed
+	if !skipView {
 fmt.Printf("Creating TeaStore materialized view for %s (namespace: %s)...\n", viewName, namespace)
 if err := clickhouseanalyzer.CreateTeaStoreMaterializedView(db, namespace, viewName); err != nil {
 fmt.Printf("Error creating materialized view: %v\n", err)
