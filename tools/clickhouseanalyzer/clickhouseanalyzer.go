@@ -119,8 +119,10 @@ var tsSpanNamePatterns = []struct {
 
 // TeaStore route normalization patterns
 var (
+	// teaStoreParamPattern matches parameter patterns like {id:[0-9][0-9]*} or {name}
 	teaStoreParamPattern = regexp.MustCompile(`\{[^}]+\}`)
-	teaStorePortPattern  = regexp.MustCompile(`:[0-9]+$`)
+	// teaStorePortPattern matches port numbers at the end of routes like :8080
+	teaStorePortPattern = regexp.MustCompile(`:[0-9]+$`)
 )
 
 // NormalizeTrainTicketSpanName applies pattern replacements to normalize
