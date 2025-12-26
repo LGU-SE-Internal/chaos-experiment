@@ -427,22 +427,16 @@ fmt.Printf("Error querying database operations: %v\n", err)
 os.Exit(1)
 }
 
-// Combine HTTP endpoints
+// Combine HTTP endpoints only (no conversion from DB/gRPC operations)
 allEndpoints := append(clientEndpoints, serverEndpoints...)
-// Convert database operations to service endpoints
-dbEndpoints := clickhouseanalyzer.ConvertDatabaseOperationsToEndpoints(dbOperations)
-allEndpoints = append(allEndpoints, dbEndpoints...)
-// Convert gRPC operations to service endpoints
-grpcEndpoints := clickhouseanalyzer.ConvertGRPCOperationsToEndpoints(grpcOperations)
-allEndpoints = append(allEndpoints, grpcEndpoints...)
 
-// Generate service endpoints file
+// Generate HTTP endpoints file - HTTP endpoints only
 fmt.Printf("Generating service endpoints file at %s...\n", outputEndpoints)
 if err := clickhouseanalyzer.GenerateServiceEndpointsFile(allEndpoints, outputEndpoints); err != nil {
 fmt.Printf("Error generating service endpoints file: %v\n", err)
 os.Exit(1)
 }
-fmt.Println("Service endpoints file generated successfully!")
+fmt.Println("HTTP endpoints file generated successfully!")
 
 // Generate database operations file
 fmt.Printf("Generating database operations file at %s...\n", outputDatabase)
