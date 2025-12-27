@@ -777,6 +777,113 @@ WHERE
 `, viewName, namespace)
 }
 
+// createSockShopMaterializedViewSQL creates SQL for SockShop materialized view
+// with specific route normalization for cart IDs and other alphanumeric identifiers
+func createSockShopMaterializedViewSQL(namespace string, viewName string) string {
+	return fmt.Sprintf(`
+CREATE MATERIALIZED VIEW IF NOT EXISTS %s 
+ENGINE = ReplacingMergeTree(version)
+PARTITION BY toYYYYMM(Timestamp)
+PRIMARY KEY (masked_route, ServiceName, db_name, rpc_service)
+ORDER BY (
+    masked_route,
+    ServiceName,
+    db_name,
+    rpc_service,
+    SpanKind,
+    request_method,
+    response_status_code,
+    db_operation,
+    db_sql_table,
+    rpc_system,
+    rpc_method,
+    grpc_status_code
+)
+SETTINGS allow_nullable_key = 1
+POPULATE
+AS 
+SELECT 
+    ResourceAttributes['service.name'] AS ServiceName,
+    4294967295 - toUnixTimestamp(Timestamp) AS version,
+    Timestamp,
+    SpanKind,
+    SpanAttributes['client.address'] AS client_address,
+    SpanAttributes['http.request.method'] AS http_request_method,
+    SpanAttributes['http.response.status_code'] AS http_response_status_code,
+    SpanAttributes['http.route'] AS http_route,
+    SpanAttributes['http.method'] AS http_method,
+    SpanAttributes['url.full'] AS url_full,
+    SpanAttributes['http.status_code'] AS http_status_code,
+    SpanAttributes['http.target'] AS http_target,
+    
+    CASE 
+        WHEN SpanAttributes['http.request.method'] IS NOT NULL AND SpanAttributes['http.request.method'] != '' 
+            THEN SpanAttributes['http.request.method']
+        WHEN SpanAttributes['http.method'] IS NOT NULL AND SpanAttributes['http.method'] != '' 
+            THEN SpanAttributes['http.method']
+        ELSE ''
+    END AS request_method,
+    
+    CASE 
+        WHEN SpanAttributes['http.response.status_code'] IS NOT NULL AND SpanAttributes['http.response.status_code'] != '' 
+            THEN SpanAttributes['http.response.status_code']
+        WHEN SpanAttributes['http.status_code'] IS NOT NULL AND SpanAttributes['http.status_code'] != '' 
+            THEN SpanAttributes['http.status_code']
+        ELSE ''
+    END AS response_status_code,
+    
+    -- SockShop-specific path normalization
+    -- Replace cart IDs and other alphanumeric identifiers with /*
+    -- Examples: /carts/HikmE45Ab8PjRoQk6fMVU-CbQ1U71L4F/items -> /carts/*/items
+    --           /carts/Lh9JIUqE5-oaMk7i0ZjCOoslTunVdCjz -> /carts/*
+    -- Also handles UUIDs and numeric IDs
+    CASE
+        WHEN SpanAttributes['http.route'] IS NOT NULL AND SpanAttributes['http.route'] != ''
+            THEN replaceRegexpAll(
+                SpanAttributes['http.route'],
+                '/[A-Za-z0-9_-]{20,}',
+                '/*'
+            )
+        WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
+            THEN replaceRegexpAll(
+                SpanAttributes['http.target'],
+                '/[A-Za-z0-9_-]{20,}',
+                '/*'
+            )
+        WHEN SpanAttributes['url.full'] IS NOT NULL AND SpanAttributes['url.full'] != ''
+            THEN replaceRegexpAll(
+                replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1'),
+                '/[A-Za-z0-9_-]{20,}',
+                '/*'
+            )
+        ELSE ''
+    END AS masked_route,
+    
+    SpanAttributes['server.address'] AS server_address,
+    SpanAttributes['server.port'] AS server_port,
+    SpanAttributes['db.connection_string'] AS db_connection_string,
+    SpanAttributes['db.name'] AS db_name,
+    SpanAttributes['db.operation'] AS db_operation,
+    SpanAttributes['db.sql.table'] AS db_sql_table, 
+    SpanAttributes['db.statement'] AS db_statement,
+    SpanAttributes['db.system'] AS db_system,
+    SpanAttributes['db.user'] AS db_user,
+    SpanAttributes['rpc.system'] AS rpc_system,
+    SpanAttributes['rpc.service'] AS rpc_service,
+    SpanAttributes['rpc.method'] AS rpc_method,
+    SpanAttributes['rpc.grpc.status_code'] AS grpc_status_code,
+    SpanName AS span_name
+FROM otel_traces
+WHERE 
+    ResourceAttributes['k8s.namespace.name'] = '%s'
+    AND SpanKind IN ('Server', 'Client')
+    AND mapExists(
+        (k, v) -> (k IS NOT NULL AND k != '') AND (v IS NOT NULL AND v != ''),
+        SpanAttributes
+    );
+`, viewName, namespace)
+}
+
 // Client query - HTTP endpoints only (excludes database and RPC operations)
 // TrainTicket client traces query - HTTP endpoints only
 // NOTE: TrainTicket has no gRPC, so otel_traces_mv does NOT have rpc_system column
@@ -1072,6 +1179,22 @@ func CreateTeaStoreMaterializedView(db *sql.DB, namespace string, viewName strin
 
 	if _, err := db.ExecContext(ctx, sql); err != nil {
 		return fmt.Errorf("error creating TeaStore materialized view for namespace %s: %w", namespace, err)
+	}
+
+	return nil
+}
+
+// CreateSockShopMaterializedView creates the materialized view for SockShop system
+// namespace: the k8s namespace (sockshop)
+// viewName: the name of the materialized view to create
+func CreateSockShopMaterializedView(db *sql.DB, namespace string, viewName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	sql := createSockShopMaterializedViewSQL(namespace, viewName)
+
+	if _, err := db.ExecContext(ctx, sql); err != nil {
+		return fmt.Errorf("error creating SockShop materialized view for namespace %s: %w", namespace, err)
 	}
 
 	return nil
