@@ -836,23 +836,41 @@ SELECT
     -- Replace cart IDs and other alphanumeric identifiers with /*
     -- Examples: /carts/HikmE45Ab8PjRoQk6fMVU-CbQ1U71L4F/items -> /carts/*/items
     --           /carts/Lh9JIUqE5-oaMk7i0ZjCOoslTunVdCjz -> /carts/*
-    -- Also handles UUIDs and numeric IDs
+    --           /carts/user95/merge -> /carts/*/merge
+    --           /customers/user50/addresses -> /customers/*/addresses
+    -- Also removes query parameters like ?sessionId=...
     CASE
         WHEN SpanAttributes['http.route'] IS NOT NULL AND SpanAttributes['http.route'] != ''
             THEN replaceRegexpAll(
-                SpanAttributes['http.route'],
+                replaceRegexpAll(
+                    replaceRegexpOne(SpanAttributes['http.route'], '\\?.*$', ''),
+                    '/user\\d+',
+                    '/*'
+                ),
                 '/[A-Za-z0-9_-]{20,}',
                 '/*'
             )
         WHEN SpanAttributes['http.target'] IS NOT NULL AND SpanAttributes['http.target'] != ''
             THEN replaceRegexpAll(
-                SpanAttributes['http.target'],
+                replaceRegexpAll(
+                    replaceRegexpOne(SpanAttributes['http.target'], '\\?.*$', ''),
+                    '/user\\d+',
+                    '/*'
+                ),
                 '/[A-Za-z0-9_-]{20,}',
                 '/*'
             )
         WHEN SpanAttributes['url.full'] IS NOT NULL AND SpanAttributes['url.full'] != ''
             THEN replaceRegexpAll(
-                replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1'),
+                replaceRegexpAll(
+                    replaceRegexpOne(
+                        replaceRegexpOne(SpanAttributes['url.full'], 'https?://[^/]+(/.*)', '\\1'),
+                        '\\?.*$',
+                        ''
+                    ),
+                    '/user\\d+',
+                    '/*'
+                ),
                 '/[A-Za-z0-9_-]{20,}',
                 '/*'
             )
