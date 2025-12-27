@@ -24,6 +24,10 @@ const (
 	SystemSocialNetwork SystemType = "sn"
 	// SystemOnlineBoutique represents the Online Boutique system
 	SystemOnlineBoutique SystemType = "ob"
+	// SystemSockShop represents the Sock Shop system
+	SystemSockShop SystemType = "sockshop"
+	// SystemTeaStore represents the Tea Store system
+	SystemTeaStore SystemType = "teastore"
 )
 
 var (
@@ -41,6 +45,8 @@ var (
 		SystemHotelReservation:   true,
 		SystemSocialNetwork:      true,
 		SystemOnlineBoutique:     true,
+		SystemSockShop:           true,
+		SystemTeaStore:           true,
 	}
 )
 
@@ -51,7 +57,7 @@ func SetCurrentSystem(system SystemType) error {
 	defer mu.Unlock()
 
 	if !validSystems[system] {
-		return fmt.Errorf("invalid system type: %s, valid types are: ts, otel-demo, media, hs, sn, ob", system)
+		return fmt.Errorf("invalid system type: %s, valid types are: ts, otel-demo, media, hs, sn, ob, sockshop, teastore", system)
 	}
 
 	currentSystem = system
@@ -95,6 +101,16 @@ func IsOnlineBoutique() bool {
 	return GetCurrentSystem() == SystemOnlineBoutique
 }
 
+// IsSockShop returns true if the current system is Sock Shop.
+func IsSockShop() bool {
+	return GetCurrentSystem() == SystemSockShop
+}
+
+// IsTeaStore returns true if the current system is Tea Store.
+func IsTeaStore() bool {
+	return GetCurrentSystem() == SystemTeaStore
+}
+
 // String returns the string representation of the SystemType.
 func (s SystemType) String() string {
 	return string(s)
@@ -102,14 +118,14 @@ func (s SystemType) String() string {
 
 // GetAllSystemTypes returns all valid system types.
 func GetAllSystemTypes() []SystemType {
-	return []SystemType{SystemTrainTicket, SystemOtelDemo, SystemMediaMicroservices, SystemHotelReservation, SystemSocialNetwork, SystemOnlineBoutique}
+	return []SystemType{SystemTrainTicket, SystemOtelDemo, SystemMediaMicroservices, SystemHotelReservation, SystemSocialNetwork, SystemOnlineBoutique, SystemSockShop, SystemTeaStore}
 }
 
 // ParseSystemType parses a string into a SystemType.
 func ParseSystemType(s string) (SystemType, error) {
 	st := SystemType(s)
 	if !validSystems[st] {
-		return "", fmt.Errorf("invalid system type: %s, valid types are: ts, otel-demo, media, hs, sn, ob", s)
+		return "", fmt.Errorf("invalid system type: %s, valid types are: ts, otel-demo, media, hs, sn, ob, sockshop, teastore", s)
 	}
 	return st, nil
 }

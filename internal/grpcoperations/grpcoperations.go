@@ -11,6 +11,8 @@ import (
 	oteldemogrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/oteldemo/grpcoperations"
 	obgrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/ob/grpcoperations"
 	sngrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/sn/grpcoperations"
+	sockshopgrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/sockshop/grpcoperations"
+	teastoregrpc "github.com/LGU-SE-Internal/chaos-experiment/internal/teastore/grpcoperations"
 )
 
 // GRPCOperation represents a gRPC operation from ClickHouse analysis
@@ -44,6 +46,12 @@ func GetOperationsByService(serviceName string) []GRPCOperation {
 	case systemconfig.SystemOnlineBoutique:
 		obOps := obgrpc.GetOperationsByService(serviceName)
 		return convertOBOperations(obOps)
+	case systemconfig.SystemSockShop:
+		sockshopOps := sockshopgrpc.GetOperationsByService(serviceName)
+		return convertSockShopOperations(sockshopOps)
+	case systemconfig.SystemTeaStore:
+		teastoreOps := teastoregrpc.GetOperationsByService(serviceName)
+		return convertTeaStoreOperations(teastoreOps)
 	default:
 		// TrainTicket doesn't have gRPC operations
 		return []GRPCOperation{}
@@ -221,6 +229,42 @@ SpanKind:       op.SpanKind,
 }
 }
 return result
+}
+
+// convertSockShopOperations converts sockshop-specific operations to the common type
+func convertSockShopOperations(sockshopOps []sockshopgrpc.GRPCOperation) []GRPCOperation {
+	result := make([]GRPCOperation, len(sockshopOps))
+	for i, op := range sockshopOps {
+		result[i] = GRPCOperation{
+			ServiceName:    op.ServiceName,
+			RPCSystem:      op.RPCSystem,
+			RPCService:     op.RPCService,
+			RPCMethod:      op.RPCMethod,
+			GRPCStatusCode: op.GRPCStatusCode,
+			ServerAddress:  op.ServerAddress,
+			ServerPort:     op.ServerPort,
+			SpanKind:       op.SpanKind,
+		}
+	}
+	return result
+}
+
+// convertTeaStoreOperations converts teastore-specific operations to the common type
+func convertTeaStoreOperations(teastoreOps []teastoregrpc.GRPCOperation) []GRPCOperation {
+	result := make([]GRPCOperation, len(teastoreOps))
+	for i, op := range teastoreOps {
+		result[i] = GRPCOperation{
+			ServiceName:    op.ServiceName,
+			RPCSystem:      op.RPCSystem,
+			RPCService:     op.RPCService,
+			RPCMethod:      op.RPCMethod,
+			GRPCStatusCode: op.GRPCStatusCode,
+			ServerAddress:  op.ServerAddress,
+			ServerPort:     op.ServerPort,
+			SpanKind:       op.SpanKind,
+		}
+	}
+	return result
 }
 
 

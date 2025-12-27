@@ -18,7 +18,7 @@ func main() {
 	database := flag.String("database", "default", "ClickHouse database name")
 	username := flag.String("username", "default", "ClickHouse username")
 	password := flag.String("password", "password", "ClickHouse password")
-	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (mediaMicroservices), 'hs' (hotelReservation), 'sn' (socialNetwork), or 'ob' (OnlineBoutique)")
+	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (mediaMicroservices), 'hs' (hotelReservation), 'sn' (socialNetwork), 'ob' (OnlineBoutique), 'sockshop' (Sock Shop), or 'teastore' (Tea Store)")
 	outputEndpoints := flag.String("output", "", "Path for the generated endpoints Go file")
 	outputDatabase := flag.String("output-db", "", "Path for the generated database operations Go file")
 	outputGRPC := flag.String("output-grpc", "", "Path for the generated gRPC operations Go file (otel-demo only)")
@@ -28,7 +28,7 @@ func main() {
 	// Validate and set the system type using systemconfig
 	systemType, err := systemconfig.ParseSystemType(*system)
 	if err != nil {
-		fmt.Printf("Invalid system: %s. Must be 'ts', 'otel-demo', 'media', 'hs', 'sn', or 'ob'\n", *system)
+		fmt.Printf("Invalid system: %s. Must be 'ts', 'otel-demo', 'media', 'hs', 'sn', 'ob', 'sockshop', or 'teastore'\n", *system)
 		os.Exit(1)
 	}
 	if err := systemconfig.SetCurrentSystem(systemType); err != nil {
@@ -59,6 +59,10 @@ func main() {
 		systemDir = "sn"
 	case systemconfig.SystemOnlineBoutique:
 		systemDir = "ob"
+	case systemconfig.SystemSockShop:
+		systemDir = "sockshop"
+	case systemconfig.SystemTeaStore:
+		systemDir = "teastore"
 	default:
 		systemDir = string(systemType)
 	}
@@ -108,6 +112,10 @@ func main() {
 		runDeathStarBenchAnalysis(db, "sn", "sn_traces_mv", *outputEndpoints, *outputDatabase, *outputGRPC, *skipView)
 	case systemconfig.IsOnlineBoutique():
 		runOnlineBoutiqueAnalysis(db, "ob", "ob_traces_mv", *outputEndpoints, *outputDatabase, *outputGRPC, *skipView)
+	case systemconfig.IsSockShop():
+		runSockShopAnalysis(db, "sockshop", "sockshop_traces_mv", *outputEndpoints, *outputDatabase, *outputGRPC, *skipView)
+	case systemconfig.IsTeaStore():
+		runTeaStoreAnalysis(db, "teastore", "teastore_traces_mv", *outputEndpoints, *outputDatabase, *outputGRPC, *skipView)
 	}
 }
 
@@ -310,6 +318,150 @@ func runOnlineBoutiqueAnalysis(db *sql.DB, namespace, viewName, outputEndpoints,
 if !skipView {
 fmt.Printf("Creating materialized view for %s (namespace: %s)...\n", viewName, namespace)
 if err := clickhouseanalyzer.CreateOnlineBoutiqueMaterializedView(db, namespace, viewName); err != nil {
+fmt.Printf("Error creating materialized view: %v\n", err)
+os.Exit(1)
+}
+}
+
+// Query HTTP client traces
+fmt.Println("Querying HTTP client traces...")
+clientEndpoints, err := clickhouseanalyzer.QueryDeathStarBenchHTTPClientTraces(db, viewName, namespace)
+if err != nil {
+fmt.Printf("Error querying HTTP client traces: %v\n", err)
+os.Exit(1)
+}
+
+// Query HTTP server traces
+fmt.Println("Querying HTTP server traces...")
+serverEndpoints, err := clickhouseanalyzer.QueryDeathStarBenchHTTPServerTraces(db, viewName, namespace)
+if err != nil {
+fmt.Printf("Error querying HTTP server traces: %v\n", err)
+os.Exit(1)
+}
+
+// Query gRPC operations
+fmt.Println("Querying gRPC operations...")
+grpcOperations, err := clickhouseanalyzer.QueryDeathStarBenchGRPCOperations(db, viewName, namespace)
+if err != nil {
+fmt.Printf("Error querying gRPC operations: %v\n", err)
+os.Exit(1)
+}
+
+// Query database operations
+fmt.Println("Querying database operations...")
+dbOperations, err := clickhouseanalyzer.QueryDeathStarBenchDatabaseOperations(db, viewName)
+if err != nil {
+fmt.Printf("Error querying database operations: %v\n", err)
+os.Exit(1)
+}
+
+// Combine HTTP endpoints only (no conversion from DB/gRPC operations)
+allEndpoints := append(clientEndpoints, serverEndpoints...)
+
+// Generate HTTP endpoints file - HTTP endpoints only
+fmt.Printf("Generating HTTP endpoints file at %s...\n", outputEndpoints)
+if err := clickhouseanalyzer.GenerateServiceEndpointsFile(allEndpoints, outputEndpoints); err != nil {
+fmt.Printf("Error generating service endpoints file: %v\n", err)
+os.Exit(1)
+}
+fmt.Println("HTTP endpoints file generated successfully!")
+
+// Generate database operations file
+fmt.Printf("Generating database operations file at %s...\n", outputDatabase)
+if err := clickhouseanalyzer.GenerateDatabaseOperationsFile(dbOperations, outputDatabase); err != nil {
+fmt.Printf("Error generating database operations file: %v\n", err)
+os.Exit(1)
+}
+fmt.Println("Database operations file generated successfully!")
+
+// Generate gRPC operations file
+fmt.Printf("Generating gRPC operations file at %s...\n", outputGRPC)
+if err := clickhouseanalyzer.GenerateGRPCOperationsFile(grpcOperations, outputGRPC); err != nil {
+fmt.Printf("Error generating gRPC operations file: %v\n", err)
+os.Exit(1)
+}
+fmt.Println("gRPC operations file generated successfully!")
+}
+
+// runTeaStoreAnalysis runs the analysis for TeaStore system with specialized route normalization
+// It creates a TeaStore-specific materialized view and queries HTTP, gRPC, and database operations
+func runTeaStoreAnalysis(db *sql.DB, namespace, viewName, outputEndpoints, outputDatabase, outputGRPC string, skipView bool) {
+	// Create TeaStore-specific materialized view if needed
+	if !skipView {
+fmt.Printf("Creating TeaStore materialized view for %s (namespace: %s)...\n", viewName, namespace)
+if err := clickhouseanalyzer.CreateTeaStoreMaterializedView(db, namespace, viewName); err != nil {
+fmt.Printf("Error creating materialized view: %v\n", err)
+os.Exit(1)
+}
+}
+
+// Query HTTP client traces
+fmt.Println("Querying HTTP client traces...")
+clientEndpoints, err := clickhouseanalyzer.QueryDeathStarBenchHTTPClientTraces(db, viewName, namespace)
+if err != nil {
+fmt.Printf("Error querying HTTP client traces: %v\n", err)
+os.Exit(1)
+}
+
+// Query HTTP server traces
+fmt.Println("Querying HTTP server traces...")
+serverEndpoints, err := clickhouseanalyzer.QueryDeathStarBenchHTTPServerTraces(db, viewName, namespace)
+if err != nil {
+fmt.Printf("Error querying HTTP server traces: %v\n", err)
+os.Exit(1)
+}
+
+// Query gRPC operations
+fmt.Println("Querying gRPC operations...")
+grpcOperations, err := clickhouseanalyzer.QueryDeathStarBenchGRPCOperations(db, viewName, namespace)
+if err != nil {
+fmt.Printf("Error querying gRPC operations: %v\n", err)
+os.Exit(1)
+}
+
+// Query database operations
+fmt.Println("Querying database operations...")
+dbOperations, err := clickhouseanalyzer.QueryDeathStarBenchDatabaseOperations(db, viewName)
+if err != nil {
+fmt.Printf("Error querying database operations: %v\n", err)
+os.Exit(1)
+}
+
+// Combine HTTP endpoints only (no conversion from DB/gRPC operations)
+allEndpoints := append(clientEndpoints, serverEndpoints...)
+
+// Generate HTTP endpoints file - HTTP endpoints only
+fmt.Printf("Generating service endpoints file at %s...\n", outputEndpoints)
+if err := clickhouseanalyzer.GenerateServiceEndpointsFile(allEndpoints, outputEndpoints); err != nil {
+fmt.Printf("Error generating service endpoints file: %v\n", err)
+os.Exit(1)
+}
+fmt.Println("HTTP endpoints file generated successfully!")
+
+// Generate database operations file
+fmt.Printf("Generating database operations file at %s...\n", outputDatabase)
+if err := clickhouseanalyzer.GenerateDatabaseOperationsFile(dbOperations, outputDatabase); err != nil {
+fmt.Printf("Error generating database operations file: %v\n", err)
+os.Exit(1)
+}
+fmt.Println("Database operations file generated successfully!")
+
+// Generate gRPC operations file
+fmt.Printf("Generating gRPC operations file at %s...\n", outputGRPC)
+if err := clickhouseanalyzer.GenerateGRPCOperationsFile(grpcOperations, outputGRPC); err != nil {
+fmt.Printf("Error generating gRPC operations file: %v\n", err)
+os.Exit(1)
+}
+fmt.Println("gRPC operations file generated successfully!")
+}
+
+// runSockShopAnalysis runs the analysis for SockShop system with specialized route normalization
+// It creates a SockShop-specific materialized view and queries HTTP, gRPC, and database operations
+func runSockShopAnalysis(db *sql.DB, namespace, viewName, outputEndpoints, outputDatabase, outputGRPC string, skipView bool) {
+// Create SockShop-specific materialized view if needed
+if !skipView {
+fmt.Printf("Creating SockShop materialized view for %s (namespace: %s)...\n", viewName, namespace)
+if err := clickhouseanalyzer.CreateSockShopMaterializedView(db, namespace, viewName); err != nil {
 fmt.Printf("Error creating materialized view: %v\n", err)
 os.Exit(1)
 }
