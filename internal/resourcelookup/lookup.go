@@ -395,6 +395,56 @@ func GetAllDatabaseOperations() ([]AppDatabasePair, error) {
 	return result, nil
 }
 
+// GetAllContainers returns all containers with their info sorted by app label
+func GetAllContainers(namespace string) ([]ContainerInfo, error) {
+	prefix, err := utils.ExtractNsPrefix(namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	cacheKey := prefix + ":all"
+
+	cacheMutex.RLock()
+	if result, exists := cachedContainerInfo[cacheKey]; exists && len(result) > 0 {
+		cacheMutex.RUnlock()
+		return result, nil
+	}
+	cacheMutex.RUnlock()
+
+	containers, err := client.GetContainersWithAppLabel(context.Background(), namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]ContainerInfo, 0, len(containers))
+	for _, c := range containers {
+		if c["appLabel"] != "" {
+			result = append(result, ContainerInfo{
+				PodName:       c["podName"],
+				AppLabel:      c["appLabel"],
+				ContainerName: c["containerName"],
+			})
+		}
+	}
+
+	// Sort by app label for consistency
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].AppLabel != result[j].AppLabel {
+			return result[i].AppLabel < result[j].AppLabel
+		}
+		return result[i].ContainerName < result[j].ContainerName
+	})
+
+	cacheMutex.Lock()
+	if cachedContainerInfo == nil {
+		cachedContainerInfo = make(map[string][]ContainerInfo)
+	}
+	cachedContainerInfo[cacheKey] = result
+	cacheMutex.Unlock()
+
+	return result, nil
+}
+
 // GetContainersByAppLabel returns all containers for a given app label
 func GetContainersByAppLabel(appLabel, namespace string) ([]ContainerInfo, error) {
 	prefix, err := utils.ExtractNsPrefix(namespace)
@@ -439,7 +489,183 @@ func GetContainersByAppLabel(appLabel, namespace string) ([]ContainerInfo, error
 	return containers, nil
 }
 
-// ClearCache clears all cached data
+// GetContainersByService returns all container names for a specific service
+func GetContainersByService(namespace string, serviceName string) ([]string, error) {
+	allContainers, err := GetAllContainers(namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	containerNames := []string{}
+	for _, container := range allContainers {
+		if container.AppLabel == serviceName {
+			containerNames = append(containerNames, container.ContainerName)
+		}
+	}
+
+	// Sort for consistency
+	sort.Strings(containerNames)
+	return containerNames, nil
+}
+
+// GetPodsByService returns all pod names for a specific service
+func GetPodsByService(namespace string, serviceName string) ([]string, error) {
+	allContainers, err := GetAllContainers(namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use a map to ensure uniqueness
+	podMap := make(map[string]bool)
+	for _, container := range allContainers {
+		if container.AppLabel == serviceName {
+			podMap[container.PodName] = true
+		}
+	}
+
+	// Convert map to slice
+	pods := make([]string, 0, len(podMap))
+	for pod := range podMap {
+		pods = append(pods, pod)
+	}
+
+	// Sort for consistency
+	sort.Strings(pods)
+	return pods, nil
+}
+
+// GetContainersAndPodsByServices returns containers and pods for multiple services
+// This is useful for chaos that affects multiple services
+func GetContainersAndPodsByServices(namespace string, serviceNames []string) ([]string, []string, error) {
+	allContainers, err := GetAllContainers(namespace)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Use maps to ensure uniqueness
+	containerMap := make(map[string]bool)
+	podMap := make(map[string]bool)
+
+	// Create a map of service names for faster lookup
+	serviceMap := make(map[string]bool)
+	for _, service := range serviceNames {
+		serviceMap[service] = true
+	}
+
+	// Filter containers for the specified services
+	for _, container := range allContainers {
+		if serviceMap[container.AppLabel] {
+			containerMap[container.ContainerName] = true
+			podMap[container.PodName] = true
+		}
+	}
+
+	// Convert maps to slices
+	containers := make([]string, 0, len(containerMap))
+	for container := range containerMap {
+		containers = append(containers, container)
+	}
+
+	pods := make([]string, 0, len(podMap))
+	for pod := range podMap {
+		pods = append(pods, pod)
+	}
+
+	// Sort for consistency
+	sort.Strings(containers)
+	sort.Strings(pods)
+
+	return containers, pods, nil
+}
+
+// InitCaches initializes resource caches
+func InitCaches() {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+	
+	cachedAppLabels = make(map[string][]string)
+	cachedContainerInfo = make(map[string][]ContainerInfo)
+	cachedAppMethods = make(map[systemconfig.SystemType][]AppMethodPair)
+	cachedAppEndpoints = make(map[systemconfig.SystemType][]AppEndpointPair)
+	cachedNetworkPairs = make(map[systemconfig.SystemType][]AppNetworkPair)
+	cachedDNSEndpoints = make(map[systemconfig.SystemType][]AppDNSPair)
+	cachedDBOperations = make(map[systemconfig.SystemType][]AppDatabasePair)
+}
+
+// PreloadCaches preloads resource caches to reduce first-access latency
+func PreloadCaches(namespace string, labelKey string) error {
+	var wg sync.WaitGroup
+	errChan := make(chan error, 6)
+
+	wg.Add(6)
+
+	// Preload app labels
+	go func() {
+		defer wg.Done()
+		_, err := GetAllAppLabels(namespace, labelKey)
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Preload HTTP endpoints
+	go func() {
+		defer wg.Done()
+		_, err := GetAllHTTPEndpoints()
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Preload network pairs
+	go func() {
+		defer wg.Done()
+		_, err := GetAllNetworkPairs()
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Preload DNS endpoints
+	go func() {
+		defer wg.Done()
+		_, err := GetAllDNSEndpoints()
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Preload database operations
+	go func() {
+		defer wg.Done()
+		_, err := GetAllDatabaseOperations()
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Preload container info
+	go func() {
+		defer wg.Done()
+		_, err := GetAllContainers(namespace)
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Wait for all initialization to complete
+	wg.Wait()
+	close(errChan)
+
+	// Return the first error if any
+	for err := range errChan {
+		return err
+	}
+
+	return nil
+}
+
+// ClearCache clears all cached data (alias for InvalidateCache)
 func ClearCache() {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
@@ -451,6 +677,11 @@ func ClearCache() {
 	cachedDNSEndpoints = nil
 	cachedContainerInfo = nil
 	cachedDBOperations = nil
+}
+
+// InvalidateCache clears all cached data
+func InvalidateCache() {
+	ClearCache()
 }
 
 // Helper functions
