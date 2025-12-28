@@ -51,10 +51,22 @@ func TestSetCurrentSystem(t *testing.T) {
 			expectedSys: SystemOnlineBoutique,
 		},
 		{
+			name:        "set SockShop system",
+			system:      SystemSockShop,
+			wantErr:     false,
+			expectedSys: SystemSockShop,
+		},
+		{
+			name:        "set TeaStore system",
+			system:      SystemTeaStore,
+			wantErr:     false,
+			expectedSys: SystemTeaStore,
+		},
+		{
 			name:        "set invalid system",
 			system:      "invalid-system",
 			wantErr:     true,
-			expectedSys: SystemOnlineBoutique, // Should remain unchanged from previous test
+			expectedSys: SystemTeaStore, // Should remain unchanged from previous test
 		},
 	}
 
@@ -165,6 +177,32 @@ func TestIsOnlineBoutique(t *testing.T) {
 	}
 }
 
+func TestIsSockShop(t *testing.T) {
+	_ = SetCurrentSystem(SystemTrainTicket)
+
+	if IsSockShop() {
+		t.Error("IsSockShop() should return false when system is TrainTicket")
+	}
+
+	_ = SetCurrentSystem(SystemSockShop)
+	if !IsSockShop() {
+		t.Error("IsSockShop() should return true when system is SockShop")
+	}
+}
+
+func TestIsTeaStore(t *testing.T) {
+	_ = SetCurrentSystem(SystemTrainTicket)
+
+	if IsTeaStore() {
+		t.Error("IsTeaStore() should return false when system is TrainTicket")
+	}
+
+	_ = SetCurrentSystem(SystemTeaStore)
+	if !IsTeaStore() {
+		t.Error("IsTeaStore() should return true when system is TeaStore")
+	}
+}
+
 func TestSystemTypeString(t *testing.T) {
 	if SystemTrainTicket.String() != "ts" {
 		t.Errorf("SystemTrainTicket.String() = %v, want %v", SystemTrainTicket.String(), "ts")
@@ -189,12 +227,20 @@ func TestSystemTypeString(t *testing.T) {
 	if SystemOnlineBoutique.String() != "ob" {
 		t.Errorf("SystemOnlineBoutique.String() = %v, want %v", SystemOnlineBoutique.String(), "ob")
 	}
+
+	if SystemSockShop.String() != "sockshop" {
+		t.Errorf("SystemSockShop.String() = %v, want %v", SystemSockShop.String(), "sockshop")
+	}
+
+	if SystemTeaStore.String() != "teastore" {
+		t.Errorf("SystemTeaStore.String() = %v, want %v", SystemTeaStore.String(), "teastore")
+	}
 }
 
 func TestGetAllSystemTypes(t *testing.T) {
 	types := GetAllSystemTypes()
-	if len(types) != 6 {
-		t.Errorf("GetAllSystemTypes() returned %d types, want 6", len(types))
+	if len(types) != 8 {
+		t.Errorf("GetAllSystemTypes() returned %d types, want 8", len(types))
 	}
 
 	found := make(map[SystemType]bool)
@@ -219,6 +265,12 @@ func TestGetAllSystemTypes(t *testing.T) {
 	}
 	if !found[SystemOnlineBoutique] {
 		t.Error("GetAllSystemTypes() should include SystemOnlineBoutique")
+	}
+	if !found[SystemSockShop] {
+		t.Error("GetAllSystemTypes() should include SystemSockShop")
+	}
+	if !found[SystemTeaStore] {
+		t.Error("GetAllSystemTypes() should include SystemTeaStore")
 	}
 }
 
@@ -263,6 +315,18 @@ func TestParseSystemType(t *testing.T) {
 			name:    "parse ob",
 			input:   "ob",
 			want:    SystemOnlineBoutique,
+			wantErr: false,
+		},
+		{
+			name:    "parse sockshop",
+			input:   "sockshop",
+			want:    SystemSockShop,
+			wantErr: false,
+		},
+		{
+			name:    "parse teastore",
+			input:   "teastore",
+			want:    SystemTeaStore,
 			wantErr: false,
 		},
 		{

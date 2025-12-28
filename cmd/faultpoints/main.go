@@ -15,13 +15,13 @@ import (
 
 func main() {
 	// Define global flags
-	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), 'sn' (SocialNetwork), or 'ob' (OnlineBoutique)")
+	system := flag.String("system", "ts", "Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), 'sn' (SocialNetwork), 'ob' (OnlineBoutique), 'sockshop' (Sock Shop), or 'teastore' (Tea Store)")
 	flag.Parse()
 
 	// Set the system type
 	systemType, err := systemconfig.ParseSystemType(*system)
 	if err != nil {
-		fmt.Printf("Invalid system: %s. Must be 'ts', 'otel-demo', 'media', 'hs', 'sn', or 'ob'\n", *system)
+		fmt.Printf("Invalid system: %s. Must be 'ts', 'otel-demo', 'media', 'hs', 'sn', 'ob', 'sockshop', or 'teastore'\n", *system)
 		os.Exit(1)
 	}
 	if err := systemconfig.SetCurrentSystem(systemType); err != nil {
@@ -66,10 +66,10 @@ func printUsage() {
 	fmt.Println("Fault Injection Points Viewer")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  faultpoints [--system ts|otel-demo|media|hs|sn|ob] <command>")
+	fmt.Println("  faultpoints [--system ts|otel-demo|media|hs|sn|ob|sockshop|teastore] <command>")
 	fmt.Println()
 	fmt.Println("Flags:")
-	fmt.Println("  --system <system>  - Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), 'sn' (SocialNetwork), or 'ob' (OnlineBoutique)")
+	fmt.Println("  --system <system>  - Target system: 'ts' (TrainTicket), 'otel-demo' (OpenTelemetry Demo), 'media' (MediaMicroservices), 'hs' (HotelReservation), 'sn' (SocialNetwork), 'ob' (OnlineBoutique), 'sockshop' (Sock Shop), or 'teastore' (Tea Store)")
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  list-http          - List all HTTP fault injection points")
