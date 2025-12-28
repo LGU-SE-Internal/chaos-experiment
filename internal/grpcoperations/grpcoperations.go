@@ -151,7 +151,7 @@ func convertOtelDemoOperations(otelOps []oteldemogrpc.GRPCOperation) []GRPCOpera
 			RPCSystem:      op.RPCSystem,
 			RPCService:     op.RPCService,
 			RPCMethod:      op.RPCMethod,
-			GRPCStatusCode: op.GRPCStatusCode,
+			GRPCStatusCode: op.StatusCode,
 			ServerAddress:  op.ServerAddress,
 			ServerPort:     op.ServerPort,
 			SpanKind:       op.SpanKind,
@@ -169,7 +169,7 @@ func convertMediaOperations(mediaOps []mediagrpc.GRPCOperation) []GRPCOperation 
 			RPCSystem:      op.RPCSystem,
 			RPCService:     op.RPCService,
 			RPCMethod:      op.RPCMethod,
-			GRPCStatusCode: op.GRPCStatusCode,
+			GRPCStatusCode: op.StatusCode,
 			ServerAddress:  op.ServerAddress,
 			ServerPort:     op.ServerPort,
 			SpanKind:       op.SpanKind,
@@ -187,7 +187,7 @@ func convertHSOperations(hsOps []hsgrpc.GRPCOperation) []GRPCOperation {
 			RPCSystem:      op.RPCSystem,
 			RPCService:     op.RPCService,
 			RPCMethod:      op.RPCMethod,
-			GRPCStatusCode: op.GRPCStatusCode,
+			GRPCStatusCode: op.StatusCode,
 			ServerAddress:  op.ServerAddress,
 			ServerPort:     op.ServerPort,
 			SpanKind:       op.SpanKind,
@@ -205,7 +205,7 @@ func convertSNOperations(snOps []sngrpc.GRPCOperation) []GRPCOperation {
 			RPCSystem:      op.RPCSystem,
 			RPCService:     op.RPCService,
 			RPCMethod:      op.RPCMethod,
-			GRPCStatusCode: op.GRPCStatusCode,
+			GRPCStatusCode: op.StatusCode,
 			ServerAddress:  op.ServerAddress,
 			ServerPort:     op.ServerPort,
 			SpanKind:       op.SpanKind,
@@ -215,20 +215,20 @@ func convertSNOperations(snOps []sngrpc.GRPCOperation) []GRPCOperation {
 }
 // convertOBOperations converts ob-specific operations to the common type
 func convertOBOperations(obOps []obgrpc.GRPCOperation) []GRPCOperation {
-result := make([]GRPCOperation, len(obOps))
-for i, op := range obOps {
-result[i] = GRPCOperation{
-ServiceName:    op.ServiceName,
-RPCSystem:      op.RPCSystem,
-RPCService:     op.RPCService,
-RPCMethod:      op.RPCMethod,
-GRPCStatusCode: op.GRPCStatusCode,
-ServerAddress:  op.ServerAddress,
-ServerPort:     op.ServerPort,
-SpanKind:       op.SpanKind,
-}
-}
-return result
+	result := make([]GRPCOperation, len(obOps))
+	for i, op := range obOps {
+		result[i] = GRPCOperation{
+			ServiceName:    op.ServiceName,
+			RPCSystem:      op.RPCSystem,
+			RPCService:     op.RPCService,
+			RPCMethod:      op.RPCMethod,
+			GRPCStatusCode: op.StatusCode,
+			ServerAddress:  op.ServerAddress,
+			ServerPort:     op.ServerPort,
+			SpanKind:       op.SpanKind,
+		}
+	}
+	return result
 }
 
 // convertSockShopOperations converts sockshop-specific operations to the common type
@@ -240,7 +240,7 @@ func convertSockShopOperations(sockshopOps []sockshopgrpc.GRPCOperation) []GRPCO
 			RPCSystem:      op.RPCSystem,
 			RPCService:     op.RPCService,
 			RPCMethod:      op.RPCMethod,
-			GRPCStatusCode: op.GRPCStatusCode,
+			GRPCStatusCode: op.StatusCode,
 			ServerAddress:  op.ServerAddress,
 			ServerPort:     op.ServerPort,
 			SpanKind:       op.SpanKind,
@@ -258,7 +258,7 @@ func convertTeaStoreOperations(teastoreOps []teastoregrpc.GRPCOperation) []GRPCO
 			RPCSystem:      op.RPCSystem,
 			RPCService:     op.RPCService,
 			RPCMethod:      op.RPCMethod,
-			GRPCStatusCode: op.GRPCStatusCode,
+			GRPCStatusCode: op.StatusCode,
 			ServerAddress:  op.ServerAddress,
 			ServerPort:     op.ServerPort,
 			SpanKind:       op.SpanKind,
