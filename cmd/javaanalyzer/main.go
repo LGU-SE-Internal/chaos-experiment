@@ -42,15 +42,22 @@ func main() {
 			fmt.Printf("Error determining project root: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Determine system-specific subdirectory
 		var systemDir string
-		if systemType == systemconfig.SystemTrainTicket {
+		switch systemType {
+		case systemconfig.SystemTrainTicket:
 			systemDir = "ts"
-		} else {
+		case systemconfig.SystemOtelDemo:
 			systemDir = "oteldemo"
+		case systemconfig.SystemSockShop:
+			systemDir = "sockshop"
+		case systemconfig.SystemTeaStore:
+			systemDir = "teastore"
+		default:
+			systemDir = string(systemType)
 		}
-		
+
 		*outputPath = filepath.Join(projectRoot, "internal", systemDir, "javaclassmethods", "javaclassmethods.go")
 	}
 

@@ -82,21 +82,57 @@ var otelDemoServiceDirs = []string{
 // OtelDemo source subdirectory
 const otelDemoSrcSubdir = "src"
 
+// SockShop service directories
+var sockShopServiceDirs = []string{
+	"carts",
+	"catalog",
+	"orders",
+	"payment",
+	"shipping",
+	"users",
+}
+
+// TeaStore service directories (under services/ subdirectory)
+var teaStoreServiceDirs = []string{
+	"tools.descartes.teastore.auth",
+	"tools.descartes.teastore.image",
+	"tools.descartes.teastore.persistence",
+	"tools.descartes.teastore.recommender",
+	"tools.descartes.teastore.registry",
+	"tools.descartes.teastore.webui",
+}
+
+// TeaStore source subdirectory
+const teaStoreSrcSubdir = "services"
+
 // GetServiceDirsForSystem returns the list of service directories for the current system
 func GetServiceDirsForSystem() []string {
-	if systemconfig.IsTrainTicket() {
+	switch systemconfig.GetCurrentSystem() {
+	case systemconfig.SystemTrainTicket:
 		return trainTicketServiceDirs
+	case systemconfig.SystemOtelDemo:
+		return otelDemoServiceDirs
+	case systemconfig.SystemSockShop:
+		return sockShopServiceDirs
+	case systemconfig.SystemTeaStore:
+		return teaStoreServiceDirs
+	default:
+		return nil
 	}
-	return otelDemoServiceDirs
 }
 
 // GetServiceBasePath returns the base path for services based on the system type
 // For OtelDemo, services are under src/ subdirectory
+// For TeaStore, services are under services/ subdirectory
 func GetServiceBasePath(basePath string) string {
-	if systemconfig.IsOtelDemo() {
+	switch systemconfig.GetCurrentSystem() {
+	case systemconfig.SystemOtelDemo:
 		return filepath.Join(basePath, otelDemoSrcSubdir)
+	case systemconfig.SystemTeaStore:
+		return filepath.Join(basePath, teaStoreSrcSubdir)
+	default:
+		return basePath
 	}
-	return basePath
 }
 
 // getPackageNameFromPath extracts the package name from the output file path
@@ -115,6 +151,12 @@ func FilterClassMethods(entries []ClassMethodEntry) []ClassMethodEntry {
 		// For OTel Demo, exclude problempattern classes
 		if systemconfig.IsOtelDemo() {
 			if strings.Contains(entry.ClassName, "problempattern") {
+				continue
+			}
+		}
+		// For TeaStore, exclude test classes
+		if systemconfig.IsTeaStore() {
+			if strings.Contains(entry.ClassName, "Test") || strings.Contains(entry.ClassName, "test") {
 				continue
 			}
 		}
